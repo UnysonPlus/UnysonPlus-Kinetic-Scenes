@@ -43,7 +43,7 @@
   // Scroll's endless mode (a repeating picture moved by whole picture lengths).
   layers.push({ id: 'rep', type: 'image', src: TALL, box: { x: 50, y: 80, w: 10, h: 10, anchor: 'center' }, clips: [{ id: 'rp', preset: 'scroll', start: 0.6, duration: 2.5, ease: 'none', params: { from: 0, to: 150, repeat: true } }] });
   // Change text chained three times (each swap starts from what the one before left), one overlapping the next.
-  layers.push({ id: 'swap', type: 'text', text: '1 / 10', style: { fontSize: 2 }, box: { x: 30, y: 88, anchor: 'center' }, clips: [
+  layers.push({ id: 'swap', type: 'text', text: '1 / 10', style: { fontSize: 2 }, pill: { stroke: '#4c9' }, box: { x: 30, y: 88, anchor: 'center' }, clips: [
     { id: 'sw1', preset: 'text-swap', start: 0.5, duration: 0.5, params: { to: '2 / 10', style: 'roll' } },
     { id: 'sw2', preset: 'text-swap', start: 1.25, duration: 0.5, params: { to: '3 / 10', style: 'blur' } },
     { id: 'sw3', preset: 'text-swap', start: 1.6, duration: 0.6, params: { to: 'done', style: 'slide' } },
@@ -125,7 +125,7 @@ John` } },
     const c = getComputedStyle(el);
     // "none" and the identity matrix draw the same; GSAP leaves the second behind once it has touched an element.
     const tf = c.transform === 'matrix(1, 0, 0, 1, 0, 0)' ? 'none' : c.transform;
-    return [tf, c.opacity, c.filter, c.clipPath, c.visibility, c.letterSpacing, c.color, c.backgroundColor, c.objectPosition, c.backgroundPosition, c.strokeDashoffset, c.strokeDasharray, c.textShadow, c.translate === '0px' ? 'none' : c.translate, el.classList && el.classList.contains('upw-progress') ? c.width : '', el.getAttribute ? (el.getAttribute('d') || el.getAttribute('points') || '') + (el.style ? el.style.left + el.style.top + (el.style.translate === 'none' ? '' : el.style.translate) : '') : '', el.children.length ? '' : el.textContent].join('|');
+    return [tf, c.opacity, c.filter, c.clipPath, c.visibility, c.letterSpacing, c.color, c.backgroundColor, c.objectPosition, c.backgroundPosition, c.strokeDashoffset, c.strokeDasharray, c.textShadow, c.translate === '0px' ? 'none' : c.translate, el.classList && el.classList.contains('upw-progress') ? c.width : '', (el.classList && el.classList.contains('upw-li') && el.style.width ? 'w' + el.style.width : '') + (el.getAttribute ? (el.getAttribute('d') || el.getAttribute('points') || '') + (el.style ? el.style.left + el.style.top + (el.style.translate === 'none' ? '' : el.style.translate) : '') : ''), el.children.length ? '' : el.textContent].join('|');
   }).join('\n');
 
   // A fixed pseudo-random order, so a failure is reproducible.

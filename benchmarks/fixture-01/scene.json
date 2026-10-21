@@ -1,0 +1,954 @@
+{
+ "format": "unysonplus-scene",
+ "version": 1,
+ "title": "Benchmark fixture-01",
+ "duration": 10,
+ "stage": {
+  "breakpoints": [
+   {
+    "id": "v",
+    "minWidth": 0,
+    "aspect": [
+     9,
+     16
+    ]
+   }
+  ],
+  "heightMode": "ratio",
+  "background": "#000000",
+  "fonts": [
+   {
+    "family": "Inter",
+    "href": "https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap"
+   }
+  ]
+ },
+ "playback": {
+  "trigger": "load",
+  "loop": true,
+  "repeatDelay": 0
+ },
+ "layers": [
+  {
+   "id": "title",
+   "type": "text",
+   "text": "VMs vs Docker",
+   "style": {
+    "fontSize": 7,
+    "fontWeight": 800,
+    "color": "#f7d117",
+    "fontFamily": "Inter"
+   },
+   "box": {
+    "x": 50,
+    "y": 9,
+    "anchor": "center"
+   },
+   "clips": [
+    {
+     "id": "title-in",
+     "preset": "fade",
+     "start": 0,
+     "duration": 0.4
+    }
+   ]
+  },
+  {
+   "id": "vm",
+   "type": "group",
+   "name": "Virtual Machines",
+   "clips": [
+    {
+     "id": "vm-in",
+     "preset": "fade",
+     "start": 0,
+     "duration": 0.4,
+     "params": {
+      "y": 4
+     }
+    },
+    {
+     "id": "vm-out",
+     "preset": "fade",
+     "start": 8.4,
+     "duration": 0.5,
+     "params": {
+      "direction": "out",
+      "y": 0
+     }
+    }
+   ],
+   "layers": [
+    {
+     "id": "vm-card",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "#0b0b0b",
+     "stroke": "#1e1e1e",
+     "strokeWidth": 0.28,
+     "radius": 2.4,
+     "box": {
+      "x": 50,
+      "y": 29.700000000000003,
+      "w": 88.7,
+      "h": 32.6
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-dot",
+     "type": "text",
+     "text": "○",
+     "style": {
+      "fontSize": 2.6,
+      "fontWeight": 700,
+      "color": "#f7d117",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 9.4,
+      "y": 15.9,
+      "anchor": "center"
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-title",
+     "type": "text",
+     "text": "Virtual Machines",
+     "style": {
+      "fontSize": 3.6,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 11.2,
+      "y": 15.9,
+      "anchor": "left"
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-sub",
+     "type": "text",
+     "text": "A full OS for every app",
+     "style": {
+      "fontSize": 1.45,
+      "fontWeight": 600,
+      "color": "#cfcfcf",
+      "fontFamily": "Inter",
+      "letterSpacing": 0.18,
+      "uppercase": true
+     },
+     "box": {
+      "x": 11.2,
+      "y": 18.1,
+      "anchor": "left"
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-timer",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "transparent",
+     "stroke": "#3a3a3a",
+     "strokeWidth": 0.28,
+     "radius": 3,
+     "box": {
+      "x": 77.3,
+      "y": 15.8,
+      "w": 29.4,
+      "h": 3
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-start",
+     "type": "text",
+     "text": "START",
+     "style": {
+      "fontSize": 1.4,
+      "fontWeight": 700,
+      "color": "#bbbbbb",
+      "fontFamily": "Inter",
+      "letterSpacing": 0.2
+     },
+     "box": {
+      "x": 66.5,
+      "y": 15.8,
+      "anchor": "center"
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-secs",
+     "type": "text",
+     "text": "45 s",
+     "style": {
+      "fontSize": 2.4,
+      "fontWeight": 700,
+      "color": "#f7d117",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 88.6,
+      "y": 15.8,
+      "anchor": "right"
+     },
+     "clips": [
+      {
+       "id": "vm-count",
+       "preset": "text-count",
+       "start": 0.9,
+       "duration": 3.6,
+       "ease": "none"
+      }
+     ]
+    },
+    {
+     "id": "vm-pill",
+     "type": "text",
+     "text": "start 3 apps",
+     "style": {
+      "fontSize": 1.7,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 50,
+      "y": 23.1,
+      "anchor": "center"
+     },
+     "clips": [
+      {
+       "id": "vm-pill-in",
+       "preset": "pop",
+       "start": 0.35,
+       "duration": 0.3
+      },
+      {
+       "id": "vm-pill-boot",
+       "preset": "text-swap",
+       "start": 0.9,
+       "duration": 0.35,
+       "params": {
+        "to": "◌ booting 3 operating systems",
+        "style": "roll"
+       }
+      },
+      {
+       "id": "vm-pill-swap",
+       "preset": "text-swap",
+       "start": 4.5,
+       "duration": 0.4,
+       "params": {
+        "to": "✓ ready in 45 s",
+        "style": "roll"
+       }
+      }
+     ],
+     "pill": {
+      "stroke": "#f7d117",
+      "strokeWidth": 0.25,
+      "padX": 0.8,
+      "padY": 0.3
+     }
+    },
+    {
+     "id": "vm-boxes",
+     "type": "repeat",
+     "items": [
+      {
+       "n": 1
+      },
+      {
+       "n": 2
+      },
+      {
+       "n": 3
+      }
+     ],
+     "step": {
+      "x": 23.4,
+      "y": 0
+     },
+     "stagger": 0.12,
+     "item": {
+      "id": "box",
+      "type": "group",
+      "clips": [],
+      "layers": [
+       {
+        "id": "frame",
+        "type": "shape",
+        "shape": "rect",
+        "fill": "transparent",
+        "stroke": "#f7d117",
+        "strokeWidth": 0.22,
+        "radius": 1.4,
+        "dash": 0.9,
+        "box": {
+         "x": 26.6,
+         "y": 32,
+         "w": 21.6,
+         "h": 11.3
+        },
+        "clips": [
+         {
+          "id": "march",
+          "preset": "march",
+          "start": 0.9,
+          "duration": 3.5
+         },
+         {
+          "id": "solid",
+          "preset": "dash-solid",
+          "start": 4.4,
+          "duration": 0.4
+         }
+        ]
+       },
+       {
+        "id": "os",
+        "type": "shape",
+        "shape": "rect",
+        "fill": "transparent",
+        "stroke": "#f7d117",
+        "strokeWidth": 0.22,
+        "radius": 1,
+        "box": {
+         "x": 26.6,
+         "y": 34.8,
+         "w": 19,
+         "h": 4.2
+        },
+        "clips": [
+         {
+          "id": "os-in",
+          "preset": "fade",
+          "start": 0.9,
+          "duration": 0.3
+         }
+        ]
+       },
+       {
+        "id": "os-t",
+        "type": "text",
+        "text": "Guest OS",
+        "style": {
+         "fontSize": 1.7,
+         "fontWeight": 600,
+         "color": "#f7d117",
+         "fontFamily": "Inter"
+        },
+        "box": {
+         "x": 26.6,
+         "y": 34.1,
+         "anchor": "center"
+        },
+        "clips": [
+         {
+          "id": "os-t-in",
+          "preset": "fade",
+          "start": 0.9,
+          "duration": 0.3
+         }
+        ]
+       },
+       {
+        "id": "bar",
+        "type": "shape",
+        "shape": "rect",
+        "fill": "#2b2b2b",
+        "stroke": "transparent",
+        "strokeWidth": 0.28,
+        "radius": 0.3,
+        "box": {
+         "x": 26.6,
+         "y": 35.9,
+         "w": 14,
+         "h": 0.5
+        },
+        "clips": [
+         {
+          "id": "bar-in",
+          "preset": "fade",
+          "start": 0.9,
+          "duration": 0.3,
+          "params": {
+           "y": 0
+          }
+         },
+         {
+          "id": "boot",
+          "preset": "progress",
+          "start": 1,
+          "duration": 3.3,
+          "ease": "none",
+          "params": {
+           "color": "#f7d117"
+          }
+         }
+        ]
+       },
+       {
+        "id": "app",
+        "type": "shape",
+        "shape": "rect",
+        "fill": "#0b0b0b",
+        "stroke": "#ffffff",
+        "strokeWidth": 0.3,
+        "radius": 1,
+        "box": {
+         "x": 26.6,
+         "y": 29.5,
+         "w": 18,
+         "h": 4
+        },
+        "clips": [
+         {
+          "id": "app-in",
+          "preset": "stack-in",
+          "start": 4.5,
+          "duration": 0.45
+         }
+        ]
+       },
+       {
+        "id": "app-t",
+        "type": "text",
+        "text": "App {{n}}",
+        "style": {
+         "fontSize": 1.9,
+         "fontWeight": 700,
+         "color": "#ffffff",
+         "fontFamily": "Inter"
+        },
+        "box": {
+         "x": 25.1,
+         "y": 29.5,
+         "anchor": "center"
+        },
+        "clips": [
+         {
+          "id": "app-t-in",
+          "preset": "fade",
+          "start": 4.6,
+          "duration": 0.3
+         }
+        ]
+       }
+      ]
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-bar0",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "transparent",
+     "stroke": "#e6e6e6",
+     "strokeWidth": 0.28,
+     "radius": 1.2,
+     "box": {
+      "x": 50,
+      "y": 39.9,
+      "w": 68.6,
+      "h": 2.7
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-bar0-t",
+     "type": "text",
+     "text": "Hypervisor",
+     "style": {
+      "fontSize": 1.9,
+      "fontWeight": 600,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 50,
+      "y": 39.9,
+      "anchor": "center"
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-bar1",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "transparent",
+     "stroke": "#e6e6e6",
+     "strokeWidth": 0.28,
+     "radius": 1.2,
+     "box": {
+      "x": 50,
+      "y": 43.3,
+      "w": 68.6,
+      "h": 2.7
+     },
+     "clips": []
+    },
+    {
+     "id": "vm-bar1-t",
+     "type": "text",
+     "text": "Hardware",
+     "style": {
+      "fontSize": 1.9,
+      "fontWeight": 600,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 50,
+      "y": 43.3,
+      "anchor": "center"
+     },
+     "clips": []
+    }
+   ]
+  },
+  {
+   "id": "vs",
+   "type": "shape",
+   "shape": "ellipse",
+   "fill": "#000",
+   "stroke": "#ffffff",
+   "strokeWidth": 0.3,
+   "box": {
+    "x": 50,
+    "y": 47.4,
+    "w": 6.6,
+    "ratio": 1
+   },
+   "clips": []
+  },
+  {
+   "id": "vs-t",
+   "type": "text",
+   "text": "vs",
+   "style": {
+    "fontSize": 2.2,
+    "fontWeight": 700,
+    "color": "#ffffff",
+    "fontFamily": "Inter"
+   },
+   "box": {
+    "x": 50,
+    "y": 47.4,
+    "anchor": "center"
+   },
+   "clips": []
+  },
+  {
+   "id": "dk",
+   "type": "group",
+   "name": "Docker Containers",
+   "clips": [
+    {
+     "id": "dk-in",
+     "preset": "fade",
+     "start": 0,
+     "duration": 0.4,
+     "params": {
+      "y": 4
+     }
+    },
+    {
+     "id": "dk-out",
+     "preset": "fade",
+     "start": 8.4,
+     "duration": 0.5,
+     "params": {
+      "direction": "out",
+      "y": 0
+     }
+    }
+   ],
+   "layers": [
+    {
+     "id": "dk-card",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "#0b0b0b",
+     "stroke": "#1e1e1e",
+     "strokeWidth": 0.28,
+     "radius": 2.4,
+     "box": {
+      "x": 50,
+      "y": 65.3,
+      "w": 88.7,
+      "h": 32.6
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-dot",
+     "type": "text",
+     "text": "○",
+     "style": {
+      "fontSize": 2.6,
+      "fontWeight": 700,
+      "color": "#f7d117",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 9.4,
+      "y": 51.5,
+      "anchor": "center"
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-title",
+     "type": "text",
+     "text": "Docker Containers",
+     "style": {
+      "fontSize": 3.6,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 11.2,
+      "y": 51.5,
+      "anchor": "left"
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-sub",
+     "type": "text",
+     "text": "Apps share the host OS",
+     "style": {
+      "fontSize": 1.45,
+      "fontWeight": 600,
+      "color": "#cfcfcf",
+      "fontFamily": "Inter",
+      "letterSpacing": 0.18,
+      "uppercase": true
+     },
+     "box": {
+      "x": 11.2,
+      "y": 53.7,
+      "anchor": "left"
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-timer",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "transparent",
+     "stroke": "#3a3a3a",
+     "strokeWidth": 0.28,
+     "radius": 3,
+     "box": {
+      "x": 77.3,
+      "y": 51.4,
+      "w": 29.4,
+      "h": 3
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-start",
+     "type": "text",
+     "text": "START",
+     "style": {
+      "fontSize": 1.4,
+      "fontWeight": 700,
+      "color": "#bbbbbb",
+      "fontFamily": "Inter",
+      "letterSpacing": 0.2
+     },
+     "box": {
+      "x": 66.5,
+      "y": 51.4,
+      "anchor": "center"
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-secs",
+     "type": "text",
+     "text": "1 s",
+     "style": {
+      "fontSize": 2.4,
+      "fontWeight": 700,
+      "color": "#f7d117",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 88.6,
+      "y": 51.4,
+      "anchor": "right"
+     },
+     "clips": [
+      {
+       "id": "dk-count",
+       "preset": "text-count",
+       "start": 0.9,
+       "duration": 0.35,
+       "ease": "none"
+      }
+     ]
+    },
+    {
+     "id": "dk-pill",
+     "type": "text",
+     "text": "start 3 apps",
+     "style": {
+      "fontSize": 1.7,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 50,
+      "y": 58.75,
+      "anchor": "center"
+     },
+     "clips": [
+      {
+       "id": "dk-pill-in",
+       "preset": "pop",
+       "start": 0.35,
+       "duration": 0.3
+      },
+      {
+       "id": "dk-pill-swap",
+       "preset": "text-swap",
+       "start": 1.15,
+       "duration": 0.3,
+       "params": {
+        "to": "✓ ready in 1 s",
+        "style": "roll"
+       }
+      }
+     ],
+     "pill": {
+      "stroke": "#2ad38b",
+      "strokeWidth": 0.25,
+      "padX": 0.8,
+      "padY": 0.3
+     }
+    },
+    {
+     "id": "dk-apps",
+     "type": "repeat",
+     "items": [
+      {
+       "n": 1
+      },
+      {
+       "n": 2
+      },
+      {
+       "n": 3
+      }
+     ],
+     "step": {
+      "x": 23.4,
+      "y": 0
+     },
+     "stagger": 0.08,
+     "item": {
+      "id": "c",
+      "type": "group",
+      "clips": [],
+      "layers": [
+       {
+        "id": "app",
+        "type": "shape",
+        "shape": "rect",
+        "fill": "#0b0b0b",
+        "stroke": "#ffffff",
+        "strokeWidth": 0.3,
+        "radius": 1.2,
+        "box": {
+         "x": 26.6,
+         "y": 67.5,
+         "w": 20,
+         "h": 4.9
+        },
+        "clips": [
+         {
+          "id": "app-in",
+          "preset": "stack-in",
+          "start": 0.95,
+          "duration": 0.4
+         }
+        ]
+       },
+       {
+        "id": "app-t",
+        "type": "text",
+        "text": "App {{n}}",
+        "style": {
+         "fontSize": 2,
+         "fontWeight": 700,
+         "color": "#ffffff",
+         "fontFamily": "Inter"
+        },
+        "box": {
+         "x": 25.1,
+         "y": 67.5,
+         "anchor": "center"
+        },
+        "clips": [
+         {
+          "id": "app-t-in",
+          "preset": "fade",
+          "start": 1,
+          "duration": 0.3
+         }
+        ]
+       },
+       {
+        "id": "led",
+        "type": "shape",
+        "shape": "ellipse",
+        "fill": "#2ad38b",
+        "box": {
+         "x": 33.1,
+         "y": 67.5,
+         "w": 1,
+         "ratio": 1
+        },
+        "clips": [
+         {
+          "id": "led-in",
+          "preset": "pop",
+          "start": 1.2,
+          "duration": 0.25
+         }
+        ]
+       }
+      ]
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-bar0",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "transparent",
+     "stroke": "#e6e6e6",
+     "strokeWidth": 0.28,
+     "radius": 1.2,
+     "box": {
+      "x": 50,
+      "y": 72,
+      "w": 68.6,
+      "h": 2.7
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-bar0-t",
+     "type": "text",
+     "text": "Docker Engine",
+     "style": {
+      "fontSize": 1.9,
+      "fontWeight": 600,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 50,
+      "y": 72,
+      "anchor": "center"
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-bar1",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "transparent",
+     "stroke": "#e6e6e6",
+     "strokeWidth": 0.28,
+     "radius": 1.2,
+     "box": {
+      "x": 50,
+      "y": 75.4,
+      "w": 68.6,
+      "h": 2.7
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-bar1-t",
+     "type": "text",
+     "text": "Host OS",
+     "style": {
+      "fontSize": 1.9,
+      "fontWeight": 600,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 50,
+      "y": 75.4,
+      "anchor": "center"
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-bar2",
+     "type": "shape",
+     "shape": "rect",
+     "fill": "transparent",
+     "stroke": "#e6e6e6",
+     "strokeWidth": 0.28,
+     "radius": 1.2,
+     "box": {
+      "x": 50,
+      "y": 78.8,
+      "w": 68.6,
+      "h": 2.7
+     },
+     "clips": []
+    },
+    {
+     "id": "dk-bar2-t",
+     "type": "text",
+     "text": "Hardware",
+     "style": {
+      "fontSize": 1.9,
+      "fontWeight": 600,
+      "color": "#ffffff",
+      "fontFamily": "Inter"
+     },
+     "box": {
+      "x": 50,
+      "y": 78.8,
+      "anchor": "center"
+     },
+     "clips": []
+    }
+   ]
+  },
+  {
+   "id": "reset",
+   "type": "shape",
+   "shape": "rect",
+   "fill": "#000",
+   "stroke": "transparent",
+   "box": {
+    "x": 50,
+    "y": 50,
+    "w": 100,
+    "h": 100
+   },
+   "opacity": 0,
+   "clips": []
+  }
+ ]
+}

@@ -60,6 +60,7 @@ LINKS AND THE ENDING (calls to action)
 
 EMPHASIS AND CHANGING WORDS
 - "select-box" frames one word of a text layer (or a few: "word" is the 1-based word number, "words" how many) in a coloured box with corner handles and tints it, like a selected object in a design tool. Use it on the one key word of a short headline ("The [goal]", "[Run] it"), after the headline has arrived; one per headline, and keep one colour per idea across the scene.
+- A text layer may carry "pill": { "stroke"?, "fill"?, "padX"?, "padY"?, "radius"? } (em): a pill or tag sized to its words (status labels, badges, chips). Leave its box without a width so the pill fits the words.
 - "text-swap" changes a text layer's words on cue ("to": the new words; "style": roll, slide, fade or blur). Use it for statuses, counters and labels that update ("booting" to "ready in 45 s", "1 / 10" to "2 / 10") instead of a second layer faded over the first. Several on one layer step through a sequence: each starts from what the one before left, so give them separate, non-overlapping times. Keep the new words about as long as the old ones, or give the layer a width.
 
 MORE MOTION

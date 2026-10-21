@@ -53,7 +53,7 @@ function tween3d(ctx: PresetContext, from: Vars, to: Vars, immediate: boolean) {
   ctx.tl.fromTo(ctx.model, from, { ...to, duration: ctx.duration, ease: ctx.ease, immediateRender: immediate }, ctx.at);
 }
 
-interface Swap { start: number; dur: number; ease: (t: number) => number; node: HTMLElement; style: 'roll' | 'slide' | 'fade' | 'blur'; shiftX: string }
+interface Swap { start: number; dur: number; ease: (t: number) => number; node: HTMLElement; style: 'roll' | 'slide' | 'fade' | 'blur'; shiftX: string; resize: boolean }
 /** Change text: each text layer's swaps, by clip id (rebuilt with the timeline). */
 const SWAPS = new WeakMap<HTMLElement, Map<string, Swap>>();
 
@@ -75,6 +75,25 @@ function renderSwaps(el: HTMLElement, clipIds: string[], now: number) {
     node.style.transform = `translate(calc(${shiftX} + ${x.toFixed(2)}%), ${y.toFixed(2)}%)`;
     node.style.filter = style === 'blur' && away > 0.001 ? `blur(${(away * 0.8).toFixed(3)}cqw)` : '';
   };
+  // A layer sized to its words (no width) resizes smoothly from the old words to the new, so a pill or
+  // tag around them follows. Widths are measured each frame from the words themselves.
+  if (list[0]?.resize) {
+    el.style.width = '';
+    // The words stay on their lines while the box changes width (a set width would otherwise wrap them).
+    original.style.whiteSpace = 'pre';
+    const cs = getComputedStyle(el);
+    const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
+    // Fractional widths (offsetWidth rounds, and a box a fraction too narrow wraps its last word).
+    const exact = (n: HTMLElement) => parseFloat(getComputedStyle(n).width) || n.offsetWidth;
+    const natural = [exact(el) - pad, ...list.map((s) => exact(s.node))];
+    let w = natural[0];
+    for (let k = 0; k < list.length; k++) {
+      const p = prog(list[k]);
+      if (p <= 0) break;
+      w = natural[k] + (natural[k + 1] - natural[k]) * p;
+    }
+    el.style.width = `${(w + pad + 0.5).toFixed(2)}px`;
+  }
   let rolling = false;
   for (let k = 0; k <= list.length; k++) {
     const node = k === 0 ? original : list[k - 1].node;
@@ -88,7 +107,8 @@ function renderSwaps(el: HTMLElement, clipIds: string[], now: number) {
     if (outS?.style === 'roll' && outP > 0 && outP < 1) rolling = true;
   }
   // The text is clipped to its own line while it rolls, so the words wheel past rather than overlap.
-  el.style.clipPath = rolling ? 'inset(-0.05em -100vw)' : '';
+  // A box sized to its words (often a pill) clips the roll to itself, sideways too.
+  el.style.clipPath = rolling ? (list[0]?.resize ? `inset(0 round ${getComputedStyle(el).borderTopLeftRadius || '0'})` : 'inset(-0.05em -100vw)') : '';
 }
 
 export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
@@ -303,11 +323,12 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     const sized = typeof ctx.layer.box.w === 'number';
     const anchor = ctx.layer.box.anchor ?? 'center';
     const hx = anchor.includes('left') ? 'left' : anchor.includes('right') ? 'right' : 'center';
+    const cs = getComputedStyle(ctx.el);
     Object.assign(node.style, {
-      position: 'absolute', top: '0', pointerEvents: 'none',
+      position: 'absolute', top: cs.paddingTop || '0', pointerEvents: 'none',
       whiteSpace: sized ? 'pre-line' : 'pre',
-      left: sized || hx === 'left' ? '0' : hx === 'center' ? '50%' : 'auto',
-      right: sized || hx === 'right' ? '0' : 'auto',
+      left: sized || hx === 'left' ? (cs.paddingLeft || '0') : hx === 'center' ? '50%' : 'auto',
+      right: sized || hx === 'right' ? (cs.paddingRight || '0') : 'auto',
     });
     if (!node.style.opacity) node.style.opacity = '0';
     let reg = SWAPS.get(ctx.el);
@@ -316,11 +337,15 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
       start: ctx.at, dur: ctx.duration, ease: easeOf(ctx), node,
       style: pick(p, 'style', ['roll', 'slide', 'fade', 'blur'] as const, 'roll'),
       shiftX: !sized && hx === 'center' ? '-50%' : '0%',
+      resize: !sized,
     });
     const tl = ctx.tl;
     const layer = ctx.layer;
     const el = ctx.el;
     drive(ctx, () => renderSwaps(el, layer.clips.map((c) => c.id), tl.time()), { ease: false, always: true });
+    // Also after every update (once per layer is enough, but repeats are harmless): the pill's width follows
+    // the words even when no swap is running, for instance once the web font has loaded.
+    ctx.late(() => renderSwaps(el, layer.clips.map((c) => c.id), tl.time()));
   },
 
   sheen(ctx) {

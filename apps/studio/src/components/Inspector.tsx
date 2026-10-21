@@ -538,7 +538,10 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
           <ColorField label="Colour" value={style.color} onCommit={(v) => layout({ style: { color: v || undefined } })} />
           <CheckField label="Capitals" checked={!!style.uppercase} onChange={(v) => layout({ style: { uppercase: v || undefined } })} />
           <CheckField label="Italic" checked={!!style.italic} onChange={(v) => layout({ style: { italic: v || undefined } })} />
-          <p className="field-hint wide">Sizes are in stage units: 10 is a tenth of the stage width.</p>
+          <CheckField label="Pill around it" checked={!!layer.pill} onChange={(v) => props({ pill: v ? { stroke: style.color ?? '#ffffff' } : undefined })} />
+          {layer.pill && <ColorField label="Pill outline" value={layer.pill.stroke} placeholder="None" onCommit={(v) => props({ pill: { ...layer.pill, stroke: v || undefined } })} />}
+          {layer.pill && <ColorField label="Pill fill" value={layer.pill.fill} placeholder="None" onCommit={(v) => props({ pill: { ...layer.pill, fill: v || undefined } })} />}
+          <p className="field-hint wide">Sizes are in stage units: 10 is a tenth of the stage width.{layer.pill ? ' The pill fits the words, and Change text resizes it smoothly to new ones.' : ''}</p>
         </Section>
       )}
 

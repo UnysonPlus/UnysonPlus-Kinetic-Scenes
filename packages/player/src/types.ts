@@ -296,6 +296,11 @@ export interface TextLayer extends LayerBase {
   /** A line break in the text ("\n") starts a new line. */
   text: string;
   style: TextStyle;
+  /**
+   * A pill (or tag) around the words, sized to them: a status label, a badge, a button's label. Change text
+   * resizes it smoothly to the new words. Radius and padding are in em (of the text size).
+   */
+  pill?: { fill?: string; stroke?: string; strokeWidth?: number; radius?: number; padX?: number; padY?: number };
 }
 
 export interface ShapeLayer extends LayerBase {

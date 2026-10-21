@@ -274,6 +274,11 @@ export function applyLayout(refs: LayerRefs, bpId: string | null) {
     is.textAlign = style.align ?? (box.anchor?.endsWith('left') || box.anchor === 'left' ? 'left' : box.anchor?.endsWith('right') || box.anchor === 'right' ? 'right' : 'center');
     is.textTransform = style.uppercase ? 'uppercase' : '';
     is.fontStyle = style.italic ? 'italic' : '';
+    const pill = refs.layer.type === 'text' ? refs.layer.pill : undefined;
+    is.padding = pill ? `${pill.padY ?? 0.35}em ${pill.padX ?? 0.9}em` : '';
+    is.background = pill?.fill ?? '';
+    is.border = pill?.stroke ? `${pill.strokeWidth ?? 0.12}cqw solid ${pill.stroke}` : '';
+    is.borderRadius = pill ? `${pill.radius ?? 99}em` : '';
   }
 }
 

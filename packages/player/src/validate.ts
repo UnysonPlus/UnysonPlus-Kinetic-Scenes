@@ -216,6 +216,7 @@ export function validateScene(input: unknown): ValidationResult {
       if (layer.type === 'text') {
         if (typeof layer.text !== 'string') fail(`${lp}.text`, 'is required');
         if (!isObj(layer.style) || !isNum(layer.style.fontSize) || layer.style.fontSize <= 0) fail(`${lp}.style.fontSize`, 'is required (stage units)');
+        if (layer.pill !== undefined && !isObj(layer.pill)) fail(`${lp}.pill`, 'must be { fill, stroke, radius, padX, padY }');
       } else if (layer.type === 'shape') {
         if (layer.shape !== 'rect' && layer.shape !== 'ellipse') fail(`${lp}.shape`, 'must be rect or ellipse');
         if (layer.dash !== undefined && (!isNum(layer.dash) || layer.dash < 0 || layer.dash > 50)) fail(`${lp}.dash`, 'must be 0 to 50 stage units');
