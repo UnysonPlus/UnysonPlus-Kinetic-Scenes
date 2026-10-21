@@ -31,6 +31,9 @@ import {
   removeLayer, roundTime, setClip, ungroupLayer, writeLayout,
 } from './lib/sceneOps';
 import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/groups';
+import { VIDEO_FORMATS, zonesFor } from '@unysonplus/scene-player/video';
+import type { VideoFormat } from '@unysonplus/scene-player/types';
+import { footageIds, getFootage, probeVideo, putFootage } from './lib/footage';
 import { DEVICES, Preview, type Device } from './components/Preview';
 import { Transport } from './components/Transport';
 import { ScenePanel } from './components/ScenePanel';
@@ -85,7 +88,10 @@ function download(name: string, type: string, content: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const DEVICE_ICONS: Record<Device['id'], JSX.Element> = {
+/** The checkerboard behind a see-through video. */
+const CHECKER = 'repeating-conic-gradient(#2a2f36 0% 25%, #1c2026 0% 50%) 50% / 24px 24px';
+
+const DEVICE_ICONS: Record<string, JSX.Element> = {
   desktop: <DesktopIcon />, laptop: <LaptopIcon />, tablet: <TabletIcon />, mobile: <PhoneIcon />,
 };
 
@@ -172,7 +178,16 @@ export function App() {
   const latest = useRef({ scene, selection, state, scope });
   latest.current = { scene, selection, state, scope };
 
-  const device = DEVICES.find((d) => d.id === deviceId)!;
+  // A video is previewed at its exact pixel size, one format at a time.
+  const video = scene.mode === 'video' && scene.video ? scene.video : null;
+  const [formatId, setFormatId] = useState<VideoFormat | null>(null);
+  const format: VideoFormat | null = video ? (formatId && video.formats.includes(formatId) ? formatId : video.formats[0]) : null;
+  const device: Device = format
+    ? { id: format, label: VIDEO_FORMATS[format].label, width: VIDEO_FORMATS[format].width, height: VIDEO_FORMATS[format].height }
+    : DEVICES.find((d) => d.id === deviceId)!;
+  const zones = video && format && safe ? zonesFor(video.platform, format) : undefined;
+  const footageRef = useRef<HTMLInputElement>(null);
+  const sentFootage = useRef(new Set<string>());
   const post = useCallback((msg: Record<string, unknown>) => iframeRef.current?.contentWindow?.postMessage(msg, '*'), []);
   const commit = history.commit;
 
@@ -185,6 +200,21 @@ export function App() {
   const selKey = selectedIds(selection).join('|');
   useEffect(() => { if (ready) post({ type: 'select', ids: selKey ? selKey.split('|') : [] }); }, [selKey, ready, post]);
   useEffect(() => { if (ready) post({ type: 'safe', show: safe }); }, [safe, ready, post]);
+  // A see-through video shows a checkerboard behind it; anything else the page's own colour.
+  const seeThrough = !!video?.transparent;
+  useEffect(() => { if (ready) post({ type: 'backdrop', value: seeThrough ? CHECKER : '' }); }, [seeThrough, ready, post]);
+  // Footage lives in this browser's database: the preview is sent each file once (it makes its own address).
+  useEffect(() => {
+    if (!ready) return;
+    for (const id of footageIds(scene)) {
+      if (sentFootage.current.has(id)) continue;
+      sentFootage.current.add(id);
+      getFootage(id).then((blob) => {
+        if (blob) post({ type: 'footage', id, blob });
+        else setNotice('Some footage is not on this computer any more (it is kept in the browser where it was added). Add it again.');
+      });
+    }
+  }, [scene, ready, post]);
   useEffect(() => { if (ready) post({ type: 'camera', on: cameraView }); }, [cameraView, ready, post]);
   useEffect(() => { if (ready) post({ type: 'ui', scale }); }, [scale, ready, post]);
 
@@ -246,6 +276,7 @@ export function App() {
 
   const onAddLayer = (type: LeafType) => {
     if (type === 'image') imageRef.current?.click();
+    else if (type === 'video') footageRef.current?.click();
     else addLayerOfType(type);
   };
 
@@ -662,6 +693,19 @@ export function App() {
             };
             reader.readAsDataURL(file);
           }} />
+          <input ref={footageRef} type="file" accept="video/*" hidden onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            const [src, meta] = await Promise.all([putFootage(file), probeVideo(file)]);
+            // Footage is what the graphics sit on: it starts with the scene and is cut where the file ends.
+            const s = latest.current.scene;
+            addLayerOfType('video', {
+              name: file.name.replace(/\.[^.]+$/, ''), src,
+              ...(meta.duration && meta.duration < s.duration ? { end: Math.round(meta.duration * 100) / 100 } : {}),
+            } as Partial<Layer>);
+            setNotice(`Added ${file.name} (${meta.duration.toFixed(1)} s). It stays in this browser; exports and videos carry it.`);
+          }} />
           <input ref={imageRef} type="file" accept="image/*" hidden onChange={(e) => {
             const file = e.target.files?.[0];
             e.target.value = '';
@@ -777,23 +821,34 @@ export function App() {
 
         <section className="stagecol" aria-label="Stage">
           <div className="toolbar">
-            <Segmented
-              legend="Screen size"
-              value={deviceId}
-              onChange={setDeviceId}
-              options={DEVICES.map((d) => ({ value: d.id, label: d.label, icon: DEVICE_ICONS[d.id], iconOnly: true, hint: `${d.label}, ${d.width} × ${d.height} window` }))}
-            />
-            <span className="tb-sep" aria-hidden="true" />
-            <Segmented
-              legend="Height mode"
-              value={scene.stage.heightMode}
-              onChange={(mode) => commit({ ...scene, stage: { ...scene.stage, heightMode: mode } })}
-              options={HEIGHT_MODES}
-            />
-            <label className="toggle">
+            {video && format ? (
+              <Segmented
+                legend="Format"
+                value={format}
+                onChange={(f) => setFormatId(f as VideoFormat)}
+                options={video.formats.map((f) => ({ value: f, label: VIDEO_FORMATS[f].label.split(' ')[1], hint: `${VIDEO_FORMATS[f].label}, ${VIDEO_FORMATS[f].width} × ${VIDEO_FORMATS[f].height}` }))}
+              />
+            ) : (
+              <>
+                <Segmented
+                  legend="Screen size"
+                  value={deviceId}
+                  onChange={setDeviceId}
+                  options={DEVICES.map((d) => ({ value: d.id, label: d.label, icon: DEVICE_ICONS[d.id], iconOnly: true, hint: `${d.label}, ${d.width} × ${d.height} window` }))}
+                />
+                <span className="tb-sep" aria-hidden="true" />
+                <Segmented
+                  legend="Height mode"
+                  value={scene.stage.heightMode}
+                  onChange={(mode) => commit({ ...scene, stage: { ...scene.stage, heightMode: mode } })}
+                  options={HEIGHT_MODES}
+                />
+              </>
+            )}
+            <label className="toggle" title={video && video.platform && video.platform !== 'none' ? 'The safe area, and where the app covers the picture with its buttons and captions' : undefined}>
               <input type="checkbox" checked={safe} onChange={(e) => setSafe(e.target.checked)} />
               <span className="toggle-track" aria-hidden="true" />
-              Safe area
+              {video && video.platform && video.platform !== 'none' ? 'App guides' : 'Safe area'}
             </label>
             {!!scene.camera?.keys.length && (
               <label className="toggle" title="Show the camera's moves on the stage. Turn it off to select and move layers in the flat layout.">
@@ -815,7 +870,7 @@ export function App() {
           </div>
 
           <div className="preview-wrap">
-            <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} />
+            <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} zones={zones} checker={seeThrough} />
             <AiAssist
               open={assistOpen}
               onOpenChange={openAssist}

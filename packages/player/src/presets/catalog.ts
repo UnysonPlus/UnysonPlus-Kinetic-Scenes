@@ -69,7 +69,7 @@ const SIDE: PresetField = {
   ],
 };
 // Presets that animate the layer as a whole also work on a group (its frame).
-const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram', 'code', 'captions', 'repeat', 'cursor'];
+const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'video', 'model', 'group', 'path', 'flow', 'diagram', 'code', 'captions', 'repeat', 'cursor'];
 
 export const PRESET_CATALOG: PresetMeta[] = [
   // ---- Text ----
@@ -337,14 +337,14 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [DIRECTION],
   },
   {
-    id: 'morph', label: 'Morph into', category: 'motion', appliesTo: ['text', 'shape', 'image', 'model', 'group', 'diagram', 'code'],
+    id: 'morph', label: 'Morph into', category: 'motion', appliesTo: ['text', 'shape', 'image', 'video', 'model', 'group', 'diagram', 'code'],
     description: 'Glides into another layer: to its place and size (and, between two shapes, its colour and corners), then hands over to it in a short crossfade, so the same word, card or screenshot carries on into the next act instead of fading out and in again. The other layer stays hidden until the handover.',
     defaultEase: 'power3.inOut', defaultDuration: 0.9,
     defaults: { to: '', fade: 0.3 },
     fields: [{ key: 'to', label: 'Into layer', type: 'layer' }, { key: 'fade', label: 'Handover', type: 'number', min: 0.05, max: 1, step: 0.05 }],
   },
   {
-    id: 'follow-path', label: 'Follow path', category: 'motion', appliesTo: ['text', 'shape', 'image', 'model', 'group', 'diagram', 'code', 'repeat'],
+    id: 'follow-path', label: 'Follow path', category: 'motion', appliesTo: ['text', 'shape', 'image', 'video', 'model', 'group', 'diagram', 'code', 'repeat'],
     description: 'Travels along a line layer (or one of the lines of a flow layer), from one point of it to another. Turn to follow makes it face along the line; Trail leaves a fading streak behind it (a comet).',
     defaultEase: 'power1.inOut', defaultDuration: 1.6,
     defaults: { path: '', line: 1, from: 0, to: 100, rotate: false, trail: 0, trailColor: '#ffffff', trailWidth: 0.35 },
@@ -533,7 +533,7 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [DIRECTION, { key: 'axis', label: 'Axis', type: 'select', options: [{ value: 'y', label: 'Vertical' }, { value: 'x', label: 'Horizontal' }] }, { key: 'angle', label: 'Angle', type: 'number', min: -180, max: 180, step: 5, unit: '°' }, { key: 'perspective', label: 'Depth', type: 'number', min: 200, max: 3000, step: 50, unit: 'px' }],
   },
   {
-    id: 'sheen', label: 'Sheen', category: 'emphasis', appliesTo: ['shape', 'image'],
+    id: 'sheen', label: 'Sheen', category: 'emphasis', appliesTo: ['shape', 'image', 'video'],
     description: 'A band of light sweeps across once. Best after the layer has settled.',
     defaultEase: 'softInOut', defaultDuration: 0.9,
     defaults: { angle: 110, width: 22, strength: 0.45, color: '#ffffff' },

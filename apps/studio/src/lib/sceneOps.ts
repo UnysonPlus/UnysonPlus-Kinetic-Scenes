@@ -250,11 +250,16 @@ export function addLayer(scene: Scene, type: Exclude<Layer['type'], 'group'>, ex
     // Joins the two layers on top, if there are two to join.
     const others = layersIn(scene, scope).filter((l) => l.type !== 'flow').slice(-2);
     layer = { id, type: 'flow', name: 'Flow lines', from: others[0]?.id ?? '', to: others[1]?.id ?? others[0]?.id ?? '', count: 7, pulses: 1, clips: [] };
+  } else if (type === 'video') {
+    // Footage fills the frame by default.
+    layer = { id, type: 'video', name: 'Footage', src: '', fit: 'cover', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [] };
   } else {
     layer = { id, type: 'image', name: 'Image', src: '', alt: '', fit: 'cover', radius: 1, box: { x: 50, y: 50, w: 30, ratio: 1.5 }, clips: [] };
   }
   layer = { ...layer, ...extra, id } as Layer;
-  return { scene: setLayersIn(scene, scope, [...layersIn(scene, scope), layer]), id };
+  // Footage goes underneath everything (the graphics sit on top of it); everything else on top.
+  const list = layersIn(scene, scope);
+  return { scene: setLayersIn(scene, scope, type === 'video' ? [layer, ...list] : [...list, layer]), id };
 }
 
 /**
@@ -278,6 +283,8 @@ export function blankScene(from: Scene): Scene {
     stage: { breakpoints, heightMode, ...(heightOffset ? { heightOffset } : {}), ...(safeArea !== undefined ? { safeArea } : {}), ...(fonts?.length ? { fonts } : {}), background: DEFAULT_BACKGROUND },
     playback: { ...from.playback, posterTime: undefined },
     layers: [],
+    // A blank video stays a video, in the same formats.
+    ...(from.mode === 'video' && from.video ? { mode: 'video' as const, video: from.video } : {}),
   };
 }
 

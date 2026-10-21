@@ -21,6 +21,7 @@ import { suggestPoster } from '../lib/poster';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
+import { FootageSection, MadeForSection } from './VideoModeSections';
 import { SFX_CATALOG, SFX_CATEGORY_LABELS, sfxMeta, sfxSrc, suggestedSound, type SfxCategory } from '@unysonplus/scene-player/sfx';
 import { cleanSound } from '../lib/audio';
 import { sceneTranscript } from '@unysonplus/scene-player/transcript';
@@ -105,6 +106,8 @@ function SceneInspector({ scene, onCommit, time }: Props) {
   const setBp = (i: number, patch: Partial<Breakpoint>) =>
     setStage({ breakpoints: scene.stage.breakpoints.map((b, j) => (j === i ? { ...b, ...patch } : b)) });
   const fonts = scene.stage.fonts ?? [];
+  // A video starts on its own and plays once, in fixed formats: the web-only settings are hidden.
+  const vid = scene.mode === 'video' && !!scene.video;
 
   return (
     <div className="insp">
@@ -117,12 +120,15 @@ function SceneInspector({ scene, onCommit, time }: Props) {
         </div>
       </div>
 
+      <MadeForSection scene={scene} onCommit={onCommit} />
+
       <Section title="Scene">
         <TextField label="Title" value={scene.title} onCommit={(v) => set({ title: v || undefined })} wide />
         <NumberField label="Length" value={scene.duration} unit="s" step={0.1} min={0.5} max={600} onCommit={(v) => v && set({ duration: v })} />
       </Section>
 
-      <Section title="Playback">
+      <Section title={vid ? 'Cover' : 'Playback'}>
+        {!vid && <>
         <SelectField
           label="Starts"
           value={scene.playback.trigger}
@@ -169,8 +175,9 @@ function SceneInspector({ scene, onCommit, time }: Props) {
         {scene.playback.loop && scene.playback.trigger !== 'scroll' && (
           <NumberField label="Pause between loops" value={scene.playback.repeatDelay ?? 0} unit="s" step={0.1} min={0} onCommit={(v) => setPlayback({ repeatDelay: v ?? 0 })} />
         )}
+        </>}
         <NumberField
-          label="Still frame"
+          label={vid ? 'Cover frame' : 'Still frame'}
           value={scene.playback.posterTime}
           placeholder={String(scene.duration)}
           unit="s" step={0.1} min={0} max={scene.duration} optional
@@ -179,10 +186,11 @@ function SceneInspector({ scene, onCommit, time }: Props) {
         <div className="insp-start">
           <button type="button" className="btn small" onClick={() => setPlayback({ posterTime: suggestPoster(scene) })} title="The most complete settled moment: every word in place, nothing mid-move">Suggest the best moment</button>
         </div>
-        <p className="field-hint wide">The still frame is what visitors who turn off animation see, and a video's thumbnail.</p>
+        <p className="field-hint wide">{vid ? 'The cover frame is the thumbnail: export it with the video.' : 'The still frame is what visitors who turn off animation see, and a video\'s thumbnail.'}</p>
       </Section>
 
       <Section title="Stage">
+        {!vid && <>
         <SelectField
           label="Height"
           value={scene.stage.heightMode}
@@ -198,11 +206,12 @@ function SceneInspector({ scene, onCommit, time }: Props) {
           />
         )}
         <NumberField label="Header offset" value={scene.stage.heightOffset ?? 0} unit="px" min={0} step={1} onCommit={(v) => setStage({ heightOffset: v || undefined })} />
+        </>}
         <NumberField label="Safe area" value={Math.round((scene.stage.safeArea ?? 0.06) * 1000) / 10} unit="%" min={0} max={45} step={0.5} onCommit={(v) => setStage({ safeArea: (v ?? 6) / 100 })} />
         <ColorField label="Background" value={scene.stage.background} placeholder="A colour or gradient" onCommit={(v) => setStage({ background: v || undefined })} />
       </Section>
 
-      <Section title="Breakpoints">
+      {!vid && <Section title="Breakpoints">
         <div className="bp-table wide" role="table" aria-label="Breakpoints">
           <div className="bp-row bp-headrow" role="row">
             <span role="columnheader">Name</span><span role="columnheader">From width</span><span role="columnheader">Shape</span><span />
@@ -241,7 +250,7 @@ function SceneInspector({ scene, onCommit, time }: Props) {
             </p>
           )}
         </div>
-      </Section>
+      </Section>}
 
       <Section title="Fonts">
         {fonts.map((f, i) => (
@@ -524,7 +533,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
   return (
     <div className="insp">
       <div className="insp-head">
-        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram', code: 'Code', repeat: 'List', captions: 'Captions', cursor: 'Cursor' } as Record<Layer['type'], string>)[layer.type]}</p>
+        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', video: 'Footage', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram', code: 'Code', repeat: 'List', captions: 'Captions', cursor: 'Cursor' } as Record<Layer['type'], string>)[layer.type]}</p>
         <input className="insp-title" aria-label="Layer name" defaultValue={layer.name ?? layer.id} key={layer.id + (layer.name ?? '')}
           onBlur={(e) => { if (e.target.value !== (layer.name ?? layer.id)) props({ name: e.target.value || undefined }); }}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
@@ -593,6 +602,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'code' && <CodeSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'diagram' && <DiagramSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
 
+      {layer.type === 'video' && <FootageSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'image' && (
         <Section title="Image">
           <ImageSource scene={scene} layer={layer} onCommit={onCommit} />

@@ -47,6 +47,7 @@ body.admin-bar .upw-scene{--upw-offset-extra:32px}
 .upw-3d{position:relative}
 .upw-link{position:absolute;inset:0;z-index:2147482000;display:block;cursor:pointer;border-radius:inherit;-webkit-tap-highlight-color:transparent}
 .upw-scene[data-editor] .upw-link{pointer-events:none}
+.upw-scene[data-noref] .upw-layer[data-ref]{display:none!important}
 .upw-scene:not([data-editor]) .upw-layer{pointer-events:none}
 .upw-scene:not([data-editor]) .upw-link{pointer-events:auto}
 .upw-scene:not([data-editor]) .upw-layer[data-hover]{pointer-events:auto}

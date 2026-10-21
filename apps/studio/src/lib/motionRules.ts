@@ -115,6 +115,26 @@ SOUND (built-in sound effects)
 - Match the motion: fast arrivals whoosh or swish, pops pop, slams hit (impact, thud), counters tick, typewriters type, a glow chimes or sparkles. A riser leads into the biggest moment.
 - Sounds that land together blur: keep about 0.15 s between them.
 
+VIDEO MODE (a scene with "mode": "video": a Reel, TikTok, Short or YouTube video, or graphics to lay over footage)
+- Keep "mode", "video" and the stage's breakpoints as they are: each format is a breakpoint with the same id (9x16,
+  4x5, 1x1, 16x9). Lay each format out with overrides; vertical text sits higher and larger than on a website.
+- The hook in the first two seconds: the first words on screen by 2 s, saying why to keep watching.
+- Keep words out of the app's covered areas (video.platform). TikTok, Reels and Shorts cover the top 8-11%, the
+  bottom 20-22% (caption, account) and a strip about 15% wide on the right from 30% to 82% down (the buttons).
+  YouTube covers the bottom 12% (the controls). Main text between 12% and 75% down, at least 6% from the left.
+- Captions: a voice-over always gets a captions layer (most people watch muted), about 60-70% down, big (5-7 on a
+  9:16), karaoke or one to three words at a time.
+- It plays once: "playback": { "trigger": "load", "loop": false }. Length to suit the platform (Reels about 30 s,
+  TikTok and Shorts under a minute) and to the voice-over when there is one.
+- Footage: a "video" layer (src, offset to trim its start, rate for speed, reference: true for footage only there to
+  design against). Never invent footage sources; use the ones already in the scene. Graphics go above it.
+- See-through (video.transparent): no full-frame background shapes, so the footage shows through in the editor.
+- One camera move: how a shot leaves sets how the next arrives. A Whip pan or Slide out to one side is followed by the
+  next shot arriving from the opposite side, moving the same way, at the same speed; cut mid-motion (the next act
+  starts as the last one leaves, never an empty frame). Keep one main direction for the whole video; save the others
+  for moments that mean something. Show a cause and its effect on the same frame.
+- No idle floating to fill time: every second something tells the story. Cut to the next shot instead of holding.
+
 AVOID
 - Two moving clips overlapping in time on the same layer (they fight over the same property).
 - Endless motion everywhere: pulse, shake and float are accents, not wallpaper.

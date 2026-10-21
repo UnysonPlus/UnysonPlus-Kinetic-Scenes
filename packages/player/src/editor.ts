@@ -82,16 +82,29 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string) {
 interface Frame { l: number; t: number; w: number; h: number; W: number; H: number; box: Box; ax: number; ay: number; ox: number; oy: number; kx: number; ky: number }
 type Rect = Pick<Frame, 'l' | 't' | 'w' | 'h' | 'W' | 'H'> & { ox?: number; oy?: number };
 
+/**
+ * Footage the Studio keeps on this computer (a scene names it "local:<id>"): the Studio sends the file itself,
+ * and this frame makes its own address for it (a sandboxed frame cannot use the Studio's).
+ */
+const footage = new Map<string, string>();
+function localize<T>(v: T): T {
+  if (typeof v === 'string') return (v.startsWith('local:') ? footage.get(v) ?? v : v) as T;
+  if (Array.isArray(v)) return v.map(localize) as T;
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, localize(x)])) as T;
+  return v;
+}
+
 function start() {
   const api = (window as unknown as { UnysonPlusScene: Api }).UnysonPlusScene;
   const host = document.getElementById('scene')!;
   const initial = JSON.parse(document.getElementById('scene-json')!.textContent || '{}');
+  let lastScene: unknown = initial;
   const safeInitial = document.body.dataset.safe === 'true';
 
   let player: ScenePlayer;
   try {
     // audio: false: the Studio plays the scene's sound itself (a frame can't start sound from clicks outside it).
-    player = api.mount(host, initial, { editor: true, autoplay: false, safeArea: safeInitial, allowCode: true, audio: false });
+    player = api.mount(host, localize(initial), { editor: true, autoplay: false, safeArea: safeInitial, allowCode: true, audio: false });
   } catch (e) {
     const box = el('div', 'err');
     box.textContent = (e as Error).message;
@@ -770,10 +783,21 @@ function start() {
       k = Math.max(0.5, Math.min(8, 1 / (Number(m.scale) || 1)));
       ov.style.setProperty('--k', String(k));
       redraw();
+    } else if (m.type === 'backdrop') {
+      // A see-through video shows the Studio's checkerboard through the page.
+      const v = typeof m.value === 'string' ? m.value : '';
+      document.documentElement.style.background = v;
+      document.body.style.background = v;
+    } else if (m.type === 'footage') {
+      if (typeof m.id === 'string' && m.blob instanceof Blob && !footage.has(m.id)) {
+        footage.set(m.id, URL.createObjectURL(m.blob));
+        if (JSON.stringify(lastScene).includes(`"${m.id}"`)) { try { player.update(localize(lastScene)); redraw(); } catch { /* reported with the next scene */ } }
+      }
     } else if (m.type === 'scene') {
       if (editing) finishEdit(false);
+      lastScene = m.scene;
       try {
-        player.update(m.scene);
+        player.update(localize(m.scene));
         markLocked();
         applyScope();
         const kept = selection.filter((id) => layerOf(id));

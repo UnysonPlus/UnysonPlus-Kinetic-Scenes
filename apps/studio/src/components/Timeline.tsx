@@ -69,7 +69,7 @@ function tickStep(pps: number) {
   return 120;
 }
 
-const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚' };
+const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', video: '▶', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚' };
 
 export function Timeline(props: Props) {
   const { scene, selection, scope } = props;
@@ -317,6 +317,7 @@ export function Timeline(props: Props) {
           <button type="button" className="btn small" onClick={() => props.onAddLayer('text')}>+ Text</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('shape')}>+ Shape</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('image')}>+ Image</button>
+          <button type="button" className="btn small" onClick={() => props.onAddLayer('video')} title="A video to design against or to show: trim it, change its speed, keep it as a reference only">+ Footage</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('model')} title="A 3D object: text, a shape, an SVG logo or a glTF model">+ 3D</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('path')} title="A line or curve that can draw itself, with arrowheads and glow; other layers can travel along it">+ Line</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('code')} title="An editor or terminal showing code that can be typed, changed, highlighted and run">+ Code</button>

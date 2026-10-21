@@ -36,6 +36,26 @@ export interface Scene {
    * step says what changes, [{ id, label?, at?, hold?, do: [{ layer, preset, params?, duration?, offset? }] }].
    */
   steps?: Array<{ id: string; label?: string; at?: number; hold?: number; do: Array<{ layer: string; preset: string; params?: Record<string, unknown>; duration?: number; offset?: number; ease?: string }> }>;
+  /**
+   * What the scene is for. web (the default): a responsive scene on a page. video: a fixed-format piece that
+   * plays once at an exact length, exported as a video (the Studio and Check scene follow `video`).
+   */
+  mode?: 'web' | 'video';
+  video?: VideoSettings;
+}
+
+/** The video formats, by shape. Each one a video scene is made in is a breakpoint with the same id. */
+export type VideoFormat = '9x16' | '1x1' | '4x5' | '16x9';
+
+export interface VideoSettings {
+  /** The formats it is made in, the main one first. */
+  formats: VideoFormat[];
+  /** Frames a second (default 30). */
+  fps?: 24 | 25 | 30 | 50 | 60;
+  /** Where it will be posted: the Studio shows (and Check scene keeps clear of) that app's buttons and captions. */
+  platform?: 'tiktok' | 'reels' | 'shorts' | 'youtube' | 'none';
+  /** Graphics only, on a see-through background, to lay over footage in a video editor. */
+  transparent?: boolean;
 }
 
 export interface CameraKey {
@@ -349,6 +369,27 @@ export interface ImageLayer extends LayerBase {
 }
 
 /**
+ * Footage: a video (or a still photo used as one) on the timeline. It is muted in the player; with `sound`
+ * a video export mixes its sound in. A `reference` layer is there to design against: the Studio shows it,
+ * a graphics-only export leaves it out, a full composite keeps it.
+ */
+export interface VideoLayer extends LayerBase {
+  type: 'video';
+  src: string;
+  /** Seconds into the file where the layer starts playing (trim the start). */
+  offset?: number;
+  /** Playing speed: 0.25 to 4 (1 = normal). */
+  rate?: number;
+  fit?: 'cover' | 'contain';
+  radius?: number;
+  reference?: boolean;
+  /** Mix the footage's own sound into a video export (0 to 2, its volume). */
+  sound?: number;
+  /** A description, for screen readers (footage that matters to the story). */
+  alt?: string;
+}
+
+/**
  * A group: layers kept together, with a timeline of their own.
  *
  * Children keep stage coordinates (grouping never moves anything); the group's frame is worked out
@@ -608,7 +649,7 @@ export interface CursorLayer extends LayerBase {
   ringColor?: string;
 }
 
-export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer;
+export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer;
 
 export interface Clip {
   id: string;

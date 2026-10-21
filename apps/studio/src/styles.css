@@ -766,3 +766,13 @@ h1, h2, p { margin: 0; }
 .tl-cam-key { position: absolute; top: 50%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; background: oklch(0.72 0.14 300); border: 1.5px solid oklch(0.95 0.03 300); transform: rotate(45deg); border-radius: 2px; cursor: ew-resize; z-index: 3; }
 .tl-cam-key.on { background: var(--accent); border-color: #fff; }
 .field-hint.is-error { color: oklch(0.78 0.13 25); }
+
+/* ---- Video mode ---- */
+.device-screen.is-checker { background: repeating-conic-gradient(#2a2f36 0% 25%, #1c2026 0% 50%) 50% / 24px 24px; }
+.app-zones { position: absolute; inset: 0; pointer-events: none; }
+.app-zone { position: absolute; background: rgba(255, 77, 109, 0.18); outline: 1px dashed rgba(255, 120, 140, 0.8); outline-offset: -1px; }
+.app-zone span { position: absolute; left: 4px; top: 3px; font-size: 10px; line-height: 1.2; color: #ffd6dd; background: rgba(40, 10, 16, 0.7); padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
+.format-checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.check-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid var(--line, #2b3644); border-radius: 999px; font-size: 12px; cursor: pointer; }
+.video-checks { display: grid; gap: 6px; margin: 4px 0 10px; font-size: 13px; }
+.video-checks .check { display: inline-flex; gap: 8px; align-items: center; }

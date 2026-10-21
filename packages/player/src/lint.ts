@@ -1,3 +1,5 @@
+import { PLATFORM_LIMITS, isVideo, zonesFor } from './video';
+import type { VideoFormat } from './types';
 import { expandRepeats } from './repeat';
 import type { Anchor, Box, Breakpoint, Clip, Layer, Scene, TextLayer } from './types';
 import { groupDuration } from './groups';
@@ -129,7 +131,11 @@ function textRect(l: TextLayer, bp: Breakpoint) {
 // no more empty space at its top than a one-line one).
 const inkRect = (r: ReturnType<typeof textRect>) => ({ ...r, top: r.top + r.line * 0.15, h: Math.max(0, r.h - r.line * 0.3) });
 
-const widthOf = (bp: Breakpoint, all: Breakpoint[]) => {
+/** How wide each video format usually appears on screen (a phone held upright; a landscape video in a player). */
+const VIDEO_SEEN_PX: Record<string, number> = { '9x16': 390, '4x5': 390, '1x1': 390, '16x9': 640 };
+
+const widthOf = (bp: Breakpoint, all: Breakpoint[], video = false) => {
+  if (video && VIDEO_SEEN_PX[bp.id]) return VIDEO_SEEN_PX[bp.id];
   if (bp.minWidth > 0) return bp.minWidth;
   const next = all.filter((b) => b.minWidth > 0).map((b) => b.minWidth).sort((a, b) => a - b)[0];
   return Math.min(next ?? NARROW_PX, NARROW_PX);
@@ -176,6 +182,7 @@ export function lintScene(input: Scene): LintIssue[] {
   /** The list a generated copy belongs to (copies are named <list id>_<n>_<item layer id>), or null. */
   const copyOfList = (id: string) => lists.find((r) => id.startsWith(`${r}_`) && /^\d+_/.test(id.slice(r.length + 1))) ?? null;
   const issues: LintIssue[] = [];
+  const video = isVideo(scene);
   const all = entries(scene);
   const spoken = spokenWords(scene);
   const bps = scene.stage.breakpoints;
@@ -249,9 +256,10 @@ export function lintScene(input: Scene): LintIssue[] {
       const bpName = bp.label ?? bp.id;
 
       // Big enough to read at the narrowest width this breakpoint covers.
-      const px = (r.style!.fontSize / 100) * widthOf(bp, bps);
+      const seen = widthOf(bp, bps, video);
+      const px = (r.style!.fontSize / 100) * seen;
       if (px < MIN_TEXT_PX - 0.5) {
-        const target = Math.ceil((MIN_TEXT_PX * 100 / widthOf(bp, bps)) * 10) / 10;
+        const target = Math.ceil((MIN_TEXT_PX * 100 / seen) * 10) / 10;
         issues.push({
           id: `size:${l.id}:${bp.id}`, severity: 'warn', layerId: l.id, breakpoint: bp.id,
           message: `${nameOf(l)} is about ${Math.round(px)} px tall on ${bpName} screens, hard to read.`,
@@ -377,6 +385,8 @@ export function lintScene(input: Scene): LintIssue[] {
     }
   }
 
+  if (video) issues.push(...videoChecks(scene, all));
+
   // Issues on a list's copies belong to the list: reported once (for its first copy), on the list itself,
   // with no fix (the copies are generated; the fix goes in the list's item).
   const out: LintIssue[] = [];
@@ -390,4 +400,135 @@ export function lintScene(input: Scene): LintIssue[] {
     out.push({ ...issue, id: `${issue.id}:list`, layerId: list, clipId: undefined, fix: undefined, message: `In the list: ${issue.message}` });
   }
   return out;
+}
+
+/* ------------------------------------------------------------------ video mode */
+
+/** The way a clip moves things across the frame: [x, y] (1 = right / down), or null when it has no side. */
+function motionOf(c: Clip): [number, number] | null {
+  const meta = presetMeta[c.preset];
+  if (!meta || !meta.fields.some((f) => f.key === 'from' && f.type === 'select')) return null;
+  const from = String(c.params?.from ?? meta.defaults.from ?? '');
+  const v: Record<string, [number, number]> = { left: [-1, 0], right: [1, 0], top: [0, -1], bottom: [0, 1] };
+  const side = v[from];
+  if (!side) return null;
+  const out = dirOf(c) === 'out';
+  // Arriving from a side moves away from it. Leaving: a slide goes towards its side; a whip pan swings away
+  // from the side the next shot arrives from (its pair keeps the same "from").
+  if (!out || c.preset === 'tr-whip') return [-side[0], -side[1]];
+  return side;
+}
+const dirName = (m: [number, number]) => (m[0] < 0 ? 'left' : m[0] > 0 ? 'right' : m[1] < 0 ? 'up' : 'down');
+
+/** Video checks: the hook, the apps' covered areas, captions, length limits, looping and every cut. */
+function videoChecks(scene: Scene, all: Entry[]): LintIssue[] {
+  const issues: LintIssue[] = [];
+  const v = scene.video!;
+  const texts = all.filter((e) => e.layer.type === 'text');
+
+  // The hook: the first words have landed within two seconds (viewers decide that fast).
+  const firstWords = Math.min(Infinity, ...texts.map((e) => window(e, scene).landed));
+  if (texts.length && firstWords > 2) {
+    issues.push({ id: 'video:hook', severity: 'warn', message: `The first words land at ${secs(firstWords)}. A video has about two seconds to say why to keep watching: put the hook on screen by then.` });
+  }
+
+  // Covered areas: nothing worth reading under the app's buttons and captions.
+  if (v.platform && v.platform !== 'none') {
+    for (const bp of scene.stage.breakpoints) {
+      const zones = zonesFor(v.platform, bp.id as VideoFormat);
+      if (!zones.length) continue;
+      for (const e of all) {
+        const l = e.layer;
+        let rect: { left: number; top: number; w: number; h: number } | null = null;
+        if (l.type === 'text') {
+          const r = textRect(l, bp);
+          if (r.hidden) continue;
+          rect = inkRect(r);
+        } else if (l.type === 'captions') {
+          const r = resolved(l, bp.id);
+          const w = r.box.w ?? 80;
+          const h = (l.style.fontSize * 2.4) * (bp.aspect[0] / bp.aspect[1]);
+          const [ax, ay] = anchorFactors(r.box.anchor);
+          rect = { left: r.box.x - w * ax, top: r.box.y - h * ay, w, h };
+        }
+        if (!rect) continue;
+        const box = rect;
+        const hit = zones.find((z) => box.left < z.x + z.w && box.left + box.w > z.x && box.top < z.y + z.h && box.top + box.h > z.y);
+        if (hit) {
+          issues.push({
+            id: `video:zone:${l.id}:${bp.id}`, severity: 'warn', layerId: l.id, breakpoint: bp.id,
+            message: `${nameOf(l)} sits under ${PLATFORM_LIMITS[v.platform]?.label ?? v.platform}'s ${hit.label.toLowerCase()} on ${bp.label ?? bp.id}. Move it inside the clear area.`,
+          });
+        }
+      }
+    }
+  }
+
+  // Captions: most people watch with the sound off.
+  const voice = (scene.audio ?? []).find((a) => a.role === 'voice');
+  const hasCaptions = all.some((e) => e.layer.type === 'captions');
+  if (voice && !hasCaptions) {
+    issues.push({
+      id: 'video:captions', severity: 'warn',
+      message: 'There is a voice-over but no captions. Most people watch with the sound off: add captions so the words are seen.',
+      fix: voice.words?.length ? {
+        label: 'Add captions',
+        apply: (s) => ({ ...s, layers: [...s.layers, { id: 'captions', type: 'captions', name: 'Captions', box: { x: 50, y: 70, w: 80, anchor: 'center' }, style: { fontSize: 6, fontWeight: 800, color: '#ffffff' }, mode: 'karaoke', clips: [] } as unknown as Layer] }),
+      } : undefined,
+    });
+  }
+
+  // Length: what the platform takes, and what works best there.
+  const lim = v.platform ? PLATFORM_LIMITS[v.platform] : undefined;
+  if (lim && scene.duration > lim.max) issues.push({ id: 'video:length', severity: 'warn', message: `${secs(scene.duration)} is longer than ${lim.label} takes (${secs(lim.max)}).` });
+  else if (lim && scene.duration > lim.best * 1.5) issues.push({ id: 'video:length', severity: 'info', message: `${secs(scene.duration)} is long for ${lim.label}: pieces there do best under about ${secs(lim.best)}.` });
+
+  // A video plays once.
+  if (scene.playback.loop) {
+    issues.push({ id: 'video:loop', severity: 'info', message: 'The scene loops. A video plays once (the app loops it): turn looping off so the export ends where the scene ends.', fix: { label: 'Play once', apply: (s) => ({ ...s, playback: { ...s.playback, loop: false, loopFrom: undefined } }) } });
+  }
+
+  // Idle floating does not tell the story: every second should.
+  const floats = all.flatMap((e) => e.layer.clips.filter((c) => c.preset === 'float' && c.duration > 2).map((c) => ({ l: e.layer, c })));
+  if (floats.length) {
+    issues.push({ id: 'video:idle', severity: 'info', layerId: floats[0].l.id, clipId: floats[0].c.id, message: `${floats.length === 1 ? `${nameOf(floats[0].l)} floats` : `${floats.length} layers float`} for more than two seconds. In a video every second should move the story on: cut sooner, or show the next thing.` });
+  }
+
+  // Every cut between acts: no empty frame, and the next shot moving the way the last one left.
+  const acts = scene.layers.filter((l) => l.type === 'group').sort((a, b) => (a.start ?? 0) - (b.start ?? 0)) as Array<Extract<Layer, { type: 'group' }>>;
+  const dirs = new Map<string, number>();
+  for (let i = 1; i < acts.length; i++) {
+    const a = acts[i - 1], b = acts[i];
+    const aStart = a.start ?? 0, bStart = b.start ?? 0;
+    // Clips on the act and on its contents run on the act's own clock (0 = its start).
+    const aOuts = [...a.clips, ...a.layers.flatMap((k) => k.clips)].filter((c) => dirOf(c) === 'out');
+    const aGone = aOuts.length ? aStart + Math.max(...aOuts.map((c) => c.start + c.duration)) : (typeof a.end === 'number' ? a.end : aStart + groupDuration(a));
+    const gap = bStart - aGone;
+    if (gap > 0.15) {
+      issues.push({
+        id: `video:gap:${b.id}`, severity: 'warn', layerId: b.id,
+        message: `The frame is empty for ${secs(gap)} before ${nameOf(b)}. Cut on the movement: start the next shot as the last one leaves.`,
+        fix: { label: `Start it at ${secs(aGone)}`, apply: (s) => mapLayer(s, b.id, (x) => ({ ...x, start: Math.round(aGone * 100) / 100 })) },
+      });
+    }
+    const exit = aOuts.map((c) => ({ c, m: motionOf(c) })).find((x) => x.m);
+    const bIns = [...b.clips, ...b.layers.flatMap((k) => k.clips)].filter((c) => dirOf(c) === 'in').sort((x, y) => x.start - y.start);
+    const entry = bIns.map((c) => ({ c, m: motionOf(c) })).find((x) => x.m);
+    if (exit?.m) dirs.set(dirName(exit.m), (dirs.get(dirName(exit.m)) ?? 0) + 1);
+    if (exit?.m && entry?.m && (exit.m[0] !== entry.m[0] || exit.m[1] !== entry.m[1])) {
+      const em = exit.m;
+      const want = em[0] < 0 ? 'right' : em[0] > 0 ? 'left' : em[1] < 0 ? 'bottom' : 'top';
+      const owner = b.clips.includes(entry.c) ? b.id : b.layers.find((k) => k.clips.includes(entry.c))!.id;
+      const clipId = entry.c.id;
+      issues.push({
+        id: `video:cut:${b.id}`, severity: 'warn', layerId: owner, clipId,
+        message: `At the cut into ${nameOf(b)}, the last shot leaves moving ${dirName(em)} but the next arrives moving ${dirName(entry.m)}. Keep the movement going the same way so the cut feels like one camera move.`,
+        fix: { label: `Arrive from the ${want}`, apply: (s) => mapLayer(s, owner, (x) => ({ ...x, clips: x.clips.map((c) => (c.id === clipId ? { ...c, params: { ...(c.params ?? {}), from: want } } : c)) })) },
+      });
+    }
+  }
+  if (dirs.size > 2) {
+    issues.push({ id: 'video:directions', severity: 'info', message: `The cuts move ${[...dirs.keys()].join(', ')}. Keep one main direction for the whole video and save the others for moments that mean something (going back, a reveal).` });
+  }
+  return issues;
 }

@@ -1,7 +1,9 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
+import type { Zone } from '@unysonplus/scene-player/video';
 
 export interface Device {
-  id: 'desktop' | 'laptop' | 'tablet' | 'mobile';
+  /** A screen (desktop, laptop, tablet, mobile), or a video format (9x16, 1x1, 4x5, 16x9). */
+  id: string;
   label: string;
   /** Browser viewport, i.e. the screen minus tabs, address bar and system bars. */
   width: number;
@@ -20,8 +22,8 @@ export const DEVICES: Device[] = [
  * Because the scene runs in a real viewport of that size, the stage's breakpoints and height modes
  * behave exactly as they will on a visitor's screen.
  */
-export const Preview = forwardRef<HTMLIFrameElement, { device: Device; srcDoc: string; label: string; onScale?: (scale: number) => void }>(
-  function Preview({ device, srcDoc, label, onScale }, ref) {
+export const Preview = forwardRef<HTMLIFrameElement, { device: Device; srcDoc: string; label: string; onScale?: (scale: number) => void; zones?: Zone[]; checker?: boolean }>(
+  function Preview({ device, srcDoc, label, onScale, zones, checker }, ref) {
     const areaRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0.5);
 
@@ -52,7 +54,7 @@ export const Preview = forwardRef<HTMLIFrameElement, { device: Device; srcDoc: s
             <span className="mono">{device.width} × {device.height}</span>
             <span className="mono">{Math.round(scale * 100)}%</span>
           </div>
-          <div className="device-screen" style={{ width: w, height: h }}>
+          <div className={`device-screen${checker ? ' is-checker' : ''}`} style={{ width: w, height: h }}>
             <iframe
               ref={ref}
               title={label}
@@ -60,6 +62,14 @@ export const Preview = forwardRef<HTMLIFrameElement, { device: Device; srcDoc: s
               sandbox="allow-scripts"
               style={{ width: device.width, height: device.height, transform: `scale(${scale})` }}
             />
+            {/* Where the app covers the picture with its own buttons and captions. */}
+            {zones && zones.length > 0 && (
+              <div className="app-zones" aria-hidden="true">
+                {zones.map((z) => (
+                  <div key={`${z.label}${z.x}${z.y}`} className="app-zone" style={{ left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%` }}><span>{z.label}</span></div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

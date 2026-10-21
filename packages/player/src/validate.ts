@@ -93,6 +93,20 @@ export function validateScene(input: unknown): ValidationResult {
     }
   }
 
+  // Video mode
+  if (scene.mode !== undefined && scene.mode !== 'web' && scene.mode !== 'video') fail('mode', 'must be web or video');
+  if (scene.video !== undefined) {
+    const v = scene.video as unknown;
+    if (!isObj(v)) fail('video', 'must be an object');
+    else {
+      const FORMATS = ['9x16', '1x1', '4x5', '16x9'];
+      if (!Array.isArray(v.formats) || !v.formats.length || v.formats.some((f: unknown) => !FORMATS.includes(f as string))) fail('video.formats', `must list one or more of ${FORMATS.join(', ')}`);
+      if (v.fps !== undefined && ![24, 25, 30, 50, 60].includes(v.fps as number)) fail('video.fps', 'must be 24, 25, 30, 50 or 60');
+      if (v.platform !== undefined && !['tiktok', 'reels', 'shorts', 'youtube', 'none'].includes(v.platform as string)) fail('video.platform', 'must be tiktok, reels, shorts, youtube or none');
+      if (v.transparent !== undefined && typeof v.transparent !== 'boolean') fail('video.transparent', 'must be true or false');
+    }
+  }
+
   // Playback
   if (scene.playback === undefined) scene.playback = { trigger: 'view', loop: false };
   if (!isObj(scene.playback)) {
@@ -224,6 +238,12 @@ export function validateScene(input: unknown): ValidationResult {
       } else if (layer.type === 'image') {
         if (typeof layer.src !== 'string' || !layer.src) fail(`${lp}.src`, 'is required');
         if (!layer.alt) warnings.push(`${lp}.alt: add a description so screen readers can announce the image (or "" if it is decorative).`);
+      } else if (layer.type === 'video') {
+        if (typeof layer.src !== 'string' || !/^(data:(video|image)\/|https?:\/\/|blob:|local:)/.test(layer.src)) fail(`${lp}.src`, 'must be a video (or image) data: URL or an http(s) address');
+        if (layer.offset !== undefined && (!isNum(layer.offset) || layer.offset < 0)) fail(`${lp}.offset`, 'must be 0 or more seconds');
+        if (layer.rate !== undefined && (!isNum(layer.rate) || layer.rate < 0.25 || layer.rate > 4)) fail(`${lp}.rate`, 'must be 0.25 to 4');
+        if (layer.sound !== undefined && (!isNum(layer.sound) || layer.sound < 0 || layer.sound > 2)) fail(`${lp}.sound`, 'must be a volume from 0 to 2');
+        if (layer.fit !== undefined && layer.fit !== 'cover' && layer.fit !== 'contain') fail(`${lp}.fit`, 'must be cover or contain');
       } else if (layer.type === 'model') {
         const m = layer.model;
         if (!isObj(m) || !['text', 'shape', 'svg', 'gltf'].includes(m.kind)) fail(`${lp}.model.kind`, 'must be text, shape, svg or gltf');
@@ -311,7 +331,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.theme !== undefined && !['dark', 'light'].includes(layer.theme)) fail(`${lp}.theme`, 'must be dark or light');
         if (layer.fontSize !== undefined && (!isNum(layer.fontSize) || layer.fontSize <= 0 || layer.fontSize > 20)) fail(`${lp}.fontSize`, 'must be more than 0 and at most 20 stage units');
       } else {
-        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow, diagram, code, captions, repeat or cursor');
+        fail(`${lp}.type`, 'must be text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat or cursor');
       }
 
       if (layer.type !== 'group' && layer.type !== 'flow' && layer.type !== 'repeat') {

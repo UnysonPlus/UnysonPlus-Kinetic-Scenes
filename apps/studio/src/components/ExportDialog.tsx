@@ -5,6 +5,7 @@ import { embedFonts } from '../lib/fonts';
 import { VideoSection } from './VideoSection';
 import { ShareSection } from './ShareSection';
 import { DownloadIcon } from './icons';
+import { footageIds, withFootage } from '../lib/footage';
 
 const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const sizeOf = (s: string) => new Blob([s]).size;
@@ -50,12 +51,14 @@ export function ExportDialog(props: {
     try {
       let html: string;
       let note = '';
+      // Footage kept in this browser is written into the page.
+      const scene = (await withFootage(props.scene)).scene;
       if (withFonts && hasFonts) {
-        const packed = await embedFonts(props.scene);
+        const packed = await embedFonts(scene);
         html = exportHtml(packed.scene, { fontCss: packed.css, three: hasModel(props.scene) ? await threeRuntime() : undefined });
         note = ` Fonts embedded (${kb(packed.bytes)}).`;
       } else {
-        html = exportHtml(props.scene, { three: hasModel(props.scene) ? await threeRuntime() : undefined });
+        html = exportHtml(scene, { three: hasModel(props.scene) ? await threeRuntime() : undefined });
       }
       const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
       const a = document.createElement('a');
@@ -99,6 +102,11 @@ export function ExportDialog(props: {
           <button type="button" className="icon-link" aria-label="Close" onClick={props.onClose}>×</button>
         </header>
 
+        {/* A video's main export is the video. */}
+        {props.scene.mode === 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} />}
+        {footageIds(props.scene).length > 0 && (
+          <p className="export-warn">This scene has footage. Videos and the downloaded page carry it; a share link and the embed code can't (footage is too big for them).</p>
+        )}
         <ShareSection scene={props.scene} open={props.open} />
 
         <section className="export-opt">
@@ -143,7 +151,7 @@ export function ExportDialog(props: {
           )}
         </section>
 
-        <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} />
+        {props.scene.mode !== 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} />}
 
         {error && <p className="export-error" role="alert">{error}</p>}
       </div>

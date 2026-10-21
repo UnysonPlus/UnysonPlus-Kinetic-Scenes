@@ -23,6 +23,8 @@ export interface LayerRefs {
   model?: { state: State3D; runtime?: Runtime3D };
   /** In the pin space (pinned to the stage, or inside a pinned group): positions are % of the stage, sizes frame units. */
   pinned?: boolean;
+  /** Footage: the video element (or the picture, for a still used as footage). */
+  media?: HTMLVideoElement | HTMLImageElement;
 }
 
 /** Every LayerRefs in a tree, groups and their contents included. */
@@ -44,7 +46,8 @@ const FALLBACK_FONTS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif
 export function createStage(doc: Document, scene: Scene) {
   const stage = doc.createElement('div');
   stage.className = 'upw-stage';
-  if (scene.stage.background) stage.style.background = scene.stage.background;
+  // A see-through video (graphics to lay over footage) has no background of its own.
+  if (scene.stage.background && !(scene.mode === 'video' && scene.video?.transparent)) stage.style.background = scene.stage.background;
 
   const canvas = doc.createElement('div');
   canvas.className = 'upw-canvas';
@@ -169,6 +172,25 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
     // The words are in the transcript.
     inner.setAttribute('aria-hidden', 'true');
     buildDiagram(doc, inner, layer);
+  } else if (layer.type === 'video') {
+    // Footage. Its time is set by the player from the timeline (muted: a video export mixes its sound).
+    if (layer.reference) outer.dataset.ref = '';
+    const still = /^data:image\//.test(layer.src);
+    const m = doc.createElement(still ? 'img' : 'video');
+    if (m instanceof HTMLVideoElement) {
+      m.muted = true;
+      m.playsInline = true;
+      m.preload = 'auto';
+      m.disablePictureInPicture = true;
+      m.setAttribute('aria-hidden', layer.alt ? 'false' : 'true');
+    } else m.alt = layer.alt ?? '';
+    if (layer.alt && m instanceof HTMLVideoElement) m.setAttribute('aria-label', layer.alt);
+    m.src = layer.src;
+    m.style.cssText = `width:100%;height:100%;display:block;object-fit:${layer.fit ?? 'cover'}`;
+    inner.style.borderRadius = `${layer.radius ?? 0}cqw`;
+    inner.style.overflow = 'hidden';
+    inner.appendChild(m);
+    refs.media = m;
   } else if (layer.type === 'image') {
     const img = doc.createElement('img');
     img.src = layer.src;

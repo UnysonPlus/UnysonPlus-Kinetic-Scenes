@@ -47,6 +47,11 @@ export interface MountOptions {
   soundOn?: boolean;
   /** Show the scene's camera moves (default true). An editor turns it off to edit the flat layout. */
   camera?: boolean;
+  /**
+   * Show reference footage (video layers marked reference). Defaults to on in an editor and off elsewhere,
+   * so a graphics-only export leaves it out; a full composite turns it on.
+   */
+  reference?: boolean;
 }
 
 export type PlayerEvent = 'update' | 'play' | 'pause' | 'complete' | 'breakpoint' | 'rebuild';
@@ -83,6 +88,11 @@ export interface ScenePlayer {
    * blank or in a fallback font. Never rejects; `missing` lists what was still not there at the time limit.
    */
   whenReady(limitMs?: number): Promise<{ missing: string[] }>;
+  /**
+   * Resolves once every footage frame for the current time is on screen (a seek moves video asynchronously).
+   * A frame-by-frame renderer awaits it after each seek.
+   */
+  settle(limitMs?: number): Promise<void>;
   /** True when the camera is on and currently moves the view away from the flat layout. */
   readonly cameraActive: boolean;
   /** Swap in a changed scene, keeping the playhead (and playback) where it was. Throws if invalid. */
@@ -113,6 +123,27 @@ function pickBreakpoint(bps: Breakpoint[], width: number, ratio = 0): Breakpoint
   return bps.find((bp) => width >= bp.minWidth && (bp.minRatio === undefined || ratio >= bp.minRatio))
     ?? bps.find((bp) => width >= bp.minWidth && bp.minRatio === undefined)
     ?? bps[bps.length - 1];
+}
+
+/**
+ * Keeps a footage element at the timeline's moment: the file's time is the layer's offset plus the time since
+ * the layer started, times its speed. Playing, the video plays along (corrected when it drifts); paused or
+ * scrubbing, it is set to the exact frame.
+ */
+function syncFootage(v: HTMLVideoElement, layer: { start?: number; offset?: number; rate?: number }, localTime: number, playing: boolean) {
+  const rate = layer.rate ?? 1;
+  const want = (layer.offset ?? 0) + Math.max(0, localTime - (layer.start ?? 0)) * rate;
+  const len = Number.isFinite(v.duration) ? v.duration : Infinity;
+  const inRange = localTime >= (layer.start ?? 0) && want < len;
+  if (playing && inRange) {
+    if (v.playbackRate !== rate) v.playbackRate = rate;
+    if (Math.abs(v.currentTime - want) > 0.2) v.currentTime = want;
+    if (v.paused) v.play().catch(() => { /* not allowed yet: stays on the frame */ });
+  } else {
+    if (!v.paused) v.pause();
+    const target = Math.min(want, Number.isFinite(len) ? Math.max(0, len - 0.04) : want);
+    if (Math.abs(v.currentTime - target) > 0.004) v.currentTime = target;
+  }
 }
 
 /** Numbers each mounted scene, so styles a scene adds stay inside it. */
@@ -148,6 +179,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   if (options.safeArea) root.dataset.safe = '';
   // Editing: links on the stage stay inert, so a click selects the layer instead of leaving the page.
   if (options.editor && !options.present) root.dataset.editor = '';
+  if (!(options.reference ?? !!options.editor)) root.dataset.noref = '';
   host.textContent = '';
   host.appendChild(root);
   if (served) host.appendChild(served);
@@ -506,6 +538,10 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       else if (layer.type === 'flow') lateDraw.push(() => drawFlow(inner, layer, t.time()));
       else if (layer.type === 'diagram') lateDraw.push(() => drawDiagram(inner, layer, t.time() - (layer.start ?? 0)));
       else if (layer.type === 'code') lateDraw.push(() => drawCode(inner, layer, t.time(), easeFnOf));
+      else if (layer.type === 'video' && refs.media instanceof HTMLVideoElement) {
+        const v = refs.media;
+        lateFns.push(() => syncFootage(v, layer, t.time(), !!tl && !tl.paused()));
+      }
       // The cursor goes last: it measures the layers it points at after they have drawn this frame.
       else if (layer.type === 'cursor') lateFns.push(() => drawCursor(inner, layer, t.time(), easeFnOf));
       // Captions follow the voice-over, which runs on the scene's own clock.
@@ -638,6 +674,11 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         im.src = u;
         return until(im.decode(), limitMs, `background ${u}`.slice(0, 120));
       }));
+      // Footage: enough of every video to show its first frame.
+      const vids = Array.from(root.querySelectorAll('video'));
+      await Promise.all(vids.map((v) => until(
+        v.readyState >= 2 ? Promise.resolve() : new Promise((ok, bad) => { v.addEventListener('loadeddata', ok, { once: true }); v.addEventListener('error', bad, { once: true }); }),
+        limitMs, `video ${v.currentSrc || v.src}`.slice(0, 120))));
       // 3D: the engine, then every model.
       const models = flatRefs(layers).filter((r) => r.model);
       if (models.length) {
@@ -656,6 +697,18 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         render3d();
       }
       return { missing };
+    },
+    async settle(limitMs = 4000) {
+      const vids = Array.from(root.querySelectorAll('video'));
+      await Promise.all(vids.map((v) => new Promise<void>((done) => {
+        if (!v.seeking && v.readyState >= 2) return done();
+        const timer = setTimeout(done, limitMs);
+        const ok = () => { if (!v.seeking && v.readyState >= 2) { clearTimeout(timer); v.removeEventListener('seeked', ok); v.removeEventListener('canplay', ok); done(); } };
+        v.addEventListener('seeked', ok);
+        v.addEventListener('canplay', ok);
+      })));
+      // One more frame so the decoded picture is painted.
+      await new Promise((r) => win.requestAnimationFrame(() => r(undefined)));
     },
     get cameraActive() { return cameraOn && hasCamera && !isRest(cam); },
     next() {
@@ -706,6 +759,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       wantPlaying = false;
       tl.pause();
       sound?.stop();
+      root.querySelectorAll('video').forEach((v) => v.pause());
       emit('pause');
     },
     seek(seconds) {

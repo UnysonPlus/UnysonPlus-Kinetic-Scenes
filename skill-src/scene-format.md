@@ -37,6 +37,14 @@ scene plays, seeks and exports the same way.
   `repeatDelay`; `loopFrom` (loop only the last part); `posterTime` (the still frame); `advance: "click"` (a
   presentation that stops at each marker).
 
+## Video mode
+
+`"mode": "video"` and `"video": { "formats": ["9x16", "1x1"], "fps": 30, "platform": "tiktok", "transparent": false }`
+make a fixed-format video (Reels, TikTok, Shorts, YouTube) or, with `transparent`, graphics to lay over footage.
+Each format is a breakpoint with the same id, all with `minWidth: 0`, told apart by `minRatio` (the narrowest shape
+has none); `heightMode` is `fill`, playback `{ "trigger": "load", "loop": false }`. `platform` is `tiktok`, `reels`,
+`shorts`, `youtube` or `none`: keep words out of the area that app covers (Check scene reports it).
+
 ## Layers
 
 Every layer: `id` (unique, letters/digits/-/_), `name`, `type`, `box` (not for flow, repeat, group), `clips`, and
@@ -47,6 +55,7 @@ optionally `start` / `end` (seconds it is there), `opacity`, `overrides`, `link`
 | `text` | words | `text` (`\n` for a line break), `style` { `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing` (em), `color`, `align`, `uppercase`, `italic` }, `pill` { `stroke`, `fill`, `padX`, `padY`, `radius` } |
 | `shape` | a rectangle or ellipse | `shape`, `fill` (colour or gradient), `stroke`, `strokeWidth`, `radius`, `dash`, `dashGap` |
 | `image` | a picture | `src` (https or data URL), `alt`, `fit` (`cover`, `contain`), `radius` |
+| `video` | footage | `src` (a video data URL or https), `offset` (seconds into the file it starts), `rate` (0.25-4), `fit`, `radius`, `reference` (shown while designing, left out of a graphics-only export), `sound` (its volume in video exports, 0-2), `alt` |
 | `model` | a 3D object | `model` { `kind`: text, shape, svg, gltf … }, `material`, `pose`, `light`, `alt` |
 | `group` | layers kept together | `layers`, `duration`; presets on the group move the whole group |
 | `path` | a line | `d` (SVG path data, 0-100 across and down its box), `stroke`, `strokeWidth`, `glow`, `dash`, `arrow` (`end`, `start`, `both`), `fill` |

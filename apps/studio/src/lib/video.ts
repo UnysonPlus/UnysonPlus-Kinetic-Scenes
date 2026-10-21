@@ -1,5 +1,6 @@
 import type { Scene } from '@unysonplus/scene-player/types';
 import { kitBase } from './ai';
+import { withFootage } from './footage';
 
 /**
  * Video export through the AI Dev Kit: the kit renders the scene in headless Chrome frame by frame
@@ -11,7 +12,14 @@ export interface VideoOptions {
   width: number;
   height: number;
   fps: number;
-  format: 'mp4' | 'webm';
+  /** mov = ProRes (4444 when see-through), for video editors. */
+  format: 'mp4' | 'webm' | 'mov';
+  /** See-through background (WebM or ProRes only). */
+  transparent?: boolean;
+  /** Keep reference footage in the video (a full composite). */
+  composite?: boolean;
+  /** Also make the cover image (the still frame). */
+  cover?: boolean;
 }
 
 export const VIDEO_SIZES: Array<{ id: string; label: string; width: number; height: number }> = [
@@ -39,7 +47,11 @@ export async function canRender(): Promise<RenderCheck> {
 }
 
 /** Renders the scene; reports progress; resolves with the video file. */
-export async function renderVideo(scene: Scene, opts: VideoOptions, onProgress: (done: number, total: number) => void, signal: AbortSignal): Promise<{ blob: Blob; name: string; warnings: string[] }> {
+export async function renderVideo(scene: Scene, opts: VideoOptions, onProgress: (done: number, total: number) => void, signal: AbortSignal): Promise<{ blob: Blob; name: string; warnings: string[]; cover?: { blob: Blob; name: string } }> {
+  // Footage kept in this browser goes with the scene (the kit renders from the file itself).
+  const packed = await withFootage(scene);
+  if (packed.missing) throw new Error('Some footage is not on this computer any more (it is kept in the browser where it was added). Add it again, then render.');
+  scene = packed.scene;
   const b = await kitBase();
   if (!b) throw new Error('The AI Dev Kit is not running on this computer.');
   // The kit's browser loads the player the Studio uses, from the Studio's own published copy.
@@ -63,8 +75,13 @@ export async function renderVideo(scene: Scene, opts: VideoOptions, onProgress: 
       if (st.state === 'done') {
         const file = await fetch(`${b}/studio/render/${id}/file`, { signal });
         if (!file.ok) throw new Error('The finished video could not be downloaded from the kit.');
+        let cover: { blob: Blob; name: string } | undefined;
+        if (st.cover) {
+          const c = await fetch(`${b}/studio/render/${id}/cover`, { signal });
+          if (c.ok) cover = { blob: await c.blob(), name: st.cover };
+        }
         // What never arrived before the first frame (a font, an image, a 3D model), if anything.
-        return { blob: await file.blob(), name: st.name, warnings: Array.isArray(st.warnings) ? st.warnings : [] };
+        return { blob: await file.blob(), name: st.name, warnings: Array.isArray(st.warnings) ? st.warnings : [], cover };
       }
     }
   } finally {

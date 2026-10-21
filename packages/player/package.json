@@ -1,6 +1,6 @@
 {
   "name": "@unysonplus/scene-player",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "private": true,
   "description": "Plays Unyson+ Kinetic Scenes scene files in any web page.",
   "type": "module",
@@ -19,7 +19,8 @@
     "./sfx": "./src/sfx.ts",
     "./transcript": "./src/transcript.ts",
     "./camera": "./src/camera.ts",
-    "./repeat": "./src/repeat.ts"
+    "./repeat": "./src/repeat.ts",
+    "./video": "./src/video.ts"
   },
   "scripts": {
     "build": "vite build && vite build --config vite.editor.config.ts && vite build --config vite.3d.config.ts",

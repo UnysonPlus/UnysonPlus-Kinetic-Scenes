@@ -2,6 +2,7 @@ import type { Scene } from '@unysonplus/scene-player/types';
 import { PRESET_CATALOG } from '@unysonplus/scene-player/catalog';
 import { validateScene } from '@unysonplus/scene-player/validate';
 import { MOTION_RULES } from './motionRules';
+import { toVideo } from './videoMode';
 
 /**
  * The Studio's link to the AI Dev Kit running on the user's own computer. The kit's local service
@@ -159,6 +160,13 @@ function restoreAssets(answer: Scene, assets: Map<string, string>, original: Sce
   return out;
 }
 
+/** A video stays a video: an answer that dropped the mode (or its formats) gets them back. */
+function keepMode(answer: Scene, original: Scene): Scene {
+  if (original.mode !== 'video' || !original.video) return answer;
+  const same = answer.mode === 'video' && answer.video && answer.stage.breakpoints.every((b) => original.stage.breakpoints.some((o) => o.id === b.id));
+  return same ? answer : toVideo(answer, answer.video ?? original.video);
+}
+
 /**
  * Asks for a new scene ("create") or a change to the current one ("edit"). The answer is validated;
  * if it is invalid, the AI gets one chance to repair it with the validator's errors.
@@ -182,11 +190,11 @@ export async function askForScene(opts: {
   const first = await call({ mode: opts.mode, prompt: opts.prompt, scene: sent, selection: opts.selection, context: opts.context }, opts.signal, opts.brief);
   // Validate with the real files back in (placeholders aren't valid addresses).
   let v = validateScene(restoreAssets(first.scene as Scene, assets, opts.scene, opts.mode !== 'create'));
-  if (v.ok) return { scene: guardCode(v.scene, keep), explanation: first.explanation, model: first.model, repaired: false };
+  if (v.ok) return { scene: keepMode(guardCode(v.scene, keep), opts.scene), explanation: first.explanation, model: first.model, repaired: false };
 
   const second = await call({ mode: 'repair', prompt: opts.prompt, scene: first.scene, errors: v.errors, context: opts.context }, opts.signal, opts.brief);
   v = validateScene(restoreAssets(second.scene as Scene, assets, opts.scene, opts.mode !== 'create'));
-  if (v.ok) return { scene: guardCode(v.scene, keep), explanation: second.explanation || first.explanation, model: second.model, repaired: true };
+  if (v.ok) return { scene: keepMode(guardCode(v.scene, keep), opts.scene), explanation: second.explanation || first.explanation, model: second.model, repaired: true };
   throw new Error(`The AI's scene still had problems after a second try:\n- ${v.errors.slice(0, 6).join('\n- ')}`);
 }
 
@@ -222,7 +230,7 @@ export async function askForReview(opts: { scene: Scene; prompt: string; playerB
   if (r.ok || !r.scene) return { note: r.notes || 'No changes needed.', looked: r.looked, frames: r.frames?.length ?? 0 };
   const v = validateScene(r.scene);
   if (!v.ok) return { note: 'The review suggested changes that did not validate, so the scene was kept as it was.', looked: r.looked, frames: r.frames?.length ?? 0 };
-  return { scene: guardCode(v.scene, codeClips(opts.scene)), note: r.explanation || '', looked: r.looked, frames: r.frames?.length ?? 0 };
+  return { scene: keepMode(guardCode(v.scene, codeClips(opts.scene)), opts.scene), note: r.explanation || '', looked: r.looked, frames: r.frames?.length ?? 0 };
 }
 
 /** A website (or a project folder)'s real words, colours, fonts and screenshots, for a quick scene. */

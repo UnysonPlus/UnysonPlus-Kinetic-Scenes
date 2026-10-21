@@ -36,7 +36,7 @@ interface Entry { text: string; size: number; at: number; y: number; x: number; 
 function wordsIn(l: Layer): string {
   if (l.type === 'text') return clean(l.text);
   if (l.type === 'model' && l.model.kind === 'text') return clean(l.model.text ?? '');
-  if (l.type === 'image') return clean(l.alt ?? '');
+  if (l.type === 'image' || l.type === 'video') return clean(l.alt ?? '');
   if (l.type === 'group') return clean(l.layers.map(wordsIn).filter(Boolean).join(' '));
   return '';
 }
