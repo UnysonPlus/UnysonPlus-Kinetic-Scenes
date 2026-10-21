@@ -15,7 +15,7 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
-import { CaptionsSection, CodeSection, CursorSection, CutOutSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, SplitImageSection, StepsSection } from './VectorSections';
+import { CaptionsSection, CodeSection, CursorSection, CutOutSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, ScriptVoiceSection, SplitImageSection, StepsSection } from './VectorSections';
 import { focusCamera } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
 import { TransitionSection } from './TransitionSection';
@@ -255,6 +255,8 @@ function SceneInspector({ scene, onCommit, time }: Props) {
       </Section>
 
       <StepsSection scene={scene} onCommit={onCommit} />
+
+      <ScriptVoiceSection scene={scene} onCommit={onCommit} />
 
       <TranscriptSection scene={scene} onCommit={onCommit} />
     </div>

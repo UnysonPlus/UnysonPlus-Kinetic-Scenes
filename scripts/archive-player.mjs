@@ -51,3 +51,7 @@ for (const f of files) {
 console.log(published
   ? `player ${version}: published to apps/studio/public/player/${version}/ (commit this folder)`
   : `player ${version}: already published, unchanged`);
+
+// The newest version's number, for tools that load the player without knowing it (the AI Dev Kit's
+// scene commands). This one file is rewritten on every build; the versioned folders never are.
+writeFileSync(join(root, 'apps/studio/public/player/latest.json'), JSON.stringify({ version, base: `player/${version}/` }) + '\n');

@@ -215,12 +215,12 @@ export function askForPlan(opts: { prompt: string; kind: 'storyboard' | 'explain
 
 /** Look, criticise, fix: the kit renders key frames and the AI reviews them; a corrected scene comes back validated. */
 export async function askForReview(opts: { scene: Scene; prompt: string; playerBase: string; signal: AbortSignal }): Promise<{ scene?: Scene; note: string; looked: boolean; frames: number }> {
-  const { scene: sent, assets } = forAi(opts.scene);
+  // The real scene goes to the kit (it renders the frames from it; it shortens the files for the AI itself).
   const r = await post<{ ok: boolean; notes?: string; scene?: Scene; explanation?: string; looked: boolean; frames: number[] }>('/studio/review', {
-    scene: sent, prompt: opts.prompt, playerBase: opts.playerBase, catalog: catalogForAi(), rules: MOTION_RULES,
+    scene: opts.scene, prompt: opts.prompt, playerBase: opts.playerBase, catalog: catalogForAi(), rules: MOTION_RULES,
   }, opts.signal);
   if (r.ok || !r.scene) return { note: r.notes || 'No changes needed.', looked: r.looked, frames: r.frames?.length ?? 0 };
-  const v = validateScene(restoreAssets(r.scene, assets, opts.scene, true));
+  const v = validateScene(r.scene);
   if (!v.ok) return { note: 'The review suggested changes that did not validate, so the scene was kept as it was.', looked: r.looked, frames: r.frames?.length ?? 0 };
   return { scene: guardCode(v.scene, codeClips(opts.scene)), note: r.explanation || '', looked: r.looked, frames: r.frames?.length ?? 0 };
 }

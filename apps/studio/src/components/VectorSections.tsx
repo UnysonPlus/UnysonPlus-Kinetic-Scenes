@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import type { CaptionsLayer, CodeLayer, CursorLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
 import { applySteps, cutOut } from '../lib/tour';
+import { installVoice, speak, voiceStatus, withVoice } from '../lib/voice';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 import { splitImageLayer, splitPicture, splitStatus, type SplitStatus } from '../lib/split';
 
@@ -325,6 +326,43 @@ export function StepsSection(props: { scene: Scene; onCommit: (scene: Scene) => 
       </p>
       <TextField label="Steps" value={steps.length ? JSON.stringify(steps, null, 1) : ''} wide mono multiline placeholder="[]" onCommit={save} />
       {steps.length > 0 && <div className="insp-start"><button type="button" className="btn small" onClick={() => save(JSON.stringify(steps))}>Apply the steps again</button></div>}
+      {note && <p className="field-hint wide" role="status">{note}</p>}
+    </Section>
+  );
+}
+
+/** Voice-over from a script: a free voice on this computer (through the AI Dev Kit) speaks it, every word timed. */
+export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scene) => void }) {
+  const [script, setScript] = useState('');
+  const [voice, setVoice] = useState('en_US-lessac-medium');
+  const [pace, setPace] = useState(1.12);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const make = async () => {
+    const lines = script.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    setBusy(true);
+    try {
+      const st = await voiceStatus();
+      if (!st) throw new Error('Start the AI Dev Kit on this computer (an up-to-date one) first.');
+      if (!st.transcription) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
+      if (!st.program || !st.voices[voice]?.installed) await installVoice(voice, (s) => setNote(`Installing the voice: ${s}`));
+      const v = await speak(lines, { voice, pace, onStep: (s) => setNote(s) });
+      props.onCommit(withVoice(props.scene, v).scene);
+      setNote(`Added a ${v.duration.toFixed(1)} s voice-over with ${v.words.length} timed words. Select it on the timeline to make a scene from it.`);
+    } catch (e) {
+      setNote(`Could not make it: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Section title="Voice-over from a script">
+      <TextField label="Script (one line per sentence or beat)" value={script} wide multiline placeholder="Meet Jotter, the fastest way to save an idea." onCommit={setScript} />
+      <SelectField label="Voice" value={voice} options={[{ value: 'en_US-lessac-medium', label: 'Clear (American English)' }, { value: 'en_US-ryan-medium', label: 'Warm (American English)' }, { value: 'en_GB-alba-medium', label: 'Bright (British English)' }]} onChange={setVoice} />
+      <NumberField label="Pace (higher is slower)" value={pace} step={0.02} min={0.7} max={1.6} onCommit={(v) => v && setPace(v)} />
+      <div className="insp-start"><button type="button" className="btn small" disabled={busy || !script.trim()} onClick={make}>{busy ? 'Speaking…' : 'Make the voice-over'}</button></div>
+      <p className="field-hint wide">No microphone needed: a free voice runs on your computer through the AI Dev Kit (downloaded once, about 60 MB), and every word is timed, so scenes and captions follow it exactly. Changing one line remakes only that line.</p>
       {note && <p className="field-hint wide" role="status">{note}</p>}
     </Section>
   );

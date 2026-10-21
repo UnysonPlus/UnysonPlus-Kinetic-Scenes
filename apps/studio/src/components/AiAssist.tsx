@@ -1,7 +1,8 @@
 import { applySteps } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
 import { musicCues } from '../lib/beats';
-import { landOnWords } from '../lib/voiceScene';
+import { beatsText, landOnWords, voiceBase, voiceBeats, voiceBrief } from '../lib/voiceScene';
+import { installVoice, narrationOf, speak, voiceStatus, withVoice } from '../lib/voice';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { lintScene } from '@unysonplus/scene-player/lint';
@@ -186,6 +187,8 @@ export function AiAssist(props: {
       if (style && mode === 'create') r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
       // A new scene gets the best still frame, whatever moment the AI guessed.
       if (mode === 'create') r.scene = { ...r.scene, playback: { ...r.scene.playback, posterTime: suggestPoster(r.scene) } };
+      // A scene built on a voice-over keeps the voice track exactly as it was (with its words).
+      if (extra?.base?.audio?.length) r.scene = { ...r.scene, audio: extra.base.audio };
       // A walkthrough the AI wrote as steps becomes clips and markers.
       if (r.scene.steps?.length) r.scene = applySteps(r.scene).scene;
       // A scene made from a voice-over: each reveal finishes on the word it shows.
@@ -234,6 +237,44 @@ export function AiAssist(props: {
       ...(p.extra ?? {}), text: p.prompt, approved: true,
       brief: [p.extra?.brief, extraBrief].filter(Boolean).join('\n\n') || undefined,
       context: [p.extra?.context, `THE APPROVED PLAN (build exactly this)\n${planText}`].filter(Boolean).join('\n\n'),
+    });
+  };
+
+  /** Builds an explainer's approved script on a voice-over made from it (the audio is the clock). */
+  const buildWithVoice = async () => {
+    if (!pending || busy) return;
+    const lines = narrationOf(planText);
+    if (!lines.length) { push({ role: 'error', text: 'The plan has no numbered segments to speak.' }); return; }
+    const p = pending;
+    setBusy(true);
+    setPhase('Making the voice-over');
+    const ctl = new AbortController();
+    abort.current = ctl;
+    let built: { base: Scene; clipId: string } | null = null;
+    try {
+      const st = await voiceStatus();
+      if (!st) throw new Error('Your AI Dev Kit is too old for voice-overs. Close it and start it again: it updates itself.');
+      if (!st.transcription) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
+      if (!st.program || !Object.values(st.voices).some((v) => v.installed)) await installVoice('en_US-lessac-medium', (step) => setPhase(`Installing the voice: ${step}`));
+      const v = await speak(lines, { signal: ctl.signal, onStep: (step) => setPhase(step) });
+      const added = withVoice({ ...scene, layers: [] }, v);
+      built = { base: added.scene, clipId: added.id };
+      push({ role: 'ai', text: `Made a ${Math.round(v.duration)} second voice-over from the script (${v.words.length} words, each timed). Building the scene on it now.` });
+    } catch (e) {
+      push({ role: 'error', text: (e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message });
+    } finally {
+      setBusy(false);
+      setPhase('');
+      abort.current = null;
+    }
+    if (!built) return;
+    const clip = built.base.audio!.find((a) => a.id === built!.clipId)!;
+    const beats = voiceBeats(clip);
+    setPending(null);
+    send(p.prompt, 'new', {
+      ...(p.extra ?? {}), text: p.prompt, approved: true, voiceClip: clip.id, base: voiceBase(built.base, clip, beats),
+      brief: [voiceBrief(clip, beats), kind === 'tutorial' ? TUTORIAL_BRIEF : EXPLAINER_BRIEF].join('\n\n'),
+      context: `VOICE-OVER BEATS (scene seconds)\n${beatsText(beats)}\n\nTHE APPROVED PLAN (build exactly this, timed to the voice)\n${planText}`,
     });
   };
 
@@ -350,6 +391,7 @@ export function AiAssist(props: {
                 <textarea id="assist-plan" rows={12} value={planText} onChange={(e) => setPlanText(e.target.value)} />
                 <div className="assist-msg-actions">
                   <button type="button" className="btn primary small" disabled={!ready} onClick={buildPlan}>Build it</button>
+                  {kind !== 'storyboard' && <button type="button" className="btn small" disabled={!ready} onClick={buildWithVoice} title="A free voice on your computer speaks the script; the scene is timed to its words">Build with a voice-over</button>}
                   <button type="button" className="link-btn" onClick={() => setPending(null)}>Start over</button>
                   <span className="assist-faint">Or type what to change below.</span>
                 </div>

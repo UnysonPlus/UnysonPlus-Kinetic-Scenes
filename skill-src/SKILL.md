@@ -26,9 +26,12 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    with the person before building when you can.
 2. **Build the layers, then the clips.** Lay out each act (a top-level group per act), then time the entrances,
    holds and exits. One new thing at a time; the picture lands just before the words that describe it.
-3. **Check it.** Validate the file (the Studio's Check scene, or the AI Dev Kit's `kinetic check`), then look at
-   rendered frames: the settled frame of every act and the middle of every transition. Fix cramped layouts, low
-   contrast, unreadable text and muddy transitions. Repeat at most a few times.
+3. **Check it.** Validate the file (the Studio's Check scene, or the AI Dev Kit's `kinetic-scenes check
+   scene.json`), then look at rendered frames (`kinetic-scenes stills scene.json`): the settled frame of every act
+   and the middle of every transition. Fix cramped layouts, low contrast, unreadable text and muddy transitions.
+   Repeat at most a few times. With the kit's MCP server connected (`studio-mcp.mjs`), the same steps are the
+   tools `scene_check` and `scene_stills` (which returns the frames as images), plus `scene_inspect`,
+   `scene_render`, `audio_beats` (land reveals on the music) and `audio_transcribe` (time the scene to a voice).
 4. **Hand it over** with a one-line summary of what you made and anything the person should decide.
 
 ## Checklist
