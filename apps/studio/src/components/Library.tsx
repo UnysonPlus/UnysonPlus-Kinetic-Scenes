@@ -12,6 +12,12 @@ const SCROLL_SAMPLE = 'data:image/svg+xml,' + encodeURIComponent(
   + Array.from({ length: 12 }, (_, i) => `<rect x="16" y="${54 + i * 70}" width="${i % 3 === 0 ? 168 : 110}" height="${i % 3 === 0 ? 50 : 14}" rx="5" fill="${i % 3 === 0 ? '#2ad38b' : '#c6ced6'}"/>`).join('')
   + '</svg>');
 
+/** A picture to show effects on footage: a sunset with a figure, so grades, zooms and copies read. */
+const PHOTO_SAMPLE = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b5f9e"/><stop offset=".6" stop-color="#f29a5c"/><stop offset="1" stop-color="#f6d58b"/></linearGradient></defs>'
+  + '<rect width="320" height="200" fill="url(#s)"/><circle cx="235" cy="120" r="34" fill="#ffe7a8"/><path d="M0 150 Q80 120 160 150 T320 145 V200 H0Z" fill="#2d6a4f"/>'
+  + '<circle cx="120" cy="92" r="20" fill="#3b2a24"/><path d="M88 200 Q90 120 120 118 Q150 120 152 200Z" fill="#e2574c"/></svg>');
+
 /** A small code window showing one of the code presets. */
 function codeSample(id: string, d: number): Layer {
   const code = 'name = input()\nprint(name)';
@@ -27,8 +33,14 @@ function codeSample(id: string, d: number): Layer {
 function sampleScene(p: PresetMeta): Scene {
   const textual = p.appliesTo.includes('text');
   const word = p.id === 'text-scramble' || p.id === 'text-typewriter' ? 'Motion' : p.id === 'text-count' ? '$1,280'
-    : p.id === 'select-box' ? 'The goal' : p.id === 'text-swap' ? 'Before' : p.id === 'text-carry' ? 'Fast then slow' : 'Aa';
-  const layer: Layer = textual
+    : p.id === 'select-box' ? 'The goal' : p.id === 'text-swap' ? 'Before' : p.id === 'text-carry' ? 'Fast then slow'
+    : p.id === 'gravity-drop' ? 'DROP' : p.id === 'odometer' ? '1,250' : p.id === 'timecode' ? '00:00:12:00' : p.id === 'knockout' ? 'KNOCK'
+    : p.id === 'strike' ? 'Old way' : p.id === 'tick' ? 'Done' : p.id === 'strip-in' ? 'HEADLINE' : 'Aa';
+  // Effects on footage show on a picture.
+  const onPicture = p.appliesTo.includes('video') && !p.appliesTo.includes('text');
+  const layer: Layer = onPicture
+    ? { id: 's', type: 'image', src: PHOTO_SAMPLE, alt: '', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [] }
+    : textual
     ? { id: 's', type: 'text', text: word, style: { fontSize: word === 'Aa' ? 30 : 17, fontWeight: 800, color: '#f4f6f8' }, box: { x: 50, y: 52 }, clips: [] }
     : p.category === '3d'
       ? { id: 's', type: 'model', model: { kind: 'shape', shape: 'knot' }, material: { color: '#2ad38b', finish: 'glossy' }, box: { x: 50, y: 50, w: 70, h: 80 }, clips: [] }
@@ -99,8 +111,10 @@ export function Library(props: {
   sounds: ReactNode;
   /** The Styles tab's content. */
   styles: ReactNode;
+  /** The Pieces tab's content. */
+  pieces?: ReactNode;
 }) {
-  const [kind, setKind] = useState<'presets' | 'sounds' | 'styles'>('presets');
+  const [kind, setKind] = useState<'presets' | 'pieces' | 'sounds' | 'styles'>('presets');
   const [query, setQuery] = useState('');
   const [hot, setHot] = useState<string | null>(null);
   const groups = useMemo(() => {
@@ -113,13 +127,13 @@ export function Library(props: {
   return (
     <aside className="library" aria-label="Library">
       <div className="lib-tabs" role="tablist" aria-label="Library">
-        {(['presets', 'sounds', 'styles'] as const).map((k) => (
+        {(props.pieces ? ['presets', 'pieces', 'sounds', 'styles'] as const : ['presets', 'sounds', 'styles'] as const).map((k) => (
           <button key={k} type="button" role="tab" aria-selected={kind === k} className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>
-            {k === 'presets' ? 'Presets' : k === 'sounds' ? 'Sounds' : 'Styles'}
+            {k === 'presets' ? 'Presets' : k === 'pieces' ? 'Pieces' : k === 'sounds' ? 'Sounds' : 'Styles'}
           </button>
         ))}
       </div>
-      {kind === 'sounds' ? props.sounds : kind === 'styles' ? props.styles : <>
+      {kind === 'sounds' ? props.sounds : kind === 'styles' ? props.styles : kind === 'pieces' ? props.pieces : <>
       <div className="lib-head">
         <input type="search" className="lib-search" placeholder="Search presets" aria-label="Search presets" value={query} onChange={(e) => setQuery(e.target.value)} />
         <p className="lib-help">

@@ -135,6 +135,32 @@ VIDEO MODE (a scene with "mode": "video": a Reel, TikTok, Short or YouTube video
   for moments that mean something. Show a cause and its effect on the same frame.
 - No idle floating to fill time: every second something tells the story. Cut to the next shot instead of holding.
 
+SHORT-FORM VIDEO EFFECTS (asked for by name; build each from these presets and layers)
+On the footage (a "video" layer): snap zoom = snap-zoom on it (x/y at the face); digital zoom = digital-zoom; dolly zoom =
+  snap-zoom out on the footage while the cut-out person layer (below) zooms in, over 1 s; zoom through cut = tr-zoom out
+  then in on the next shot; zoom portal = portal (out to a corner, in back); grade slider / eyedropper grade = grade-wipe
+  across; mood curtain = grade-wipe with axis "y"; film look = film with sprockets false; projected film = film; liquid
+  glass = glass; playing grid = copies mode grid; contact sheet = copies mode contact; picture dive / odometer recursion
+  = copies mode dive; real feed = copies mode feed; frame break = shatter on the footage with the person cut out above it.
+Needing the person cut out (a second "video" layer named "(person)" above the graphics, made in Footage tools): magazine
+  cover = big masthead text between the footage and the person (the Magazine cover piece); words behind the head =
+  any text between them; paper cut-out = a coloured shape between them, the footage hidden (end it at 0) and sticker on
+  the person; green screen / studio reveal = a shape or picture between them, the footage hidden; frame escape = the
+  footage in a frame (frame: card or phone) and the person on top, not framed, so they spill out of it.
+Following the face (the footage's track): live markup = grade bw on the footage, an ellipse shape (stroke only) with draw
+  and follow; orbit = small icon layers with follow (at face) plus orbit-flat; a label over the head = follow at above.
+Text: kinetic hook = the Kinetic hook piece (text-slam, gravity-drop); gravity drop = gravity-drop; giant captions =
+  captions motion slam; viral drop = captions motion drop; knockout captions = knockout; headline storm = several
+  tilted pill texts with strip-in from alternating sides; receipt printer = receipt on a group; screenplay page =
+  text-typewriter then select-box; intertitle / title card = the Intertitle / Title card pieces (timecode).
+Emphasis: checklist pop / checklist = text lines with tick, a counter with odometer; icon strike = strike; jiggle delete =
+  jiggle then strike; growth curve = the Growth chart piece (draw, odometer).
+Interface pieces (build from layers like the Pieces library): comment CTA / comment drop = a comment box typing "EDIT"
+  then a reply; prompt bar; chat takeover = a chat window; file drop = a dashed zone (march, dash-solid) and a file card;
+  NLE timeline = coloured clips growing in tracks and a playhead; storyboard deck = cards with strip-in; phone mockup =
+  the footage with frame phone; B-roll overlay = a picture or footage with frame browser over the speaker; video card =
+  footage with frame card.
+
 AVOID
 - Two moving clips overlapping in time on the same layer (they fight over the same property).
 - Endless motion everywhere: pulse, shake and float are accents, not wallpaper.

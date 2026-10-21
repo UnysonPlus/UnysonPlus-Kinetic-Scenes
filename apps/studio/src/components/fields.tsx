@@ -127,9 +127,9 @@ export function SelectField<T extends string>(props: { label: string; value: T; 
   );
 }
 
-export function CheckField(props: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+export function CheckField(props: { label: string; checked: boolean; onChange: (v: boolean) => void; wide?: boolean }) {
   return (
-    <label className="check">
+    <label className={props.wide ? 'check wide' : 'check'}>
       <input type="checkbox" checked={props.checked} onChange={(e) => props.onChange(e.target.checked)} />
       <span>{props.label}</span>
     </label>

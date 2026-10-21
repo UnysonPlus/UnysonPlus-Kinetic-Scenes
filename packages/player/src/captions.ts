@@ -83,12 +83,25 @@ export function drawCaptions(inner: HTMLElement, layer: CaptionsLayer, audio: Au
   }
   const hl = layer.highlight ?? '#ffd166';
   const mode = layer.mode ?? 'word';
+  const motion = layer.motion ?? 'pop';
   const spans = Array.from(line.children) as HTMLElement[];
   c.words.forEach((w, i) => {
     const said = time >= w.at;
     const now = said && (time < w.end || i === c.words.length - 1 || time < c.words[i + 1].at);
     const lit = mode === 'karaoke' ? said : mode === 'word' ? now : false;
-    spans[i].style.color = lit ? hl : '';
+    const sp = spans[i];
+    sp.style.color = lit ? hl : '';
+    if (motion === 'pop') return;
+    // Word by word: each one arrives as it is said.
+    sp.style.display = 'inline-block';
+    const u = Math.max(0, Math.min(1, (time - w.at + 0.04) / (motion === 'slam' ? 0.14 : 0.32)));
+    sp.style.opacity = time >= w.at - 0.04 ? '1' : '0';
+    if (motion === 'slam') sp.style.transform = `scale(${(1 + 0.7 * (1 - u) ** 2).toFixed(4)})`;
+    else {
+      const n = 7.5625, d = 2.75;
+      const b = u < 1 / d ? n * u * u : u < 2 / d ? n * (u - 1.5 / d) ** 2 + 0.75 : u < 2.5 / d ? n * (u - 2.25 / d) ** 2 + 0.9375 : n * (u - 2.625 / d) ** 2 + 0.984375;
+      sp.style.transform = `translateY(${(-0.9 * (1 - b)).toFixed(4)}em)`;
+    }
   });
   // Each chunk arrives with a small pop.
   const a = Math.max(0, Math.min(1, (time - (c.start - 0.05)) / 0.14));

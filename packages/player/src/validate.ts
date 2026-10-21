@@ -33,6 +33,9 @@ const PATH_RE = /^[MmLlHhVvCcSsQqTtAaZz0-9eE.,\s+-]*$/;
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
+/** Frames an image or footage can sit in. */
+const FRAMES = ['none', 'phone', 'browser', 'polaroid', 'film', 'card'];
+
 export function validateScene(input: unknown): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -238,12 +241,15 @@ export function validateScene(input: unknown): ValidationResult {
       } else if (layer.type === 'image') {
         if (typeof layer.src !== 'string' || !layer.src) fail(`${lp}.src`, 'is required');
         if (!layer.alt) warnings.push(`${lp}.alt: add a description so screen readers can announce the image (or "" if it is decorative).`);
+        if (layer.frame !== undefined && !FRAMES.includes(layer.frame)) fail(`${lp}.frame`, `must be one of ${FRAMES.join(', ')}`);
       } else if (layer.type === 'video') {
         if (typeof layer.src !== 'string' || !/^(data:(video|image)\/|https?:\/\/|blob:|local:)/.test(layer.src)) fail(`${lp}.src`, 'must be a video (or image) data: URL or an http(s) address');
         if (layer.offset !== undefined && (!isNum(layer.offset) || layer.offset < 0)) fail(`${lp}.offset`, 'must be 0 or more seconds');
         if (layer.rate !== undefined && (!isNum(layer.rate) || layer.rate < 0.25 || layer.rate > 4)) fail(`${lp}.rate`, 'must be 0.25 to 4');
         if (layer.sound !== undefined && (!isNum(layer.sound) || layer.sound < 0 || layer.sound > 2)) fail(`${lp}.sound`, 'must be a volume from 0 to 2');
+        if (layer.track !== undefined && (!Array.isArray(layer.track) || layer.track.length > 20000 || layer.track.some((p) => !isObj(p) || !isNum(p.t) || !isNum(p.x) || !isNum(p.y)))) fail(`${lp}.track`, 'must be a list of { t, x, y, w, h }');
         if (layer.fit !== undefined && layer.fit !== 'cover' && layer.fit !== 'contain') fail(`${lp}.fit`, 'must be cover or contain');
+        if (layer.frame !== undefined && !FRAMES.includes(layer.frame)) fail(`${lp}.frame`, `must be one of ${FRAMES.join(', ')}`);
       } else if (layer.type === 'model') {
         const m = layer.model;
         if (!isObj(m) || !['text', 'shape', 'svg', 'gltf'].includes(m.kind)) fail(`${lp}.model.kind`, 'must be text, shape, svg or gltf');
@@ -315,6 +321,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (!isObj(layer.style) || !isNum(layer.style.fontSize) || layer.style.fontSize <= 0) fail(`${lp}.style.fontSize`, 'is required (stage units)');
         if (layer.maxWords !== undefined && (!isNum(layer.maxWords) || layer.maxWords < 1 || layer.maxWords > 12)) fail(`${lp}.maxWords`, 'must be 1 to 12');
         if (layer.mode !== undefined && !['word', 'karaoke', 'none'].includes(layer.mode)) fail(`${lp}.mode`, 'must be word, karaoke or none');
+        if (layer.motion !== undefined && !['pop', 'slam', 'drop'].includes(layer.motion)) fail(`${lp}.motion`, 'must be pop, slam or drop');
         if (!(scene.audio ?? []).some((a) => Array.isArray(a?.words) && a.words.length)) warnings.push(`${lp}: captions need a voice-over with its words (transcribe it in the AI Dev Kit).`);
       } else if (layer.type === 'repeat') {
         // Played as the group it expands into; checked as that group.

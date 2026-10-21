@@ -21,7 +21,7 @@ import { suggestPoster } from '../lib/poster';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
-import { FootageSection, MadeForSection } from './VideoModeSections';
+import { FRAME_OPTIONS, FootageKitSection, FootageSection, MadeForSection } from './VideoModeSections';
 import { SFX_CATALOG, SFX_CATEGORY_LABELS, sfxMeta, sfxSrc, suggestedSound, type SfxCategory } from '@unysonplus/scene-player/sfx';
 import { cleanSound } from '../lib/audio';
 import { sceneTranscript } from '@unysonplus/scene-player/transcript';
@@ -603,12 +603,14 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'diagram' && <DiagramSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
 
       {layer.type === 'video' && <FootageSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'video' && <FootageKitSection scene={scene} layer={layer} onCommit={onCommit} />}
       {layer.type === 'image' && (
         <Section title="Image">
           <ImageSource scene={scene} layer={layer} onCommit={onCommit} />
           <TextField label="Description" value={layer.alt} wide placeholder="What the image shows (blank if decorative)" onCommit={(v) => props({ alt: v })} />
           <SelectField label="Fit" value={layer.fit ?? 'cover'} options={[{ value: 'cover', label: 'Fill the box' }, { value: 'contain', label: 'Fit inside' }]} onChange={(v) => props({ fit: v })} />
           <NumberField label="Corner radius" value={layer.radius ?? 0} step={0.1} min={0} unit="su" onCommit={(v) => props({ radius: v })} />
+          <SelectField label="Frame" value={layer.frame ?? 'none'} options={FRAME_OPTIONS} onChange={(v) => props({ frame: v === 'none' ? undefined : v })} />
         </Section>
       )}
       {layer.type === 'image' && (

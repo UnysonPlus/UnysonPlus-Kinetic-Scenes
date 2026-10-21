@@ -175,6 +175,8 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
   } else if (layer.type === 'video') {
     // Footage. Its time is set by the player from the timeline (muted: a video export mixes its sound).
     if (layer.reference) outer.dataset.ref = '';
+    // The face path, for layers that follow it.
+    (outer as HTMLElement & { upwTrack?: unknown }).upwTrack = layer.track;
     const still = /^data:image\//.test(layer.src);
     const m = doc.createElement(still ? 'img' : 'video');
     if (m instanceof HTMLVideoElement) {
@@ -191,6 +193,7 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
     inner.style.overflow = 'hidden';
     inner.appendChild(m);
     refs.media = m;
+    frameMedia(doc, inner, m, layer.frame, layer.radius);
   } else if (layer.type === 'image') {
     const img = doc.createElement('img');
     img.src = layer.src;
@@ -201,6 +204,7 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
     inner.style.borderRadius = `${layer.radius ?? 0}cqw`;
     inner.style.overflow = 'hidden';
     inner.appendChild(img);
+    frameMedia(doc, inner, img, layer.frame, layer.radius);
   }
   return refs;
 }
@@ -370,4 +374,38 @@ export function measureGroup(refs: LayerRefs, bpId: string | null) {
     left: `${(-f.l / f.w) * 100}%`, top: `${(-f.t / f.h) * 100}%`,
     width: `${(100 / f.w) * 100}%`, height: `${(100 / f.h) * 100}%`,
   });
+}
+
+/**
+ * A frame round a picture or footage: the frame is the layer's box, the picture sits inside it. The frame's
+ * parts are drawn by the frame (not by the picture), so effects on the picture stay inside.
+ */
+function frameMedia(doc: Document, inner: HTMLElement, media: HTMLElement, frame: string | undefined, radius = 0) {
+  if (!frame || frame === 'none') return;
+  inner.dataset.frame = frame;
+  inner.style.position = 'relative';
+  const part = (css: string) => { const e = doc.createElement('i'); e.className = 'upw-frame'; e.setAttribute('aria-hidden', 'true'); e.style.cssText = `position:absolute;pointer-events:none;${css}`; inner.appendChild(e); return e; };
+  const box = (css: string) => { media.style.position = 'absolute'; media.style.cssText += `;position:absolute;${css}`; };
+  inner.style.overflow = 'visible';
+  if (frame === 'phone') {
+    Object.assign(inner.style, { background: '#0b0c0e', borderRadius: '13% / 6.5%', boxShadow: '0 0 0 0.25cqw #2b2e33, 0 2cqw 4cqw rgba(0,0,0,.45)' });
+    box('left:3.5%;top:1.8%;width:93%;height:96.4%;border-radius:10% / 5%');
+    part('left:50%;top:3%;width:30%;height:2.4%;transform:translateX(-50%);background:#0b0c0e;border-radius:99px');
+  } else if (frame === 'browser') {
+    Object.assign(inner.style, { background: '#f2f3f5', borderRadius: '1.2cqw', boxShadow: '0 1.5cqw 3.5cqw rgba(0,0,0,.35)', overflow: 'hidden' });
+    box('left:0;top:3.4cqw;width:100%;height:calc(100% - 3.4cqw)');
+    const bar = part('left:0;right:0;top:0;height:3.4cqw;display:flex;align-items:center;gap:0.7cqw;padding-left:1.4cqw;background:#e4e6ea');
+    bar.innerHTML = ['#ff5f57', '#febc2e', '#28c840'].map((c) => `<b style="width:1cqw;height:1cqw;border-radius:50%;background:${c}"></b>`).join('') + '<b style="margin-left:2cqw;flex:0 1 45%;height:1.8cqw;border-radius:1cqw;background:#fff"></b>';
+  } else if (frame === 'polaroid') {
+    Object.assign(inner.style, { background: '#fbfaf6', boxShadow: '0 1.2cqw 3cqw rgba(0,0,0,.35)' });
+    box('left:5%;top:4.5%;width:90%;height:77.5%');
+  } else if (frame === 'film') {
+    Object.assign(inner.style, { background: '#0b0b0b' });
+    box('left:11%;top:1.5%;width:78%;height:97%');
+    const holes = 'repeating-linear-gradient(to bottom, transparent 0 1.2cqw, #f4efe6 1.2cqw 3.2cqw, transparent 3.2cqw 4.4cqw)';
+    part(`left:3%;width:5%;top:0;bottom:0;background:${holes};border-radius:.3cqw`);
+    part(`right:3%;width:5%;top:0;bottom:0;background:${holes};border-radius:.3cqw`);
+  } else if (frame === 'card') {
+    Object.assign(inner.style, { borderRadius: `${Math.max(radius, 1.6)}cqw`, boxShadow: '0 0 0 0.15cqw rgba(255,255,255,.18), 0 1.6cqw 4cqw rgba(0,0,0,.45)', overflow: 'hidden' });
+  }
 }

@@ -54,8 +54,8 @@ optionally `start` / `end` (seconds it is there), `opacity`, `overrides`, `link`
 | --- | --- | --- |
 | `text` | words | `text` (`\n` for a line break), `style` { `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `letterSpacing` (em), `color`, `align`, `uppercase`, `italic` }, `pill` { `stroke`, `fill`, `padX`, `padY`, `radius` } |
 | `shape` | a rectangle or ellipse | `shape`, `fill` (colour or gradient), `stroke`, `strokeWidth`, `radius`, `dash`, `dashGap` |
-| `image` | a picture | `src` (https or data URL), `alt`, `fit` (`cover`, `contain`), `radius` |
-| `video` | footage | `src` (a video data URL or https), `offset` (seconds into the file it starts), `rate` (0.25-4), `fit`, `radius`, `reference` (shown while designing, left out of a graphics-only export), `sound` (its volume in video exports, 0-2), `alt` |
+| `image` | a picture | `src` (https or data URL), `alt`, `fit` (`cover`, `contain`), `radius`, `frame` (phone, browser, polaroid, film, card) |
+| `video` | footage | `src` (a video data URL or https), `offset` (seconds into the file it starts), `rate` (0.25-4), `fit`, `radius`, `frame` (phone, browser, polaroid, film, card), `reference` (shown while designing, left out of a graphics-only export), `sound` (its volume in video exports, 0-2), `track` (the face path the kit finds, for the follow preset), `alt` |
 | `model` | a 3D object | `model` { `kind`: text, shape, svg, gltf … }, `material`, `pose`, `light`, `alt` |
 | `group` | layers kept together | `layers`, `duration`; presets on the group move the whole group |
 | `path` | a line | `d` (SVG path data, 0-100 across and down its box), `stroke`, `strokeWidth`, `glow`, `dash`, `arrow` (`end`, `start`, `both`), `fill` |
@@ -63,7 +63,7 @@ optionally `start` / `end` (seconds it is there), `opacity`, `overrides`, `link`
 | `diagram` | nodes and connections | `nodes` [{ `id`, `x`, `y` (% of its box), `label`, `sub`, `shape` (box, pill, circle, dot, value), `color`, `at`, `moves` }], `edges` [{ `from`, `to`, `kind` (curve, straight, step), `label`, `dashed`, `arrow`, `at` }], `tag` { `label`, `stops` [{ `node`, `t` }] }, `look` |
 | `code` | an editor or terminal | `code`, `title` (file name: sets the language), `language`, `frame` (window, terminal, plain), `run`, `theme`, `fontSize`, `lineNumbers` |
 | `repeat` | a list | `item` (one layer, usually a group, with `{{field}}` placeholders), `items` [{ … }], `step` { `x`, `y` }, `columns`, `rowStep`, `stagger` |
-| `captions` | the words of a voice-over | `style`, `audio` (clip id), `maxWords`, `mode` (word, karaoke, none), `highlight`, `background` |
+| `captions` | the words of a voice-over | `style`, `audio` (clip id), `maxWords`, `mode` (word, karaoke, none), `motion` (pop, slam, drop), `highlight`, `background` |
 | `cursor` | a pointer for tours | `shape` (auto, arrow, hand), `theme`, `ringColor`; its box x / y is where the TIP starts |
 
 Other layer fields:

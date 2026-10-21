@@ -676,8 +676,8 @@ h1, h2, p { margin: 0; }
 .sound-btn.on { color: var(--accent); }
 
 /* ---------- sounds ---------- */
-.lib-tabs { display: flex; gap: 2px; padding: 10px 12px 0; border-bottom: 1px solid var(--border-soft); }
-.lib-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--faint); font: inherit; font-size: 13px; font-weight: 650; padding: 6px 10px 8px; cursor: pointer; }
+.lib-tabs { display: flex; gap: 0; padding: 10px 8px 0; border-bottom: 1px solid var(--border-soft); overflow: hidden; }
+.lib-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--faint); font: inherit; font-size: 13px; font-weight: 650; padding: 6px 7px 8px; flex: 1 1 auto; min-width: 0; white-space: nowrap; cursor: pointer; }
 .lib-tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
 .lib-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .snd-bulk { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -776,3 +776,10 @@ h1, h2, p { margin: 0; }
 .check-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid var(--line, #2b3644); border-radius: 999px; font-size: 12px; cursor: pointer; }
 .video-checks { display: grid; gap: 6px; margin: 4px 0 10px; font-size: 13px; }
 .video-checks .check { display: inline-flex; gap: 8px; align-items: center; }
+/* A button row sharing a grid row with a field lines up with the field's input, not its label. */
+.insp-grid > .insp-start { align-self: end; margin-top: 0; }
+.piece-list { list-style: none; margin: 0; padding: 0 12px 16px; display: grid; gap: 8px; overflow-y: auto; }
+.piece { width: 100%; text-align: left; display: grid; gap: 3px; padding: 10px 11px; border: 1px solid var(--line, #26303a); border-radius: 8px; background: var(--panel-2, #12171d); color: var(--ink); cursor: pointer; font: inherit; }
+.piece:hover, .piece:focus-visible { border-color: var(--accent, #2ad38b); }
+.piece strong { font-size: 13px; }
+.piece span { font-size: 11.5px; color: var(--muted); line-height: 1.35; }

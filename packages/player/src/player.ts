@@ -707,6 +707,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         v.addEventListener('seeked', ok);
         v.addEventListener('canplay', ok);
       })));
+      // Effects that draw the footage into a canvas (copies, shatter) draw again now the frame is there.
+      if (vids.length) runLate();
       // One more frame so the decoded picture is painted.
       await new Promise((r) => win.requestAnimationFrame(() => r(undefined)));
     },

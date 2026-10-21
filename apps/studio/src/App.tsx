@@ -34,6 +34,8 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { VIDEO_FORMATS, zonesFor } from '@unysonplus/scene-player/video';
 import type { VideoFormat } from '@unysonplus/scene-player/types';
 import { footageIds, getFootage, probeVideo, putFootage } from './lib/footage';
+import { insertPiece } from './lib/pieces';
+import { PiecesLibrary } from './components/PiecesLibrary';
 import { DEVICES, Preview, type Device } from './components/Preview';
 import { Transport } from './components/Transport';
 import { ScenePanel } from './components/ScenePanel';
@@ -747,6 +749,12 @@ export function App() {
 
       <main className="workspace">
         <Library layerType={selectedLayer?.type ?? null} count={selectedIds(selection).length} onApply={applyPreset}
+          pieces={<PiecesLibrary onInsert={(piece) => {
+            const r = insertPiece(latest.current.scene, piece, Math.round(latest.current.state.time * 100) / 100, latest.current.scope);
+            commit(r.scene);
+            setSelection({ layerId: r.id, clipId: null });
+            setNotice(`Added ${piece.name}. Double-click it to change what is inside.`);
+          }} />}
           styles={
             <StyleLibrary
               styles={allStyles}

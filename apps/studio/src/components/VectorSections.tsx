@@ -177,6 +177,7 @@ export function CaptionsSection(props: { scene: Scene; layer: CaptionsLayer; set
         ? <SelectField label="Words from" value={layer.audio ?? ''} options={[{ value: '', label: 'The first voice-over' }, ...voices.map((a) => ({ value: a.id, label: a.name ?? a.id }))]} onChange={(v) => set({ audio: v || undefined })} />
         : <p className="field-hint wide">Captions need a voice-over with its words: add the audio, then transcribe it in its settings.</p>}
       <NumberField label="Words at a time" value={layer.maxWords ?? 4} step={1} min={1} max={12} onCommit={(v) => set({ maxWords: v ? Math.round(v) : undefined })} />
+      <SelectField label="Words arrive" value={layer.motion ?? 'pop'} options={[{ value: 'pop', label: 'A few at a time (pop)' }, { value: 'slam', label: 'Each slams in (giant captions)' }, { value: 'drop', label: 'Each drops in (viral drop)' }]} onChange={(v) => set({ motion: v === 'pop' ? undefined : v as 'slam' | 'drop' })} />
       <SelectField label="Light up" value={layer.mode ?? 'word'} options={[{ value: 'word', label: 'The word being said' }, { value: 'karaoke', label: 'Every word said so far' }, { value: 'none', label: 'Nothing' }]} onChange={(v) => set({ mode: v === 'word' ? undefined : v })} />
       <ColorField label="Lit colour" value={layer.highlight} placeholder="#ffd166" onCommit={(v) => set({ highlight: v || undefined })} />
       <NumberField label="Size" value={style.fontSize} step={0.1} min={0.3} max={20} unit="su" onCommit={(v) => v && set({ style: { ...style, fontSize: v } })} />

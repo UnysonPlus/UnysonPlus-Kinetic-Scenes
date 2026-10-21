@@ -7,8 +7,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { lintScene } from '@unysonplus/scene-player/lint';
 import { askForPlan, askForQuick, askForReview, askForScene, type KitStatus, type Plan } from '../lib/ai';
-import { PLAYER_BASE } from '../lib/documents';
 import { applyStyle, styleBrief, type SceneStyle } from '../lib/styles';
+import { allLayers } from '@unysonplus/scene-player/groups';
+import { useFootageSound } from '../lib/footageKit';
+import { transcribe, transcribeStatus } from '../lib/transcribe';
 
 const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
 const KIT_REPO = 'https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit';
@@ -48,6 +50,18 @@ export type QueuedRequest = string | {
 type Kind = 'storyboard' | 'explainer' | 'tutorial';
 
 /** How an approved explainer or tutorial script becomes a scene when there is no voice-over yet. */
+/** Editing someone's own footage: captions and effects placed on what is said, the footage untouched. */
+const VIDEO_EDIT_BRIEF = `EDIT MY VIDEO (this request): the scene has the person's footage (a "video" layer) and its voice-over with every
+word timed (in "context"). Edit it like a short-form video editor:
+- Keep the footage layers, their timing and the audio exactly as they are; add layers and clips around them.
+- Add a captions layer (if there is none) in the lower-middle, big, motion "slam" or "drop", out of the app's covered areas.
+- Place 5 to 10 effects on the moments that suit them, each landing on its word (from "context"): a hook in the first
+  two seconds (Kinetic hook piece or Gravity drop on the first key words), a Snap zoom on the footage at a punchline,
+  a Colour grade or Grade wipe on a change of mood, Strike or Tick on a list, a Knockout or Fly-in strip for a key
+  phrase, Odometer for a number, the Comment box piece (comment call to action) at the end if they ask for comments.
+- Name effects only from PRESETS; build pieces from layers. Vary them: never the same effect twice in a row.
+- Short clips: entrances 0.25-0.6 s, then hold while the word is said; nothing covers the face for long.`;
+
 const EXPLAINER_BRIEF = `EXPLAINER (this request): the approved plan in "context" lists SEGMENTS, each with its narration and what the screen shows.
 - Build one act per segment (a top-level group named after it), in order, with a marker at each segment's start ("id": "seg-1", "seg-2", ...).
 - Time each segment by its narration at about 150 words a minute plus 0.4 s; the picture lands just BEFORE the words that describe it.
@@ -207,7 +221,7 @@ export function AiAssist(props: {
       if (lookFix) {
         setPhase('Looking at the frames');
         try {
-          const rv = await askForReview({ scene: r.scene, prompt: ask, playerBase: `${PLAYER_BASE}${__PLAYER_VERSION__}/`, signal: ctl.signal });
+          const rv = await askForReview({ scene: r.scene, prompt: ask, playerBase: new URL(`/player/${__PLAYER_VERSION__}/`, location.href).href, signal: ctl.signal });
           if (rv.scene) {
             props.onApply(rv.scene, 'edit');
             push({ role: 'ai', text: `${rv.looked ? `I looked at ${rv.frames} frames.` : 'I checked the report (this AI cannot look at pictures).'} ${rv.note}`, before: r.scene, after: rv.scene, issues: lintScene(rv.scene).length, model: r.model });
@@ -276,6 +290,47 @@ export function AiAssist(props: {
       brief: [voiceBrief(clip, beats), kind === 'tutorial' ? TUTORIAL_BRIEF : EXPLAINER_BRIEF].join('\n\n'),
       context: `VOICE-OVER BEATS (scene seconds)\n${beatsText(beats)}\n\nTHE APPROVED PLAN (build exactly this, timed to the voice)\n${planText}`,
     });
+  };
+
+  /** Edit my video: the footage's sound transcribed (if it is not yet), then captions and effects placed on its words. */
+  const editVideo = async () => {
+    if (busy || status.state !== 'ready') return;
+    const footage = allLayers(scene.layers).find((l) => l.type === 'video' && !l.reference);
+    if (!footage) { push({ role: 'error', text: 'Add your footage first (+ Footage on the timeline).' }); return; }
+    setBusy(true);
+    const ctl = new AbortController();
+    abort.current = ctl;
+    let s: Scene | null = null;
+    let clipId = '';
+    try {
+      s = scene;
+      let voice = (s.audio ?? []).find((a) => a.role === 'voice' && a.words?.length);
+      if (!voice) {
+        setPhase('Taking the sound out of the footage');
+        const r = await useFootageSound(s, footage.id);
+        s = r.scene;
+        const clip = s.audio!.find((a) => a.id === r.id)!;
+        const st = await transcribeStatus();
+        const model = (Object.keys(st.models) as Array<keyof typeof st.models>).find((k) => st.models[k].installed);
+        if (!st.program || !model) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
+        const t = await transcribe(clip.src, model, (step) => setPhase(`Transcribing: ${step}`), ctl.signal);
+        s = { ...s, audio: s.audio!.map((a) => (a.id === clip.id ? { ...a, words: t.words, speech: t.speech } : a)) };
+        voice = s.audio!.find((a) => a.id === clip.id)!;
+        push({ role: 'ai', text: `Took the sound out of the footage and timed ${t.words.length} words. Now placing captions and effects on them.` });
+      }
+      clipId = voice.id;
+    } catch (e) {
+      push({ role: 'error', text: (e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message });
+      s = null;
+    } finally {
+      setBusy(false);
+      setPhase('');
+      abort.current = null;
+    }
+    if (!s) return;
+    const clip = s.audio!.find((a) => a.id === clipId)!;
+    const ask = prompt.trim() || 'Edit this video: captions, a hook, and effects that suit what is said.';
+    send(ask, 'scene', { text: ask, base: s, voiceClip: clip.id, brief: VIDEO_EDIT_BRIEF, context: `VOICE-OVER WORDS (scene seconds)\n${beatsText(voiceBeats(clip))}` });
   };
 
   /** A quick scene from a website: its real words, colours, fonts and screenshots. */
@@ -356,6 +411,12 @@ export function AiAssist(props: {
                 <div className="assist-ideas">
                   {ideas.map((i) => <button key={i} type="button" className="assist-idea" disabled={!ready || busy} onClick={() => (scope === 'new' ? setPrompt(i) : send(i))}>{i}</button>)}
                 </div>
+                {scope !== 'new' && allLayers(scene.layers).some((l) => l.type === 'video' && !l.reference) && (
+                  <div className="assist-quick">
+                    <button type="button" className="btn small primary" disabled={!ready || busy} onClick={editVideo}>Edit my video</button>
+                    <p className="assist-faint">Captions and effects placed on what is said in your footage (its sound is transcribed in the AI Dev Kit first). Type what you want above to steer it.</p>
+                  </div>
+                )}
                 {scope === 'new' && (
                   <div className="assist-quick">
                     <label htmlFor="assist-url">Or start from a website</label>

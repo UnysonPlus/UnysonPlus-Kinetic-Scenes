@@ -366,7 +366,11 @@ export interface ImageLayer extends LayerBase {
   fit?: 'cover' | 'contain';
   /** Corner radius in stage units. */
   radius?: number;
+  /** A frame round the picture: a phone, a browser window, a polaroid, a film strip or a card. */
+  frame?: MediaFrame;
 }
+
+export type MediaFrame = 'none' | 'phone' | 'browser' | 'polaroid' | 'film' | 'card';
 
 /**
  * Footage: a video (or a still photo used as one) on the timeline. It is muted in the player; with `sound`
@@ -382,11 +386,17 @@ export interface VideoLayer extends LayerBase {
   rate?: number;
   fit?: 'cover' | 'contain';
   radius?: number;
+  frame?: MediaFrame;
   reference?: boolean;
   /** Mix the footage's own sound into a video export (0 to 2, its volume). */
   sound?: number;
   /** A description, for screen readers (footage that matters to the story). */
   alt?: string;
+  /**
+   * The face in the footage, frame by frame (the AI Dev Kit finds it): seconds into the file, and the face's
+   * centre and size as fractions of the frame. The Follow preset keeps a layer on it.
+   */
+  track?: Array<{ t: number; x: number; y: number; w: number; h: number }>;
 }
 
 /**
@@ -632,6 +642,11 @@ export interface CaptionsLayer extends LayerBase {
   background?: string;
   /** Capitals. */
   uppercase?: boolean;
+  /**
+   * How the words arrive. pop (the default): each group of words appears with a small pop. slam: each word
+   * slams in as it is said (giant captions). drop: each word drops in from above and bounces (viral drop).
+   */
+  motion?: 'pop' | 'slam' | 'drop';
 }
 
 /**
