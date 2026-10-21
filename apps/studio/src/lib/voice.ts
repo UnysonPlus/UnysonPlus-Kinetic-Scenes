@@ -13,6 +13,8 @@ export interface VoiceStatus {
   transcription: boolean;
   ffmpeg: boolean;
   install: { state: string; step: string; done: number; total: number; error: string } | null;
+  /** Voicebox (an add-on): the person's own voices, when the app is open. */
+  voicebox?: { connected: boolean; profiles: Array<{ id: string; name: string }> };
 }
 
 async function kit(): Promise<string> {

@@ -3,6 +3,7 @@ import { suggestPoster } from '../lib/poster';
 import { musicCues } from '../lib/beats';
 import { beatsText, landOnWords, voiceBase, voiceBeats, voiceBrief } from '../lib/voiceScene';
 import { installVoice, narrationOf, speak, voiceStatus, withVoice } from '../lib/voice';
+import { preferredVoice } from '../lib/addons';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { lintScene } from '@unysonplus/scene-player/lint';
@@ -274,8 +275,11 @@ export function AiAssist(props: {
       const st = await voiceStatus();
       if (!st) throw new Error('Your AI Dev Kit is too old for voice-overs. Close it and start it again: it updates itself.');
       if (!st.transcription) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
-      if (!st.program || !Object.values(st.voices).some((v) => v.installed)) await installVoice('en_US-lessac-medium', (step) => setPhase(`Installing the voice: ${step}`));
-      const v = await speak(lines, { signal: ctl.signal, onStep: (step) => setPhase(step) });
+      // The voice chosen last under Voice-over from a script (a Voicebox voice when Voicebox is open).
+      const pick = preferredVoice();
+      const own = pick?.startsWith('voicebox:') && st.voicebox?.connected && st.voicebox.profiles.some((p) => `voicebox:${p.id}` === pick) ? pick : undefined;
+      if (!own && (!st.program || !Object.values(st.voices).some((v) => v.installed))) await installVoice('en_US-lessac-medium', (step) => setPhase(`Installing the voice: ${step}`));
+      const v = await speak(lines, { voice: own ?? (pick && !pick.startsWith('voicebox:') ? pick : undefined), signal: ctl.signal, onStep: (step) => setPhase(step) });
       const added = withVoice({ ...scene, layers: [] }, v);
       built = { base: added.scene, clipId: added.id };
       push({ role: 'ai', text: `Made a ${Math.round(v.duration)} second voice-over from the script (${v.words.length} words, each timed). Building the scene on it now.` });

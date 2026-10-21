@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { CaptionsLayer, CodeLayer, CursorLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
 import { applySteps, cutOut } from '../lib/tour';
 import { installVoice, speak, voiceStatus, withVoice } from '../lib/voice';
+import { preferredVoice, rememberVoice } from '../lib/addons';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 import { splitImageLayer, splitPicture, splitStatus, type SplitStatus } from '../lib/split';
 
@@ -335,7 +336,12 @@ export function StepsSection(props: { scene: Scene; onCommit: (scene: Scene) => 
 /** Voice-over from a script: a free voice on this computer (through the AI Dev Kit) speaks it, every word timed. */
 export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scene) => void }) {
   const [script, setScript] = useState('');
-  const [voice, setVoice] = useState('en_US-lessac-medium');
+  const [voice, setVoiceState] = useState(() => preferredVoice() ?? 'en_US-lessac-medium');
+  const setVoice = (v: string) => { setVoiceState(v); rememberVoice(v); };
+  // The person's Voicebox voices, when Voicebox is open (an add-on).
+  const [own, setOwn] = useState<Array<{ id: string; name: string }>>([]);
+  useEffect(() => { voiceStatus().then((st) => setOwn(st?.voicebox?.connected ? st.voicebox.profiles : [])).catch(() => setOwn([])); }, []);
+  const isOwn = voice.startsWith('voicebox:');
   const [pace, setPace] = useState(1.12);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -347,7 +353,8 @@ export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scen
       const st = await voiceStatus();
       if (!st) throw new Error('Start the AI Dev Kit on this computer (an up-to-date one) first.');
       if (!st.transcription) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
-      if (!st.program || !st.voices[voice]?.installed) await installVoice(voice, (s) => setNote(`Installing the voice: ${s}`));
+      if (isOwn && !st.voicebox?.connected) throw new Error('Open Voicebox first (see Add-ons in the top bar).');
+      if (!isOwn && (!st.program || !st.voices[voice]?.installed)) await installVoice(voice, (s) => setNote(`Installing the voice: ${s}`));
       const v = await speak(lines, { voice, pace, onStep: (s) => setNote(s) });
       props.onCommit(withVoice(props.scene, v).scene);
       setNote(`Added a ${v.duration.toFixed(1)} s voice-over with ${v.words.length} timed words. Select it on the timeline to make a scene from it.`);
@@ -360,10 +367,16 @@ export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scen
   return (
     <Section title="Voice-over from a script">
       <TextField label="Script (one line per sentence or beat)" value={script} wide multiline placeholder="Meet Jotter, the fastest way to save an idea." onCommit={setScript} />
-      <SelectField label="Voice" value={voice} options={[{ value: 'en_US-lessac-medium', label: 'Clear (American English)' }, { value: 'en_US-ryan-medium', label: 'Warm (American English)' }, { value: 'en_GB-alba-medium', label: 'Bright (British English)' }]} onChange={setVoice} />
-      <NumberField label="Pace (higher is slower)" value={pace} step={0.02} min={0.7} max={1.6} onCommit={(v) => v && setPace(v)} />
+      <SelectField label="Voice" value={voice} options={[
+        { value: 'en_US-lessac-medium', label: 'Clear (American English)' }, { value: 'en_US-ryan-medium', label: 'Warm (American English)' }, { value: 'en_GB-alba-medium', label: 'Bright (British English)' },
+        ...own.map((p) => ({ value: `voicebox:${p.id}`, label: `Voicebox: ${p.name}` })),
+        ...(isOwn && !own.some((p) => `voicebox:${p.id}` === voice) ? [{ value: voice, label: 'Voicebox (open it to use this voice)' }] : []),
+      ]} onChange={setVoice} />
+      {!isOwn && <NumberField label="Pace (higher is slower)" value={pace} step={0.02} min={0.7} max={1.6} onCommit={(v) => v && setPace(v)} />}
       <div className="insp-start"><button type="button" className="btn small" disabled={busy || !script.trim()} onClick={make}>{busy ? 'Speaking…' : 'Make the voice-over'}</button></div>
-      <p className="field-hint wide">No microphone needed: a free voice runs on your computer through the AI Dev Kit (downloaded once, about 60 MB), and every word is timed, so scenes and captions follow it exactly. Changing one line remakes only that line.</p>
+      <p className="field-hint wide">{isOwn
+        ? 'Speaks each line in your Voicebox voice (Voicebox must be open; the first line can take a few minutes while it loads), then times every word. Only use a voice you have the right to use.'
+        : 'No microphone needed: a free voice runs on your computer through the AI Dev Kit (downloaded once, about 60 MB), and every word is timed, so scenes and captions follow it exactly. Changing one line remakes only that line. Your own voice: connect Voicebox under Add-ons.'}</p>
       {note && <p className="field-hint wide" role="status">{note}</p>}
     </Section>
   );

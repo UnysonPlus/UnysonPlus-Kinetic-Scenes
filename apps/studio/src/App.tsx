@@ -5,6 +5,7 @@ import type { HeightMode, Layer, Scene } from '@unysonplus/scene-player/types';
 import demo from './scenes/demo.json';
 import { previewHtml } from './lib/documents';
 import { ExportDialog } from './components/ExportDialog';
+import { AddonsDialog } from './components/AddonsDialog';
 import { AiAssist, type ChatMessage } from './components/AiAssist';
 import { CheckPanel } from './components/CheckPanel';
 import { FullscreenPlayer } from './components/FullscreenPlayer';
@@ -160,6 +161,7 @@ export function App() {
   const [ready, setReady] = useState(false);
   const [scale, setScale] = useState(1);
   const [exporting, setExporting] = useState(false);
+  const [addonsOpen, setAddonsOpen] = useState(false);
   const [alignTo, setAlignTo] = useState<AlignTo>('selection');
   /** The group being edited (double-click to enter, Escape to leave); null = the whole scene. */
   const [scope, setScope] = useState<string | null>(null);
@@ -690,6 +692,7 @@ export function App() {
           <button type="button" className="btn" onClick={startNew} title="Start an empty scene (same screen sizes and fonts). Undo brings back the current one."><NewIcon /> New</button>
           <button type="button" className="btn" onClick={() => openRef.current?.click()} title="Open a saved .scene.json file"><OpenIcon /> Open</button>
           <button type="button" className="btn" onClick={saveProject} title="Save the project as a .scene.json file (Ctrl+S)"><SaveIcon /> Save</button>
+          <button type="button" className="btn" onClick={() => setAddonsOpen(true)} title="Extra tools the AI Dev Kit can use on this computer: Voicebox and more">Add-ons</button>
           <button type="button" className="btn primary" onClick={() => setExporting(true)}><DownloadIcon /> Export</button>
           <input ref={openRef} type="file" accept=".json,application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) openProject(f); e.target.value = ''; }} />
           <input ref={audioRef} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" hidden onChange={(e) => {
@@ -1020,6 +1023,7 @@ export function App() {
       </main>
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
+      <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
       {notice && <div className="toast" role="status">{notice}</div>}
       {fullscreen && <FullscreenPlayer scene={scene} startAt={0} onClose={() => setFullscreen(false)} />}
     </div>
