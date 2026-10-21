@@ -15,7 +15,7 @@ const SCROLL_SAMPLE = 'data:image/svg+xml,' + encodeURIComponent(
 function sampleScene(p: PresetMeta): Scene {
   const textual = p.appliesTo.includes('text');
   const word = p.id === 'text-scramble' || p.id === 'text-typewriter' ? 'Motion' : p.id === 'text-count' ? '$1,280'
-    : p.id === 'select-box' ? 'The goal' : p.id === 'text-swap' ? 'Before' : 'Aa';
+    : p.id === 'select-box' ? 'The goal' : p.id === 'text-swap' ? 'Before' : p.id === 'text-carry' ? 'Fast then slow' : 'Aa';
   const layer: Layer = textual
     ? { id: 's', type: 'text', text: word, style: { fontSize: word === 'Aa' ? 30 : 17, fontWeight: 800, color: '#f4f6f8' }, box: { x: 50, y: 52 }, clips: [] }
     : p.category === '3d'
@@ -24,6 +24,10 @@ function sampleScene(p: PresetMeta): Scene {
       ? { id: 's', type: 'shape', shape: 'rect', fill: 'transparent', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [] }
       : p.id === 'scroll'
         ? { id: 's', type: 'image', src: SCROLL_SAMPLE, radius: 2, box: { x: 50, y: 50, w: 34, h: 76 }, clips: [] }
+      : p.id === 'march' || p.id === 'dash-solid'
+        ? { id: 's', type: 'shape', shape: 'rect', fill: 'transparent', stroke: '#2ad38b', strokeWidth: 0.6, dash: 3, radius: 3, box: { x: 50, y: 50, w: 60, h: 50 }, clips: [] }
+      : p.id === 'progress'
+        ? { id: 's', type: 'shape', shape: 'rect', fill: '#26313d', radius: 3, box: { x: 50, y: 50, w: 70, h: 12 }, clips: [] }
       : p.id === 'gradient-flow'
         ? { id: 's', type: 'shape', shape: 'rect', fill: 'linear-gradient(90deg, #2ad38b, #3b82f6, #a855f7, #2ad38b)', radius: 3, box: { x: 50, y: 50, w: 70, h: 60 }, clips: [] }
         : { id: 's', type: 'shape', shape: 'rect', fill: '#2ad38b', radius: 3, box: { x: 50, y: 50, w: 26, ratio: 1 }, clips: [] };

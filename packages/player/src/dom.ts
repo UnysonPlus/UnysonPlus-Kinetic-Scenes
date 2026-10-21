@@ -111,8 +111,25 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
 
   if (layer.type === 'shape') {
     if (layer.fill) inner.style.background = layer.fill;
-    if (layer.stroke) inner.style.border = `${layer.strokeWidth ?? 0.2}cqw solid ${layer.stroke}`;
     inner.style.borderRadius = layer.shape === 'ellipse' ? '50%' : `${layer.radius ?? 0}cqw`;
+    if (layer.stroke && typeof layer.dash === 'number' && layer.dash > 0) {
+      // A dashed outline is drawn as SVG (a CSS dashed border can't set its dash length or move it).
+      const sw = layer.strokeWidth ?? 0.2;
+      const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'upw-dash');
+      Object.assign(svg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none' });
+      const r = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('width', '100%');
+      r.setAttribute('height', '100%');
+      Object.assign(r.style, {
+        fill: 'none', stroke: layer.stroke, strokeWidth: `${sw}cqw`,
+        strokeDasharray: `${layer.dash}cqw ${layer.dashGap ?? layer.dash * 0.8}cqw`,
+        rx: layer.shape === 'ellipse' ? '50%' : `${layer.radius ?? 0}cqw`, ry: layer.shape === 'ellipse' ? '50%' : `${layer.radius ?? 0}cqw`,
+      });
+      svg.appendChild(r);
+      inner.style.position = 'relative';
+      inner.appendChild(svg);
+    } else if (layer.stroke) inner.style.border = `${layer.strokeWidth ?? 0.2}cqw solid ${layer.stroke}`;
     inner.setAttribute('aria-hidden', 'true');
   } else if (layer.type === 'model') {
     inner.classList.add('upw-3d');

@@ -53,6 +53,20 @@
     { id: 'sr', preset: 'text-rise', start: 0.1, duration: 0.6 },
     { id: 'sb', preset: 'select-box', start: 0.85, duration: 0.6, params: { word: 2, words: 2, color: '#f59e0b' } },
   ] });
+  // A dashed outline: marching, then made solid; a typed line with a caret; a clock counting; a whip with a streak.
+  layers.push({ id: 'dash', type: 'shape', shape: 'rect', fill: 'transparent', stroke: '#4c9', strokeWidth: 0.2, dash: 1, radius: 1, box: { x: 15, y: 70, w: 10, h: 6 }, clips: [
+    { id: 'dm', preset: 'march', start: 0.2, duration: 1.5 }, { id: 'ds', preset: 'dash-solid', start: 1.8, duration: 0.5 },
+  ] });
+  layers.push({ id: 'typ', type: 'text', text: 'make a hero', style: { fontSize: 2 }, box: { x: 50, y: 70, anchor: 'left' }, clips: [
+    { id: 'ty', preset: 'text-typewriter', start: 0.3, duration: 1, params: { caret: true } },
+  ] });
+  layers.push({ id: 'clk', type: 'text', text: '0:45', style: { fontSize: 2 }, box: { x: 85, y: 70 }, clips: [
+    { id: 'ck', preset: 'text-count', start: 0.2, duration: 1.2 },
+  ] });
+  layers.push({ id: 'wo', type: 'group', start: 0, clips: [{ id: 'wo1', preset: 'tr-whip', start: 2.1, duration: 0.5, params: { direction: 'out', streak: true } }], layers: [
+    { id: 'wo2', type: 'text', text: 'Leaving', style: { fontSize: 2 }, box: { x: 30, y: 60 }, clips: [] } ] });
+  layers.push({ id: 'wi', type: 'group', start: 0, clips: [{ id: 'wi1', preset: 'tr-whip', start: 2.1, duration: 0.5, params: { direction: 'in', streak: true } }], layers: [
+    { id: 'wi2', type: 'text', text: 'Arriving', style: { fontSize: 2 }, box: { x: 30, y: 64 }, clips: [] } ] });
   // A layer pinned to the stage (placed in the stage-wide pin space, outside the camera).
   layers.push({ id: 'pin', type: 'text', text: 'Pinned', pin: 'stage', style: { fontSize: 2 }, box: { x: 100, y: 100, anchor: 'bottom-right' }, clips: [{ id: 'pf', preset: 'fade', start: 0.35, duration: 0.6 }] });
   layers.push({ id: 'g', type: 'group', start: 1, clips: [{ id: 'gf', preset: 'slide', start: 0.2, duration: 0.6 }], layers: [
@@ -68,7 +82,7 @@
     const c = getComputedStyle(el);
     // "none" and the identity matrix draw the same; GSAP leaves the second behind once it has touched an element.
     const tf = c.transform === 'matrix(1, 0, 0, 1, 0, 0)' ? 'none' : c.transform;
-    return [tf, c.opacity, c.filter, c.clipPath, c.visibility, c.letterSpacing, c.color, c.backgroundColor, c.objectPosition, c.backgroundPosition, el.children.length ? '' : el.textContent].join('|');
+    return [tf, c.opacity, c.filter, c.clipPath, c.visibility, c.letterSpacing, c.color, c.backgroundColor, c.objectPosition, c.backgroundPosition, c.strokeDashoffset, c.strokeDasharray, c.textShadow, c.translate === '0px' ? 'none' : c.translate, el.classList && el.classList.contains('upw-progress') ? c.width : '', el.children.length ? '' : el.textContent].join('|');
   }).join('\n');
 
   // A fixed pseudo-random order, so a failure is reproducible.

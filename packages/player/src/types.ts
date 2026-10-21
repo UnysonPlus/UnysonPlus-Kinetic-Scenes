@@ -298,6 +298,10 @@ export interface ShapeLayer extends LayerBase {
   strokeWidth?: number;
   /** Corner radius in stage units (rect only). */
   radius?: number;
+  /** A dashed outline: the length of each dash, in stage units (needs a stroke). */
+  dash?: number;
+  /** The gap between dashes, in stage units. Defaults to 0.8 times the dash. */
+  dashGap?: number;
 }
 
 export interface ImageLayer extends LayerBase {

@@ -97,10 +97,10 @@ export const PRESET_CATALOG: PresetMeta[] = [
   },
   {
     id: 'text-typewriter', label: 'Typewriter', category: 'text', appliesTo: ['text'],
-    description: 'Letters appear one at a time, as if being typed.',
+    description: 'Letters appear one at a time, as if being typed. Caret adds a typing cursor that blinks once the line is done (a prompt box, a search field).',
     defaultEase: 'none', defaultDuration: 1.2,
-    defaults: { direction: 'in' },
-    fields: [DIRECTION],
+    defaults: { direction: 'in', caret: false },
+    fields: [DIRECTION, { key: 'caret', label: 'Caret', type: 'boolean' }],
   },
   {
     id: 'text-blur', label: 'Blur in', category: 'text', appliesTo: ['text'],
@@ -154,10 +154,10 @@ export const PRESET_CATALOG: PresetMeta[] = [
   },
   {
     id: 'slide', label: 'Slide', category: 'reveal', appliesTo: ALL,
-    description: 'Slides in from a side (or out to one) while fading.',
+    description: 'Slides in from a side (or out to one) while fading. Motion blur smears it along the move while it is fast, so a quick move reads as speed.',
     defaultEase: 'softLand', defaultDuration: 0.6,
-    defaults: { direction: 'in', from: 'bottom', distance: 60 },
-    fields: [DIRECTION, SIDE, { key: 'distance', label: 'Distance', type: 'number', min: 0, max: 400, step: 5, unit: '%' }],
+    defaults: { direction: 'in', from: 'bottom', distance: 60, motionBlur: 0 },
+    fields: [DIRECTION, SIDE, { key: 'distance', label: 'Distance', type: 'number', min: 0, max: 400, step: 5, unit: '%' }, { key: 'motionBlur', label: 'Motion blur', type: 'number', min: 0, max: 3, step: 0.1 }],
   },
   {
     id: 'grow', label: 'Grow', category: 'reveal', appliesTo: ALL,
@@ -227,7 +227,7 @@ export const PRESET_CATALOG: PresetMeta[] = [
   // ---- Second set ----
   {
     id: 'text-count', label: 'Count up', category: 'text', appliesTo: ['text'],
-    description: 'The number in the text counts up to its value, keeping any prefix, separators and suffix ("$12,500+").',
+    description: 'The number in the text counts up to its value, keeping any prefix, separators and suffix ("$12,500+"). A clock ("0:45") counts in minutes and seconds.',
     defaultEase: 'expo.out', defaultDuration: 1.6,
     defaults: { from: 0 },
     fields: [{ key: 'from', label: 'Count from', type: 'number', step: 1 }],
@@ -244,6 +244,72 @@ export const PRESET_CATALOG: PresetMeta[] = [
         { value: 'fade', label: 'Fade' }, { value: 'blur', label: 'Blur' },
       ] },
     ],
+  },
+  {
+    id: 'text-carry', label: 'Carry in', category: 'text', appliesTo: ['text'],
+    description: 'The first word slides in big and fast and each following word travels less, so the line arrives with momentum instead of an even stagger.',
+    defaultEase: 'expo.out', defaultDuration: 0.9,
+    defaults: { from: 'right', distance: 18, falloff: 0.35, stagger: 0.07 },
+    fields: [
+      { key: 'from', label: 'From', type: 'select', options: [{ value: 'right', label: 'Right' }, { value: 'left', label: 'Left' }, { value: 'bottom', label: 'Below' }] },
+      { key: 'distance', label: 'First word travels', type: 'number', min: 0, max: 100, step: 0.5, unit: 'su' },
+      { key: 'falloff', label: 'Each next word', type: 'number', min: 0.05, max: 1, step: 0.05, unit: '×' },
+      STAGGER,
+    ],
+  },
+  {
+    id: 'stack-in', label: 'Stack', category: 'reveal', appliesTo: ALL,
+    description: 'Drops in from just above and settles, like a card landing on a pile. Stagger several to build a stacking list.',
+    defaultEase: 'back.out(1.4)', defaultDuration: 0.55,
+    defaults: { direction: 'in', lift: 35 },
+    fields: [DIRECTION, { key: 'lift', label: 'Drop from', type: 'number', min: 0, max: 200, step: 5, unit: '%' }],
+  },
+  {
+    id: 'glow', label: 'Glow', category: 'emphasis', appliesTo: ALL,
+    description: 'A neon glow lights up around the letters (or the outline) and stays on. Flicker makes it catch like a neon tube.',
+    defaultEase: 'power2.out', defaultDuration: 0.6,
+    defaults: { direction: 'in', color: '#2ad38b', size: 1.2, strength: 1, flicker: false },
+    fields: [DIRECTION, { key: 'color', label: 'Colour', type: 'color' }, { key: 'size', label: 'Size', type: 'number', min: 0.1, max: 6, step: 0.1, unit: 'su' }, { key: 'strength', label: 'Strength', type: 'number', min: 0, max: 2, step: 0.05 }, { key: 'flicker', label: 'Flicker', type: 'boolean' }],
+  },
+  {
+    id: 'burst', label: 'Burst', category: 'emphasis', appliesTo: ALL,
+    description: 'A one-off burst of sparks, shards, dots or rings from the layer on a hit. Land it with a sound and the word it punctuates.',
+    defaultEase: 'none', defaultDuration: 0.7,
+    defaults: { kind: 'sparks', count: 14, reach: 12, color: '#ffd166', x: 50, y: 50 },
+    fields: [
+      { key: 'kind', label: 'Kind', type: 'select', options: [{ value: 'sparks', label: 'Sparks' }, { value: 'shards', label: 'Shards' }, { value: 'dots', label: 'Dots' }, { value: 'rings', label: 'Rings' }] },
+      { key: 'count', label: 'How many', type: 'number', min: 1, max: 60, step: 1 },
+      { key: 'reach', label: 'Reach', type: 'number', min: 1, max: 60, step: 0.5, unit: 'su' },
+      { key: 'color', label: 'Colour', type: 'color' },
+      { key: 'x', label: 'From X', type: 'number', min: -50, max: 150, step: 1, unit: '%' },
+      { key: 'y', label: 'From Y', type: 'number', min: -50, max: 150, step: 1, unit: '%' },
+    ],
+  },
+  {
+    id: 'progress', label: 'Progress bar', category: 'motion', appliesTo: ['shape'],
+    description: 'A bar fills the shape from one value to another over the clip: the shape is the track. Use the None ease for a steady load.',
+    defaultEase: 'power1.inOut', defaultDuration: 2,
+    defaults: { from: 0, to: 100, color: '#2ad38b', axis: 'x' },
+    fields: [
+      { key: 'from', label: 'From', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
+      { key: 'to', label: 'To', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
+      { key: 'color', label: 'Bar colour', type: 'color' },
+      { key: 'axis', label: 'Fills', type: 'select', options: [{ value: 'x', label: 'Across' }, { value: 'y', label: 'Upwards' }] },
+    ],
+  },
+  {
+    id: 'march', label: 'Marching outline', category: 'ambient', appliesTo: ['shape'],
+    description: 'The dashes of a dashed outline travel round it while something is working. Give the shape an outline and a dash length.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { speed: 2 },
+    fields: [{ key: 'speed', label: 'Speed', type: 'number', min: 0.1, max: 20, step: 0.1, unit: 'su/s' }],
+  },
+  {
+    id: 'dash-solid', label: 'Make solid', category: 'emphasis', appliesTo: ['shape'],
+    description: 'A dashed outline closes up into a solid one, for something becoming ready.',
+    defaultEase: 'power2.inOut', defaultDuration: 0.5,
+    defaults: { direction: 'in' },
+    fields: [DIRECTION],
   },
   // ---- Scene transitions (for groups: an "out" on the scene leaving, an "in" on the next) ----
   {
@@ -269,10 +335,10 @@ export const PRESET_CATALOG: PresetMeta[] = [
   },
   {
     id: 'tr-whip', label: 'Whip pan', category: 'transition', appliesTo: ALL,
-    description: 'A fast slide with blur, as if the camera swung to the next scene.',
-    defaultEase: 'softInOut', defaultDuration: 0.45,
-    defaults: { direction: 'in', from: 'right', distance: 100, blur: 1.2 },
-    fields: [DIRECTION, SIDE, { key: 'distance', label: 'Distance', type: 'number', min: 10, max: 150, step: 5, unit: '%' }, { key: 'blur', label: 'Blur', type: 'number', min: 0, max: 4, step: 0.1 }],
+    description: 'One fast camera swing: the scene speeds away with a blur along the move and the next arrives from the same side at the same speed, settling into place. Light streak flares across the screen on the cut to hide the join.',
+    defaultEase: 'none', defaultDuration: 0.5,
+    defaults: { direction: 'in', from: 'right', distance: 100, blur: 1.6, streak: false, color: '#ffffff' },
+    fields: [DIRECTION, SIDE, { key: 'distance', label: 'Distance', type: 'number', min: 10, max: 150, step: 5, unit: '%' }, { key: 'blur', label: 'Blur', type: 'number', min: 0, max: 4, step: 0.1 }, { key: 'streak', label: 'Light streak', type: 'boolean' }, { key: 'color', label: 'Streak colour', type: 'color' }],
   },
   {
     id: 'tr-zoom', label: 'Zoom through', category: 'transition', appliesTo: ALL,
@@ -280,6 +346,13 @@ export const PRESET_CATALOG: PresetMeta[] = [
     defaultEase: 'softInOut', defaultDuration: 0.6,
     defaults: { direction: 'in', scale: 4, blur: 0.8 },
     fields: [DIRECTION, { key: 'scale', label: 'Zoom', type: 'number', min: 1.2, max: 10, step: 0.1, unit: '×' }, { key: 'blur', label: 'Blur', type: 'number', min: 0, max: 4, step: 0.1 }],
+  },
+  {
+    id: 'tr-streak', label: 'Light streak', category: 'transition', appliesTo: ALL,
+    description: 'A horizontal flare of light races across the screen and the scenes swap at its brightest.',
+    defaultEase: 'none', defaultDuration: 0.5,
+    defaults: { direction: 'in', color: '#7cc4ff', from: 'left' },
+    fields: [DIRECTION, { key: 'color', label: 'Colour', type: 'color' }, { key: 'from', label: 'Sweeps from', type: 'select', options: [{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }] }],
   },
   {
     id: 'tr-glitch', label: 'Glitch', category: 'transition', appliesTo: ALL,

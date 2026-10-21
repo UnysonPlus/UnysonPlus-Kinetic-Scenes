@@ -62,6 +62,13 @@ EMPHASIS AND CHANGING WORDS
 - "select-box" frames one word of a text layer (or a few: "word" is the 1-based word number, "words" how many) in a coloured box with corner handles and tints it, like a selected object in a design tool. Use it on the one key word of a short headline ("The [goal]", "[Run] it"), after the headline has arrived; one per headline, and keep one colour per idea across the scene.
 - "text-swap" changes a text layer's words on cue ("to": the new words; "style": roll, slide, fade or blur). Use it for statuses, counters and labels that update ("booting" to "ready in 45 s", "1 / 10" to "2 / 10") instead of a second layer faded over the first. Several on one layer step through a sequence: each starts from what the one before left, so give them separate, non-overlapping times. Keep the new words about as long as the old ones, or give the layer a width.
 
+MORE MOTION
+- "text-carry" (Carry in): the first word arrives from far and each next travels less; a punchy alternative to rise for a short line. "text-typewriter" with "caret": true types with a cursor (a prompt box, a search field: put the text over a rounded shape).
+- "glow" gives text or a shape a neon glow that stays on ("flicker": true for a neon sign catching). One or two glowing things per scene; it is emphasis, not decoration.
+- "burst" (sparks, shards, dots or rings) punctuates ONE hit: a slam landing, a number arriving, a button press. Pair it with an impact sound on the same moment; at most two per 10 s.
+- "slide" takes "motionBlur" (0-3) for fast moves; "tr-whip" is a velocity-matched cut (place the out and the in at the same time, as with every transition) and takes "streak": true to flash a light streak on the cut; "tr-streak" is a cut hidden by a flare of light.
+- Interface pieces: "progress" fills a shape like a loading bar (the shape is the track); "text-count" on text like "0:45" counts as a clock; a shape with "stroke" and "dash" (dash length, stage units) has a dashed outline, "march" moves its dashes while something works and "dash-solid" closes it up when it is ready; "stack-in" drops cards onto a pile (stagger them).
+
 SOUND (built-in sound effects)
 - A clip may carry "sound": { "name": <a sound id below>, "at"?: "start" | "end", "delay"?: s, "volume"?: 0-2, "pitch"?: 0.5-2 }. It plays with the clip and moves with it. "at": "end" lands it on the clip's last frame (a slam, a drop).
 - Add sounds when the request asks for sound, music, a video, an ad or a presentation; otherwise leave them out unless the scene already has some.

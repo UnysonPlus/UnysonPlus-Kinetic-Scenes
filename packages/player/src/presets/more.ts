@@ -7,20 +7,20 @@ import type { PresetContext } from './index';
  */
 
 type Vars = Record<string, unknown>;
-const num = (p: Vars, k: string, d: number) => (typeof p[k] === 'number' && Number.isFinite(p[k]) ? (p[k] as number) : d);
-const pick = <T extends string>(p: Vars, k: string, allowed: readonly T[], d: T): T => (allowed.includes(p[k] as T) ? (p[k] as T) : d);
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const isOut = (p: Vars) => p.direction === 'out';
+export const num = (p: Vars, k: string, d: number) => (typeof p[k] === 'number' && Number.isFinite(p[k]) ? (p[k] as number) : d);
+export const pick = <T extends string>(p: Vars, k: string, allowed: readonly T[], d: T): T => (allowed.includes(p[k] as T) ? (p[k] as T) : d);
+export const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+export const isOut = (p: Vars) => p.direction === 'out';
 
 /** The clip's ease as a function (presets that draw by hand apply it themselves). */
-function easeOf(ctx: PresetContext): (t: number) => number {
+export function easeOf(ctx: PresetContext): (t: number) => number {
   if (typeof ctx.ease === 'function') return ctx.ease;
   const f = ctx.gsap.parseEase(ctx.ease) as ((t: number) => number) | undefined;
   return typeof f === 'function' ? f : (t) => t;
 }
 
 /** Runs render(progress 0..1) across the clip, seek-safe. Renders the start now when this is the layer's first clip. */
-function drive(ctx: PresetContext, render: (p: number) => void, opts: { ease?: boolean; renderFirst?: boolean; always?: boolean } = {}) {
+export function drive(ctx: PresetContext, render: (p: number) => void, opts: { ease?: boolean; renderFirst?: boolean; always?: boolean } = {}) {
   const e = opts.ease === false ? (t: number) => t : easeOf(ctx);
   const state = { p: 0 };
   // `always`: also for a later clip whose own elements would otherwise sit untouched until it first plays.
@@ -29,7 +29,7 @@ function drive(ctx: PresetContext, render: (p: number) => void, opts: { ease?: b
 }
 
 /** A child element this preset owns inside the layer, reused when the timeline is rebuilt. */
-function owned(ctx: PresetContext, cls: string, clipId = ctx.clip.id): HTMLElement {
+export function owned(ctx: PresetContext, cls: string, clipId = ctx.clip.id): HTMLElement {
   const key = `${cls}-${clipId}`;
   let node = ctx.el.querySelector<HTMLElement>(`:scope > [data-upw-own="${key}"]`);
   if (!node) {
@@ -179,6 +179,19 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     if (!chars.length) return;
     const originals = chars.map((c) => c.dataset.ch ?? c.textContent ?? '');
     const joined = originals.join('');
+    // A clock ("0:45", "12:30"): counts in minutes and seconds.
+    const clock = /(\d+):([0-5]\d)/.exec(joined);
+    if (clock) {
+      const slots = Array.from({ length: clock[0].length }, (_, k) => clock.index + k);
+      const target = Number(clock[1]) * 60 + Number(clock[2]);
+      const startValue = num(ctx.params, 'from', 0);
+      drive(ctx, (t) => {
+        const v = Math.max(0, Math.round(t >= 1 ? target : startValue + (target - startValue) * t));
+        const txt = `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}`.padStart(slots.length, ' ').slice(-slots.length);
+        slots.forEach((slot, k) => { chars[slot].textContent = txt[k] === ' ' ? '' : txt[k]; });
+      });
+      return;
+    }
     const m = /\d[\d,.  ']*\d|\d/.exec(joined);
     if (!m) return;
     const span = Array.from({ length: m[0].length }, (_, k) => m.index + k);

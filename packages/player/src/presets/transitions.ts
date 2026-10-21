@@ -1,4 +1,5 @@
 import type { PresetContext } from './index';
+import { directionalBlur, streakOverlay } from './fx';
 
 /**
  * Scene transitions: moves made for a whole group (an act, a slide) handing over to the next. Each has an
@@ -186,24 +187,63 @@ export const TRANSITION_BUILDERS: Record<string, (ctx: PresetContext) => void> =
     });
   },
 
-  /** A whip pan: a fast slide with blur, as if the camera swung to the next scene. */
+  /**
+   * A whip pan, velocity-matched: the old scene accelerates out over the first half and the new one
+   * arrives from the same side at the same speed over the second, settling into place, so the cut in the
+   * middle reads as one fast camera swing. The blur runs along the move and is heaviest at the cut, and
+   * an optional light streak flares across the screen right on it to hide the join.
+   */
   'tr-whip'(ctx) {
     const p = ctx.params;
     const out = isOut(p);
     const from = pick(p, 'from', ['right', 'left', 'bottom', 'top'] as const, 'right');
     const dist = num(p, 'distance', 100);
-    const blur = num(p, 'blur', 1.2);
-    // Out leaves towards where the next scene comes from the other side (the camera swings one way).
+    const blur = num(p, 'blur', 1.6);
     const sign = from === 'right' || from === 'bottom' ? 1 : -1;
     const horiz = from === 'right' || from === 'left';
+    const mb = directionalBlur(ctx);
+    const streak = p.streak === true ? streakOverlay(canvasOf(ctx.el)?.closest<HTMLElement>('.upw-stage') ?? null, `upw-tr-streak-${Math.round(ctx.at * 1000)}`, str(p, 'color', '#ffffff')) : null;
     drive(ctx, (t, raw) => {
-      if ((out && raw <= 0) || (!out && raw >= 1)) { untouched(ctx.el); return; }
-      const k = out ? -sign * t : sign * (1 - t);
-      const speed = Math.sin(Math.PI * clamp01(t)); // fastest mid-move
-      const off = `${(k * dist).toFixed(2)}cqw`;
-      ctx.el.style.translate = horiz ? `${off} 0` : `0 ${(k * dist).toFixed(2)}cqh`;
-      ctx.el.style.filter = raw > 0 && raw < 1 && blur > 0 ? `blur(${(speed * blur).toFixed(2)}cqw)` : '';
-      ctx.el.style.opacity = out && raw >= 1 ? '0' : '';
+      if ((out && raw <= 0) || (!out && raw >= 1)) { untouched(ctx.el); mb?.(0, 0); streak?.(0, 0); return; }
+      // u: 0 to 1 over this scene's half; the move's speed is 2 at the cut and 0 at rest.
+      const u = out ? clamp01(t * 2) : clamp01(t * 2 - 1);
+      const k = out ? -sign * u * u : sign * (1 - u) * (1 - u);
+      const speed = out ? 2 * u : 2 * (1 - u);
+      const shown = out ? t < 0.5 : t >= 0.5;
+      ctx.el.style.translate = horiz ? `${(k * dist).toFixed(2)}cqw 0` : `0 ${(k * dist).toFixed(2)}cqh`;
+      ctx.el.style.opacity = shown ? '' : '0';
+      const b = blur * speed * 0.5 * (dist / 100) * 2;
+      if (mb) mb(horiz ? b : 0, horiz ? 0 : b);
+      else ctx.el.style.filter = b > 0.01 ? `blur(${(b * 0.4).toFixed(2)}cqw)` : '';
+      if (streak) {
+        const near = 1 - Math.abs(t - 0.5) / 0.2;
+        streak(near > 0 ? smooth(clamp01(near)) : 0, (t - 0.5) * 5 * sign);
+      }
+    });
+  },
+
+  /**
+   * Light streak: an anamorphic flare races across the screen and the scenes swap at its brightest. The
+   * flare belongs to the cut (keyed by its time), so the out and in halves of one transition share it.
+   */
+  'tr-streak'(ctx) {
+    const p = ctx.params;
+    const out = isOut(p);
+    const c = str(p, 'color', '#7cc4ff');
+    const sweep = pick(p, 'from', ['left', 'right'] as const, 'left') === 'left' ? 1 : -1;
+    const fl = streakOverlay(canvasOf(ctx.el)?.closest<HTMLElement>('.upw-stage') ?? null, `upw-tr-streak-${Math.round(ctx.at * 1000)}`, c);
+    drive(ctx, (_t, raw) => {
+      if (raw <= 0 || raw >= 1) {
+        fl?.(0, 0);
+        ctx.el.style.filter = '';
+        ctx.el.style.opacity = out && raw >= 1 ? '0' : !out && raw <= 0 ? '0' : '';
+        return;
+      }
+      const v = raw < 0.5 ? smooth(raw / 0.5) : 1 - smooth((raw - 0.5) / 0.5);
+      fl?.(v, (raw * 2 - 1) * sweep * 2);
+      const shown = out ? raw < 0.5 : raw >= 0.5;
+      ctx.el.style.opacity = shown ? '' : '0';
+      ctx.el.style.filter = shown && v > 0.02 ? `brightness(${(1 + v * 0.9).toFixed(2)})` : '';
     });
   },
 
