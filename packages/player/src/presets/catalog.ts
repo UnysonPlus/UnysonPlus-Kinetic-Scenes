@@ -63,7 +63,7 @@ const SIDE: PresetField = {
   ],
 };
 // Presets that animate the layer as a whole also work on a group (its frame).
-const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group'];
+const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram'];
 
 export const PRESET_CATALOG: PresetMeta[] = [
   // ---- Text ----
@@ -310,6 +310,29 @@ export const PRESET_CATALOG: PresetMeta[] = [
     defaultEase: 'power2.inOut', defaultDuration: 0.5,
     defaults: { direction: 'in' },
     fields: [DIRECTION],
+  },
+  {
+    id: 'draw', label: 'Draw', category: 'reveal', appliesTo: ['path', 'flow'],
+    description: 'A line (or flow lines) draws itself from its start to its end; out erases it. Arrowheads ride the tip.',
+    defaultEase: 'power2.inOut', defaultDuration: 1.2,
+    defaults: { direction: 'in' },
+    fields: [DIRECTION],
+  },
+  {
+    id: 'follow-path', label: 'Follow path', category: 'motion', appliesTo: ['text', 'shape', 'image', 'model', 'group', 'diagram'],
+    description: 'Travels along a line layer (or one of the lines of a flow layer), from one point of it to another. Turn to follow makes it face along the line; Trail leaves a fading streak behind it (a comet).',
+    defaultEase: 'power1.inOut', defaultDuration: 1.6,
+    defaults: { path: '', line: 1, from: 0, to: 100, rotate: false, trail: 0, trailColor: '#ffffff', trailWidth: 0.35 },
+    fields: [
+      { key: 'path', label: 'Line layer (id)', type: 'text' },
+      { key: 'line', label: 'Which flow line', type: 'number', min: 1, max: 40, step: 1 },
+      { key: 'from', label: 'From', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
+      { key: 'to', label: 'To', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
+      { key: 'rotate', label: 'Turn to follow', type: 'boolean' },
+      { key: 'trail', label: 'Trail length', type: 'number', min: 0, max: 1, step: 0.05 },
+      { key: 'trailColor', label: 'Trail colour', type: 'color' },
+      { key: 'trailWidth', label: 'Trail width', type: 'number', min: 0.05, max: 3, step: 0.05, unit: 'su' },
+    ],
   },
   // ---- Scene transitions (for groups: an "out" on the scene leaving, an "in" on the next) ----
   {

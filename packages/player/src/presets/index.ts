@@ -8,6 +8,7 @@ import { MORE_BUILDERS } from './more';
 import { TRANSITION_BUILDERS } from './transitions';
 import { FX_BUILDERS, directionalBlur, speedOf, typewriterCaret } from './fx';
 import { easeOf, drive } from './more';
+import { PATH_BUILDERS } from './paths';
 
 /**
  * Preset animation code. Each builder adds its tweens to the scene timeline at the clip's start.
@@ -49,6 +50,13 @@ export interface PresetContext {
   allowCode: boolean;
   /** 3D layers: the state 3D presets animate (rotations in degrees, scale, camera orbit, tilt and dolly). */
   model?: State3D;
+  /**
+   * Runs a function after every update of the whole scene (and after a resize), once every preset has
+   * drawn its frame: for presets that place something by where other layers are (Follow path).
+   */
+  late: (fn: () => void) => void;
+  /** The current time on this clip's timeline (a group's own clock inside a group). */
+  now: () => number;
 }
 
 export interface PresetDefinition extends PresetMeta {
@@ -308,8 +316,13 @@ const BUILDERS: Record<string, (ctx: PresetContext) => void> = {
       const keyed = frames.filter((f) => typeof f[k] === 'number');
       if (!keyed.length) continue;
       const v0 = keyed[0][k] as number;
-      // Hold the first value from the clip's start (also sets the starting state for scrubbing).
-      ctx.tl.fromTo(ctx.el, prop(k, v0), { ...prop(k, v0), duration: Math.max(0.001, keyed[0].t as number), ease: 'none', immediateRender: ctx.first }, ctx.at);
+      // Hold the first value from the clip's start (also sets the starting state for scrubbing). A key at
+      // 0 needs no hold: the first move starts from it, and a hold overlapping that move would make the
+      // frame depend on which of the two rendered last.
+      const t0 = keyed[0].t as number;
+      if (t0 > 1e-6) ctx.tl.fromTo(ctx.el, prop(k, v0), { ...prop(k, v0), duration: t0, ease: 'none', immediateRender: ctx.first }, ctx.at);
+      else if (ctx.first && keyed.length > 1) ctx.gsap.set(ctx.el, prop(k, v0));
+      else if (keyed.length === 1) ctx.tl.fromTo(ctx.el, prop(k, v0), { ...prop(k, v0), duration: 0.001, ease: 'none', immediateRender: ctx.first }, ctx.at);
       for (let i = 1; i < keyed.length; i++) {
         const a = keyed[i - 1];
         const b = keyed[i];
@@ -377,7 +390,7 @@ const BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   },
 };
 
-const ALL_BUILDERS: Record<string, (ctx: PresetContext) => void> = { ...BUILDERS, ...MORE_BUILDERS, ...TRANSITION_BUILDERS, ...FX_BUILDERS };
+const ALL_BUILDERS: Record<string, (ctx: PresetContext) => void> = { ...BUILDERS, ...MORE_BUILDERS, ...TRANSITION_BUILDERS, ...FX_BUILDERS, ...PATH_BUILDERS };
 
 export const presets: Record<string, PresetDefinition> = Object.fromEntries(
   PRESET_CATALOG.map((meta) => {

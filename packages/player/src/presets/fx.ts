@@ -261,7 +261,7 @@ export function typewriterCaret(ctx: PresetContext, chars: HTMLElement[]) {
     position: 'absolute', width: '0.07em', height: '1.05em', background: 'currentColor', pointerEvents: 'none', opacity: '0',
   });
   drive(ctx, (raw) => {
-    if (raw <= 0 || raw >= 1) { caret.style.opacity = '0'; return; }
+    if (raw <= 0 || raw >= 1) { caret.style.opacity = '0'; caret.style.left = ''; caret.style.top = ''; return; }
     const tt = raw * ctx.duration;
     const typed = Math.floor(tt / each) + 1;
     const shown = out ? Math.max(0, n - typed) : Math.min(n, typed);

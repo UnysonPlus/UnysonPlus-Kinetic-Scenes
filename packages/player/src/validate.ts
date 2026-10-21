@@ -1,5 +1,5 @@
 import { SAFE_HREF, SCENE_FORMAT, SCENE_VERSION } from './types';
-import type { Anchor, Breakpoint, Clip, HeightMode, Layer, Scene } from './types';
+import type { Anchor, Box, Breakpoint, Clip, HeightMode, Layer, Scene } from './types';
 import { PRESET_IDS } from './presets/catalog';
 import { SFX_IDS, parseSfxSrc } from './sfx';
 import { CAMERA_LIMITS, CAMERA_PROPS } from './camera';
@@ -26,6 +26,8 @@ const TRIGGERS = ['load', 'view', 'manual', 'scroll'];
 export const KEYFRAME_PROPS = ['x', 'y', 'scale', 'rotate', 'opacity', 'blur'] as const;
 const EASE_RE = /^[a-zA-Z0-9.]+(\([0-9., -]*\))?$/;
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+/** SVG path data: commands and numbers only. */
+const PATH_RE = /^[MmLlHhVvCcSsQqTtAaZz0-9eE.,\s+-]*$/;
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -198,6 +200,7 @@ export function validateScene(input: unknown): ValidationResult {
   const bpIds = new Set((scene.stage?.breakpoints ?? []).map((b) => b?.id));
   const layerIds = new Set<string>();
   const clipIds = new Set<string>();
+  const flowRefs: Array<{ p: string; from: string; to: string }> = [];
   const checkLayers = (list: unknown, base: string, depth: number) => {
     if (!Array.isArray(list)) return fail(base, 'must be a list');
     if (depth > 8) return fail(base, 'groups are nested too deeply (8 levels at most)');
@@ -235,16 +238,64 @@ export function validateScene(input: unknown): ValidationResult {
       } else if (layer.type === 'group') {
         if (layer.duration !== undefined && (!isNum(layer.duration) || layer.duration <= 0)) fail(`${lp}.duration`, 'must be more than 0 seconds');
         checkLayers(layer.layers, `${lp}.layers`, depth + 1);
+      } else if (layer.type === 'path') {
+        if (typeof layer.d !== 'string' || !layer.d.trim() || layer.d.length > 20000 || !PATH_RE.test(layer.d)) fail(`${lp}.d`, 'must be SVG path data (M, L, C, Q, A, Z… with numbers)');
+        if (layer.strokeWidth !== undefined && (!isNum(layer.strokeWidth) || layer.strokeWidth < 0 || layer.strokeWidth > 20)) fail(`${lp}.strokeWidth`, 'must be 0 to 20 stage units');
+        if (layer.arrow !== undefined && !['end', 'start', 'both'].includes(layer.arrow)) fail(`${lp}.arrow`, 'must be end, start or both');
+        if (layer.glow !== undefined && (!isNum(layer.glow) || layer.glow < 0 || layer.glow > 10)) fail(`${lp}.glow`, 'must be 0 to 10');
+        if (layer.dash !== undefined && (!isNum(layer.dash) || layer.dash < 0 || layer.dash > 50)) fail(`${lp}.dash`, 'must be 0 to 50 stage units');
+      } else if (layer.type === 'flow') {
+        if (typeof layer.from !== 'string') fail(`${lp}.from`, 'must be the id of the layer the lines leave from');
+        if (typeof layer.to !== 'string') fail(`${lp}.to`, 'must be the id of the layer the lines arrive at');
+        if (!layer.from || !layer.to) warnings.push(`${lp}: pick the two layers the flow lines join.`);
+        flowRefs.push({ p: lp, from: layer.from, to: layer.to });
+        if (layer.count !== undefined && (!isNum(layer.count) || layer.count < 1 || layer.count > 40)) fail(`${lp}.count`, 'must be 1 to 40');
+        if (layer.pinch !== undefined && (!isNum(layer.pinch) || layer.pinch < 0 || layer.pinch > 1)) fail(`${lp}.pinch`, 'must be 0 to 1');
+        if (layer.wave !== undefined && (!isNum(layer.wave) || layer.wave < 0 || layer.wave > 1)) fail(`${lp}.wave`, 'must be 0 to 1');
+        if (layer.glow !== undefined && (!isNum(layer.glow) || layer.glow < 0 || layer.glow > 3)) fail(`${lp}.glow`, 'must be 0 to 3');
+        if (layer.pulses !== undefined && (!isNum(layer.pulses) || layer.pulses < 0 || layer.pulses > 6)) fail(`${lp}.pulses`, 'must be 0 to 6');
+        if (layer.colors !== undefined && (!Array.isArray(layer.colors) || layer.colors.length > 8 || layer.colors.some((c) => typeof c !== 'string'))) fail(`${lp}.colors`, 'must be a list of up to 8 colours');
+        for (const k of ['fromSide', 'toSide'] as const) if (layer[k] !== undefined && !['auto', 'left', 'right', 'top', 'bottom'].includes(layer[k] as string)) fail(`${lp}.${k}`, 'must be auto, left, right, top or bottom');
+        if (!layer.box) (layer as { box?: Box }).box = { x: 0, y: 0, w: 100, h: 100, anchor: 'top-left' };
+      } else if (layer.type === 'diagram') {
+        const nodes = layer.nodes as unknown;
+        const ids = new Set<string>();
+        if (!Array.isArray(nodes) || !nodes.length || nodes.length > 200) fail(`${lp}.nodes`, 'must be a list of 1 to 200 nodes');
+        else nodes.forEach((n: unknown, k: number) => {
+          const np = `${lp}.nodes[${k}]`;
+          if (!isObj(n)) return fail(np, 'must be an object');
+          if (typeof n.id !== 'string' || !n.id) fail(`${np}.id`, 'is required');
+          else if (ids.has(n.id)) fail(`${np}.id`, `"${n.id}" is used twice`);
+          else ids.add(n.id);
+          if (!isNum(n.x) || !isNum(n.y)) fail(np, 'needs x and y (% of the box)');
+          if (n.shape !== undefined && !['box', 'pill', 'circle', 'dot', 'value'].includes(n.shape as string)) fail(`${np}.shape`, 'must be box, pill, circle, dot or value');
+          if (n.at !== undefined && (!isNum(n.at) || n.at < 0)) fail(`${np}.at`, 'must be 0 or more seconds');
+          if (n.moves !== undefined && (!Array.isArray(n.moves) || n.moves.some((m: unknown) => !isObj(m) || !isNum(m.t) || !isNum(m.x) || !isNum(m.y)))) fail(`${np}.moves`, 'must be a list of { t, x, y }');
+        });
+        const edges = layer.edges as unknown;
+        if (edges !== undefined) {
+          if (!Array.isArray(edges) || edges.length > 400) fail(`${lp}.edges`, 'must be a list of at most 400 connections');
+          else edges.forEach((e: unknown, k: number) => {
+            const ep = `${lp}.edges[${k}]`;
+            if (!isObj(e)) return fail(ep, 'must be an object');
+            if (!ids.has(e.from as string) || !ids.has(e.to as string)) fail(ep, 'from and to must be node ids');
+            if (e.kind !== undefined && !['straight', 'curve', 'step'].includes(e.kind as string)) fail(`${ep}.kind`, 'must be straight, curve or step');
+          });
+        }
+        if (layer.tag !== undefined) {
+          const t = layer.tag as unknown;
+          if (!isObj(t) || typeof t.label !== 'string' || !Array.isArray(t.stops) || t.stops.some((s: unknown) => !isObj(s) || !ids.has(s.node as string) || !isNum(s.t))) fail(`${lp}.tag`, 'must be { label, stops: [{ node, t }] } with node ids');
+        }
       } else {
-        fail(`${lp}.type`, 'must be text, shape, image, model or group');
+        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow or diagram');
       }
 
-      if (layer.type !== 'group') {
+      if (layer.type !== 'group' && layer.type !== 'flow') {
         if (!isObj(layer.box)) fail(`${lp}.box`, 'is required');
         else {
           if (!isNum(layer.box.x) || !isNum(layer.box.y)) fail(`${lp}.box`, 'needs x and y');
           if (layer.box.anchor !== undefined && !ANCHORS.includes(layer.box.anchor)) fail(`${lp}.box.anchor`, `must be one of ${ANCHORS.join(', ')}`);
-          if (layer.type !== 'text' && !isNum(layer.box.w)) fail(`${lp}.box.w`, 'is required for shapes and images');
+          if (layer.type !== 'text' && !isNum(layer.box.w)) fail(`${lp}.box.w`, 'is required (all layers but text)');
           if (layer.type !== 'text' && !isNum(layer.box.h) && !isNum(layer.box.ratio)) fail(`${lp}.box`, 'needs h or ratio for shapes and images');
         }
       }
@@ -321,6 +372,9 @@ export function validateScene(input: unknown): ValidationResult {
     });
   };
   checkLayers(scene.layers, 'layers', 0);
+  for (const f of flowRefs) {
+    for (const id of [f.from, f.to]) if (typeof id === 'string' && id && !layerIds.has(id)) warnings.push(`${f.p}: no layer has the id "${id}", so the flow lines are not drawn.`);
+  }
 
   return { ok: errors.length === 0, errors, warnings, scene };
 }

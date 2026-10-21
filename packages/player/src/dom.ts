@@ -1,5 +1,6 @@
 import type { Anchor, Box, Layer, LayerLink, LayerOverride, Scene, TextStyle } from './types';
 import { REST_3D, type Runtime3D, type State3D } from './model3d';
+import { buildDiagram, buildFlow, buildPath } from './vector';
 
 /** The elements created for one layer. */
 export interface LayerRefs {
@@ -138,6 +139,16 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
       inner.setAttribute('aria-label', layer.alt);
     } else inner.setAttribute('aria-hidden', 'true');
     refs.model = { state: { ...REST_3D } };
+  } else if (layer.type === 'path') {
+    inner.setAttribute('aria-hidden', 'true');
+    buildPath(doc, inner, layer);
+  } else if (layer.type === 'flow') {
+    inner.setAttribute('aria-hidden', 'true');
+    buildFlow(doc, inner, layer);
+  } else if (layer.type === 'diagram') {
+    // The words are in the transcript.
+    inner.setAttribute('aria-hidden', 'true');
+    buildDiagram(doc, inner, layer);
   } else if (layer.type === 'image') {
     const img = doc.createElement('img');
     img.src = layer.src;
@@ -219,6 +230,12 @@ export function applyLayout(refs: LayerRefs, bpId: string | null) {
     return;
   }
 
+  if (refs.layer.type === 'flow') {
+    Object.assign(os, { left: '0%', top: '0%', width: '100%', height: '100%', transform: 'none' });
+    if (typeof refs.layer.opacity === 'number') os.opacity = String(refs.layer.opacity);
+    return;
+  }
+
   os.left = `${box.x}%`;
   os.top = `${box.y}%`;
   // In the pin space, sizes stay in the frame's units (the pin space is the stage's size, the frame is not).
@@ -277,7 +294,7 @@ export function measureGroup(refs: LayerRefs, bpId: string | null) {
   if (W && H) {
     for (const c of children) {
       const el = c.outer;
-      if (el.dataset.hidden !== undefined || !el.offsetWidth) continue;
+      if (el.dataset.hidden !== undefined || !el.offsetWidth || c.layer.type === 'flow') continue;
       let x: number;
       let y: number;
       if (c.children) {

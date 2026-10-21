@@ -69,7 +69,7 @@ function tickStep(pps: number) {
   return 120;
 }
 
-const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', model: '◆', group: '❏' };
+const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘' };
 
 export function Timeline(props: Props) {
   const { scene, selection, scope } = props;
@@ -318,6 +318,9 @@ export function Timeline(props: Props) {
           <button type="button" className="btn small" onClick={() => props.onAddLayer('shape')}>+ Shape</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('image')}>+ Image</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('model')} title="A 3D object: text, a shape, an SVG logo or a glTF model">+ 3D</button>
+          <button type="button" className="btn small" onClick={() => props.onAddLayer('path')} title="A line or curve that can draw itself, with arrowheads and glow; other layers can travel along it">+ Line</button>
+          <button type="button" className="btn small" onClick={() => props.onAddLayer('diagram')} title="Nodes and connections: a flowchart, an architecture diagram or a branch graph">+ Diagram</button>
+          <button type="button" className="btn small" onClick={() => props.onAddLayer('flow')} title="A bundle of glowing curves joining two layers, which stays attached as they move">+ Flow</button>
           {!scope && <button type="button" className="btn small" onClick={props.onAddAudio} title="A voice-over, music or a sound effect (MP3, WAV, OGG…)">+ Audio</button>}
           {!scope && (
             <>

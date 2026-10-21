@@ -182,6 +182,22 @@ export function addLayer(scene: Scene, type: Exclude<Layer['type'], 'group'>, ex
       material: { color: '#2ad38b', finish: 'glossy' }, pose: { rx: 8, ry: -20 }, alt: '',
       box: { x: 50, y: 50, w: 36, ratio: 1.6 }, clips: [],
     };
+  } else if (type === 'path') {
+    layer = { id, type: 'path', name: 'Line', d: 'M 0 80 C 35 80, 65 20, 100 20', stroke: '#2ad38b', strokeWidth: 0.3, arrow: 'end', box: { x: 50, y: 50, w: 30, h: 20 }, clips: [] };
+  } else if (type === 'diagram') {
+    layer = {
+      id, type: 'diagram', name: 'Diagram', box: { x: 50, y: 50, w: 60, h: 30 },
+      nodes: [
+        { id: 'a', x: 12, y: 50, label: 'Input' }, { id: 'b', x: 50, y: 50, label: 'Process', at: 0.5 },
+        { id: 'c', x: 88, y: 50, label: 'Output', at: 1, color: '#2ad38b' },
+      ],
+      edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }],
+      clips: [],
+    };
+  } else if (type === 'flow') {
+    // Joins the two layers on top, if there are two to join.
+    const others = layersIn(scene, scope).filter((l) => l.type !== 'flow').slice(-2);
+    layer = { id, type: 'flow', name: 'Flow lines', from: others[0]?.id ?? '', to: others[1]?.id ?? others[0]?.id ?? '', count: 7, pulses: 1, clips: [] };
   } else {
     layer = { id, type: 'image', name: 'Image', src: '', alt: '', fit: 'cover', radius: 1, box: { x: 50, y: 50, w: 30, ratio: 1.5 }, clips: [] };
   }

@@ -368,7 +368,123 @@ export interface ModelMaterial {
   original?: boolean;
 }
 
-export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer;
+/**
+ * A line: an SVG path drawn in the layer's box. Its coordinates run from 0 to 100 across and down the box
+ * (percent of the box), so the line stretches with the box while its width stays the same. Draw it on
+ * with the Draw preset; other layers can travel along it (Follow path).
+ */
+export interface PathLayer extends LayerBase {
+  type: 'path';
+  /** SVG path data, e.g. "M 0 50 C 30 0, 70 100, 100 50". */
+  d: string;
+  /** Line colour. Defaults to white. */
+  stroke?: string;
+  /** Stage units. Defaults to 0.3. */
+  strokeWidth?: number;
+  /** Fills the closed shape the path makes. */
+  fill?: string;
+  /** A dashed line: dash length and gap in stage units. */
+  dash?: number;
+  dashGap?: number;
+  /** Arrowheads at the end, the start or both. */
+  arrow?: 'end' | 'start' | 'both';
+  /** A soft glow around the line, in stage units (0 = none). */
+  glow?: number;
+}
+
+/**
+ * Flow lines: a bundle of glowing curves from one layer to another, worked out every frame from where
+ * those two layers are, so they stay attached however either one moves. The layer covers the stage
+ * (its box is ignored); it never takes clicks.
+ */
+export interface FlowLayer extends Omit<LayerBase, 'box'> {
+  type: 'flow';
+  box?: Box;
+  /** The layer the lines leave from, and the one they arrive at (ids). */
+  from: string;
+  to: string;
+  /** Number of lines, 1 to 40. Defaults to 7. */
+  count?: number;
+  /** How far apart the lines are where they leave and arrive, in stage units. Defaults to 8. */
+  spread?: number;
+  /** How tightly they squeeze together in the middle, 0 (not at all) to 1 (into one point). Defaults to 0.75. */
+  pinch?: number;
+  /** How much the curves sway (a wave) between the ends, 0 to 1. Defaults to 0.35. */
+  wave?: number;
+  /** Colours blended along the lines, from the start to the end. */
+  colors?: string[];
+  /** Line width in stage units. Defaults to 0.16. */
+  width?: number;
+  /** Glow strength, 0 to 3. Defaults to 1. */
+  glow?: number;
+  /** Light pulses travelling along each line, per line (0 = none). */
+  pulses?: number;
+  /** Pulse speed: how many times a pulse runs the length of its line per second. Defaults to 0.5. */
+  pulseSpeed?: number;
+  /** Which sides of the two layers the lines leave and arrive at. Defaults to facing each other. */
+  fromSide?: 'auto' | 'left' | 'right' | 'top' | 'bottom';
+  toSide?: 'auto' | 'left' | 'right' | 'top' | 'bottom';
+}
+
+/**
+ * A diagram: nodes and the connections between them, as data. Node positions are percent of the layer's
+ * box. Each node and connection can appear at its own moment (seconds from the layer's start): a node
+ * pops in and its connections draw themselves. A tag can travel from node to node.
+ */
+export interface DiagramLayer extends LayerBase {
+  type: 'diagram';
+  nodes: DiagramNode[];
+  edges?: DiagramEdge[];
+  /** A label that moves between nodes (like a "HEAD" or "You are here" tag). */
+  tag?: { label: string; color?: string; stops: Array<{ node: string; t: number }> };
+  look?: DiagramLook;
+}
+
+export interface DiagramNode {
+  id: string;
+  /** Centre of the node, % of the box. */
+  x: number;
+  y: number;
+  label?: string;
+  /** A second, smaller line under the label. */
+  sub?: string;
+  /** box (rounded rectangle), pill, circle, dot (a small point with its label beside it) or value (a labelled box holding a value: label above, sub inside). */
+  shape?: 'box' | 'pill' | 'circle' | 'dot' | 'value';
+  /** Width in % of the box (box, pill, value). Defaults to a size that fits the label. */
+  w?: number;
+  color?: string;
+  /** Seconds (on the layer's timeline) when the node pops in. Defaults to 0 (there from the start). */
+  at?: number;
+  /** Moves: the node glides to each new position, arriving at time t; its connections bend with it. */
+  moves?: Array<{ t: number; x: number; y: number }>;
+}
+
+export interface DiagramEdge {
+  from: string;
+  to: string;
+  /** straight, curve (a smooth S) or step (right angles). Defaults to curve. */
+  kind?: 'straight' | 'curve' | 'step';
+  label?: string;
+  color?: string;
+  dashed?: boolean;
+  arrow?: boolean;
+  /** When the connection draws itself (seconds); defaults to when both its nodes are there. */
+  at?: number;
+}
+
+export interface DiagramLook {
+  /** Lines and outlines. */
+  color?: string;
+  nodeFill?: string;
+  textColor?: string;
+  /** Label size in stage units. Defaults to 1.4. */
+  fontSize?: number;
+  fontFamily?: string;
+  /** Line width in stage units. Defaults to 0.2. */
+  lineWidth?: number;
+}
+
+export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer;
 
 export interface Clip {
   id: string;

@@ -67,6 +67,19 @@
     { id: 'wo2', type: 'text', text: 'Leaving', style: { fontSize: 2 }, box: { x: 30, y: 60 }, clips: [] } ] });
   layers.push({ id: 'wi', type: 'group', start: 0, clips: [{ id: 'wi1', preset: 'tr-whip', start: 2.1, duration: 0.5, params: { direction: 'in', streak: true } }], layers: [
     { id: 'wi2', type: 'text', text: 'Arriving', style: { fontSize: 2 }, box: { x: 30, y: 64 }, clips: [] } ] });
+  // A line drawn on with a comet riding it; flow lines between two layers (one moving) with an icon riding one;
+  // a diagram whose nodes pop in, move and carry a travelling tag.
+  layers.push({ id: 'ln', type: 'path', d: 'M 0 80 C 25 0, 60 100, 100 20', stroke: '#7cc4ff', strokeWidth: 0.25, arrow: 'end', glow: 0.5, dash: 0.8, box: { x: 20, y: 50, w: 20, h: 12 }, clips: [{ id: 'lnd', preset: 'draw', start: 0.4, duration: 1 }] });
+  layers.push({ id: 'cm', type: 'shape', shape: 'ellipse', fill: '#fff', box: { x: 0, y: 0, w: 1, ratio: 1 }, clips: [{ id: 'cmf', preset: 'follow-path', start: 1.5, duration: 1, params: { path: 'ln', trail: 0.3, rotate: true } }] });
+  layers.push({ id: 'fa', type: 'shape', shape: 'rect', fill: '#234', box: { x: 50, y: 50, w: 6, h: 8 }, clips: [] });
+  layers.push({ id: 'fb', type: 'shape', shape: 'rect', fill: '#234', box: { x: 75, y: 55, w: 6, h: 8 }, clips: [{ id: 'fbk', preset: 'keyframes', start: 0.5, duration: 2, params: { frames: [{ t: 0, y: 0 }, { t: 2, y: -60 }] } }] });
+  layers.push({ id: 'fl', type: 'flow', from: 'fa', to: 'fb', count: 5, pulses: 2, clips: [{ id: 'fld', preset: 'draw', start: 0.3, duration: 0.8 }] });
+  layers.push({ id: 'fi', type: 'shape', shape: 'rect', fill: '#f90', box: { x: 0, y: 0, w: 1, ratio: 1 }, clips: [{ id: 'fif', preset: 'follow-path', start: 1.2, duration: 1.2, params: { path: 'fl', line: 2 } }] });
+  layers.push({ id: 'dg', type: 'diagram', box: { x: 50, y: 30, w: 30, h: 15 }, nodes: [
+    { id: 'n1', x: 10, y: 50, label: 'Input' }, { id: 'n2', x: 50, y: 50, label: 'Store', at: 0.6, moves: [{ t: 2, x: 50, y: 20 }] },
+    { id: 'n3', x: 90, y: 50, shape: 'value', label: 'name', sub: 'John', at: 1.1 }, { id: 'n4', x: 50, y: 90, shape: 'dot', label: 'a1f', at: 1.4 } ],
+    edges: [{ from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3', kind: 'step', label: 'save', dashed: true }, { from: 'n2', to: 'n4', kind: 'straight' }],
+    tag: { label: 'HEAD', stops: [{ node: 'n1', t: 0.5 }, { node: 'n2', t: 1.2 }, { node: 'n3', t: 2.1 }] }, clips: [] });
   // A layer pinned to the stage (placed in the stage-wide pin space, outside the camera).
   layers.push({ id: 'pin', type: 'text', text: 'Pinned', pin: 'stage', style: { fontSize: 2 }, box: { x: 100, y: 100, anchor: 'bottom-right' }, clips: [{ id: 'pf', preset: 'fade', start: 0.35, duration: 0.6 }] });
   layers.push({ id: 'g', type: 'group', start: 1, clips: [{ id: 'gf', preset: 'slide', start: 0.2, duration: 0.6 }], layers: [
@@ -82,7 +95,7 @@
     const c = getComputedStyle(el);
     // "none" and the identity matrix draw the same; GSAP leaves the second behind once it has touched an element.
     const tf = c.transform === 'matrix(1, 0, 0, 1, 0, 0)' ? 'none' : c.transform;
-    return [tf, c.opacity, c.filter, c.clipPath, c.visibility, c.letterSpacing, c.color, c.backgroundColor, c.objectPosition, c.backgroundPosition, c.strokeDashoffset, c.strokeDasharray, c.textShadow, c.translate === '0px' ? 'none' : c.translate, el.classList && el.classList.contains('upw-progress') ? c.width : '', el.children.length ? '' : el.textContent].join('|');
+    return [tf, c.opacity, c.filter, c.clipPath, c.visibility, c.letterSpacing, c.color, c.backgroundColor, c.objectPosition, c.backgroundPosition, c.strokeDashoffset, c.strokeDasharray, c.textShadow, c.translate === '0px' ? 'none' : c.translate, el.classList && el.classList.contains('upw-progress') ? c.width : '', el.getAttribute ? (el.getAttribute('d') || el.getAttribute('points') || '') + (el.style ? el.style.left + el.style.top + (el.style.translate === 'none' ? '' : el.style.translate) : '') : '', el.children.length ? '' : el.textContent].join('|');
   }).join('\n');
 
   // A fixed pseudo-random order, so a failure is reproducible.

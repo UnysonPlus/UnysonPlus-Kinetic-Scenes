@@ -14,6 +14,7 @@ import { soundTrack } from './sfx';
 import { TRANSCRIPT_CLASS, transcriptHtml } from './transcript';
 import { buildCamera, cameraTransform, isRest, CAMERA_REST, type CameraState } from './camera';
 import { defaultEaseFor } from './presets/catalog';
+import { drawDiagram, drawFlow, drawPath } from './vector';
 
 // The measured eases, usable by name in any clip (and in custom code clips).
 NAMED_EASES.forEach((e) => gsap.registerEase(e.id, e.fn));
@@ -188,6 +189,16 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     fitPins();
     const pinned = layers.filter((r) => r.pinned);
     if (pinned.length) layoutTree(pinned, current?.id ?? null);
+    runLate();
+  }
+  /** Drawn after every update, once every preset has drawn: lines, flow lines, diagrams, Follow path. */
+  let lateDraw: Array<() => void> = [];
+  let lateFns: Array<() => void> = [];
+  function runLate() {
+    // Lines and flows first, then whatever is placed by them (Follow path).
+    for (const fn of [...lateDraw, ...lateFns]) {
+      try { fn(); } catch (e) { console.warn('[Unyson+ scene]', e); }
+    }
   }
   let camEl: HTMLElement | null = null;
   let cameraOn = options.camera !== false;
@@ -349,6 +360,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       onUpdate: () => {
         render3d();
         applyCamera();
+        runLate();
         emit('update');
       },
       onRepeat: () => syncAudio(),
@@ -370,6 +382,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     });
     // Make the timeline exactly as long as the scene, even if the last clip ends early.
     t.set({}, {}, scene.duration);
+    lateFns = [];
+    lateDraw = [];
 
     addLayers(t, layers, scene.duration);
     hasCamera = buildCamera(t, scene, cam);
@@ -418,8 +432,15 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
           gsap,
           allowCode: !!options.allowCode,
           model: refs.model?.state,
+          late: (fn) => { lateFns.push(fn); },
+          now: () => t.time(),
         });
       });
+      // Lines, flow lines and diagrams draw from where things are, after every preset has drawn.
+      const inner = refs.inner;
+      if (layer.type === 'path') lateDraw.push(() => drawPath(inner, layer));
+      else if (layer.type === 'flow') lateDraw.push(() => drawFlow(inner, layer, t.time()));
+      else if (layer.type === 'diagram') lateDraw.push(() => drawDiagram(inner, layer, t.time() - (layer.start ?? 0)));
 
       if (layer.type === 'group' && refs.children) {
         const dur = groupDuration(layer);
@@ -453,6 +474,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     layoutTree(layers, current?.id ?? null);
     tl = buildTimeline();
     tl.time(Math.min(time, scene.duration), false);
+    runLate();
     if (play) tl.play();
     syncAudio();
     emit('rebuild');

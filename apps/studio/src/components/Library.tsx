@@ -31,6 +31,8 @@ function sampleScene(p: PresetMeta): Scene {
       : p.id === 'gradient-flow'
         ? { id: 's', type: 'shape', shape: 'rect', fill: 'linear-gradient(90deg, #2ad38b, #3b82f6, #a855f7, #2ad38b)', radius: 3, box: { x: 50, y: 50, w: 70, h: 60 }, clips: [] }
         : { id: 's', type: 'shape', shape: 'rect', fill: '#2ad38b', radius: 3, box: { x: 50, y: 50, w: 26, ratio: 1 }, clips: [] };
+  // Draw and Follow path need a line to show on.
+  const line: Layer = { id: 'ln', type: 'path', d: 'M 0 80 C 35 80, 65 20, 100 20', stroke: '#2ad38b', strokeWidth: 0.9, arrow: p.id === 'draw' ? 'end' : undefined, box: { x: 50, y: 50, w: 70, h: 50 }, clips: [] };
   const d = Math.min(p.defaultDuration, 2.4);
   layer.clips = [{ id: 'c', preset: p.id, start: 0.15, duration: d, params: p.id === 'keyframes' ? { frames: [{ t: 0, scale: 0.8, rotate: -8 }, { t: d, scale: 1.1, rotate: 8 }] }
     : p.id === 'select-box' ? { word: 2 } : p.id === 'text-swap' ? { to: 'After' } : undefined }];
@@ -38,7 +40,7 @@ function sampleScene(p: PresetMeta): Scene {
     format: 'unysonplus-scene', version: 1, duration: d + 0.75,
     stage: { breakpoints: [{ id: 'a', minWidth: 0, aspect: [16, 10] }], heightMode: 'ratio', safeArea: 0 },
     playback: { trigger: 'manual', loop: true, repeatDelay: 0.3 },
-    layers: [layer],
+    layers: p.id === 'draw' ? [{ ...line, clips: layer.clips }] : p.id === 'follow-path' ? [{ ...line, stroke: 'rgba(255,255,255,.18)' }, { id: 's', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 0, y: 0, w: 8, ratio: 1 }, clips: [{ ...layer.clips[0], params: { path: 'ln', trail: 0.4, trailColor: '#2ad38b' } }] }] : [layer],
   };
 }
 
