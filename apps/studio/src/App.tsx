@@ -10,6 +10,7 @@ import { CheckPanel } from './components/CheckPanel';
 import { FullscreenPlayer } from './components/FullscreenPlayer';
 import { kitStatus, type KitStatus } from './lib/ai';
 import { lintScene, type LintIssue } from '@unysonplus/scene-player/lint';
+import type { LayoutIssue } from '@unysonplus/scene-player/layout';
 import { clipEase, framesOf, isKeyframes, setKey, valueAt, writeFrames } from './lib/keyframes';
 import { addMarker } from './lib/markers';
 import { clearShareHash, hasSharedScene, readSharedScene } from './lib/share';
@@ -484,6 +485,9 @@ export function App() {
         case 'upw:state':
           setState({ time: m.time, duration: m.duration, playing: m.playing, breakpoint: m.breakpoint, stageHeight: m.stageHeight });
           break;
+        case 'upw:layout-check':
+          setLayoutCheck({ running: false, issues: Array.isArray(m.issues) ? m.issues : [], done: true });
+          break;
         case 'upw:error':
           setFrameError(m.message ? String(m.message) : null);
           break;
@@ -595,6 +599,18 @@ export function App() {
 
   // ---- Check scene + AI assist ----
   const issues = useMemo(() => lintScene(scene), [scene]);
+  // Check the layout: measured on the stage at the moments each part has landed, on request (it moves the playhead).
+  const [layoutCheck, setLayoutCheck] = useState<{ running: boolean; issues: LayoutIssue[]; done: boolean }>({ running: false, issues: [], done: false });
+  useEffect(() => { setLayoutCheck((c) => (c.done || c.issues.length ? { running: false, issues: [], done: false } : c)); }, [scene]);
+  const checkLayout = useCallback(() => { setLayoutCheck({ running: true, issues: [], done: false }); post({ type: 'check-layout' }); }, [post]);
+  const showLayoutIssue = useCallback((i: LayoutIssue) => {
+    post({ type: 'seek', time: i.t });
+    if (i.layerId) {
+      const path = groupPath(latest.current.scene, i.layerId);
+      setScope(path.length ? path[path.length - 1].id : null);
+      setSelection({ layerId: i.layerId, clipId: null });
+    }
+  }, [post]);
   const problems = issues.filter((i) => i.severity === 'warn').length;
   const recheckKit = useCallback(() => { setKit({ state: 'checking' }); kitStatus().then(setKit); }, []);
   useEffect(recheckKit, [recheckKit]);
@@ -642,10 +658,10 @@ export function App() {
   }, []);
 
   const askAiToFix = useCallback(() => {
-    const list = lintScene(latest.current.scene).map((i) => `- ${i.message}`).join('\n');
+    const list = [...lintScene(latest.current.scene).map((i) => `- ${i.message}`), ...layoutCheck.issues.map((i) => `- At ${i.t} s: ${i.message}`)].join('\n');
     setQueued(`Fix these problems Check scene found, changing as little as possible and keeping everything else as it is:\n${list}`);
     openAssist(true);
-  }, [openAssist]);
+  }, [openAssist, layoutCheck.issues]);
 
   return (
     <div className="app">
@@ -978,7 +994,8 @@ export function App() {
           </div>
           <div className="panel-body" role="tabpanel">
             {tab === 'check' && (
-              <CheckPanel issues={issues} aiReady={kit.state === 'ready'} onFix={fixIssue} onFixAll={fixAll} onShow={showIssue} onAskAi={askAiToFix} />
+              <CheckPanel issues={issues} aiReady={kit.state === 'ready'} onFix={fixIssue} onFixAll={fixAll} onShow={showIssue} onAskAi={askAiToFix}
+                layout={layoutCheck} onCheckLayout={checkLayout} onShowLayout={showLayoutIssue} />
             )}
             {tab === 'inspect' && selection.camera && scene.camera?.keys.some((k) => k.id === selection.camera) ? (
               <CameraInspector scene={scene} keyId={selection.camera} time={state.time} cameraView={cameraView} onCommit={commit} onSeek={seek}

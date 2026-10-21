@@ -27,6 +27,20 @@ function bounceOut(t: number) {
 /* ------------------------------------------------------------------ colour grades */
 
 interface Grade { grayscale?: number; sepia?: number; saturate?: number; contrast?: number; brightness?: number; hue?: number; blur?: number }
+/**
+ * Where a mark beside or through words goes: on a text layer, the words' own box (shrunk to the words, keeping the
+ * layer's alignment), so a tick sits next to a short centred line instead of at the far edge of a wide text box.
+ */
+function wordsHost(ctx: PresetContext): HTMLElement {
+  if (ctx.layer.type !== 'text') return ctx.el;
+  const words = ctx.el.querySelector<HTMLElement>('.upw-txt');
+  if (!words) return ctx.el;
+  const align = ctx.el.ownerDocument.defaultView?.getComputedStyle(words).textAlign ?? 'left';
+  Object.assign(words.style, { width: 'fit-content', maxWidth: '100%', position: 'relative',
+    marginLeft: align === 'center' || align === 'right' || align === 'end' ? 'auto' : '', marginRight: align === 'center' ? 'auto' : '' });
+  return words;
+}
+
 export const LOOKS: Record<string, Grade> = {
   bw: { grayscale: 1, contrast: 1.12 },
   noir: { grayscale: 1, contrast: 1.5, brightness: 0.9 },
@@ -287,7 +301,8 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     const out = isOut(p);
     const fall = p.fall !== false;
     ctx.el.style.position = ctx.el.style.position || 'relative';
-    const bar = owned(ctx, 'upw-strike', 'shared');
+    const host = wordsHost(ctx);
+    const bar = owned({ ...ctx, el: host }, 'upw-strike', 'shared');
     Object.assign(bar.style, {
       position: 'absolute', left: '-6%', width: '112%', top: '50%', height: `${num(p, 'thickness', 0.6)}cqw`, marginTop: `-${num(p, 'thickness', 0.6) / 2}cqw`,
       background: color(p, 'color', '#ff3b47'), borderRadius: '99px', transformOrigin: '0 50%', rotate: `${num(p, 'angle', -8)}deg`, pointerEvents: 'none', zIndex: '2',
@@ -340,7 +355,7 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     const side = pick(p, 'side', ['left', 'right'] as const, 'left');
     const c = color(p, 'color', '#2ad38b');
     ctx.el.style.position = ctx.el.style.position || 'relative';
-    const box = owned(ctx, 'upw-tick', 'shared');
+    const box = owned({ ...ctx, el: wordsHost(ctx) }, 'upw-tick', 'shared');
     if (!box.firstChild) {
       box.innerHTML = `<svg viewBox="0 0 24 24" style="width:100%;height:100%;overflow:visible"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M6.5 12.5l3.6 3.6 7.4-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>`;
     }

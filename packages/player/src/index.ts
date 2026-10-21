@@ -7,6 +7,7 @@ export { autoMount } from './auto';
 export { NAMED_EASES, NAMED_EASE_IDS, namedEase, EXIT_EASE, type NamedEase } from './eases';
 export { defaultEaseFor } from './presets/catalog';
 export { lintScene, readingTime, type LintIssue } from './lint';
+export { settledMoments, layoutIssues, type LayoutIssue } from './layout';
 export { SCROLL_DEFAULTS } from './scroll';
 export { setAssetBase, REST_3D, type State3D } from './model3d';
 export { SceneAudio, voiceSpans } from './audio';

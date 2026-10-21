@@ -171,6 +171,37 @@ export const PIECES: Piece[] = [
     ]),
   },
   {
+    id: 'loadout', name: 'Loadout', description: 'Five locked slots fill one by one while a counter steps 0/5 to 5/5 and a card names each item: a stack, a toolkit, the steps of a setup. Change the names, then stretch the group to your voice-over.',
+    build: () => {
+      const items = ['Project', 'Words', 'Sound', 'Stems', '3D'];
+      const step = 1.6, first = 0.9, accent = '#e0603a', ink = '#1d1f24', dim = '#9aa0a8';
+      const at = (i: number) => first + i * step;
+      const slots = items.flatMap((name, i) => {
+        const x = 18 + i * 16;
+        return [
+          rect(`slot${i + 1}`, x, 20, 12, 6.75, { fill: 'rgba(0,0,0,0)', stroke: dim, strokeWidth: 0.25, dash: 1, radius: 1.2,
+            clips: [C('stack-in', 0.15 + i * 0.07, 0.4), C('dash-solid', at(i), 0.3), C('recolor', at(i), 0.3, { to: accent }), C('pop', at(i), 0.35, { from: 0.8 })] }),
+          text(`mark${i + 1}`, '?', x, 20, 3.4, { style: { fontSize: 3.4, fontWeight: 700, color: dim, fontFamily: MONO },
+            clips: [C('fade', 0.25 + i * 0.07, 0.3), C('text-swap', at(i), 0.3, { to: String(i + 1).padStart(2, '0'), style: 'roll' }), C('recolor', at(i), 0.3, { to: '#ffffff' })] }),
+          text(`tag${i + 1}`, 'LOCKED', x, 26, 1.7, { style: { fontSize: 1.7, fontWeight: 600, color: dim, fontFamily: MONO, letterSpacing: 0.08 },
+            clips: [C('fade', 0.3 + i * 0.07, 0.3), C('text-swap', at(i) + 0.1, 0.3, { to: name.toUpperCase(), style: 'roll' }), C('recolor', at(i) + 0.1, 0.3, { to: ink })] }),
+        ];
+      });
+      // The card names the item that just unlocked, one after another on the same layer.
+      const swaps = items.slice(1).map((name, i) => C('text-swap', at(i + 1), 0.4, { to: name, style: 'slide' }));
+      const numbers = items.slice(1).map((_, i) => C('text-swap', at(i + 1), 0.4, { to: `ITEM ${String(i + 2).padStart(2, '0')}`, style: 'roll' }));
+      const counts = items.map((_, i) => C('text-swap', at(i), 0.3, { to: `${i + 1}/5`, style: 'roll' }));
+      return group('loadout', 'Loadout', [
+        text('kicker', 'THE FULL STACK', 12, 10, 2, { box: { anchor: 'left' }, style: { fontSize: 2, fontWeight: 600, color: dim, fontFamily: MONO, letterSpacing: 0.12 }, clips: [C('fade', 0, 0.3)] }),
+        text('count', '0/5', 88, 10, 3, { box: { anchor: 'right' }, style: { fontSize: 3, fontWeight: 800, color: accent, fontFamily: MONO }, clips: [C('fade', 0, 0.3), ...counts] }),
+        ...slots,
+        rect('card', 50, 38, 76, 10, { fill: '#ffffff', stroke: '#e3e0da', strokeWidth: 0.2, radius: 1.6, clips: [C('stack-in', at(0) - 0.1, 0.45)] }),
+        text('num', 'ITEM 01', 18, 35.6, 1.8, { box: { anchor: 'left' }, style: { fontSize: 1.8, fontWeight: 600, color: accent, fontFamily: MONO, letterSpacing: 0.1 }, clips: [C('fade', at(0) + 0.1, 0.3), ...numbers] }),
+        text('name', items[0], 18, 39.4, 6, { box: { anchor: 'left', w: 64 }, style: { fontSize: 6, fontWeight: 900, color: ink, align: 'left', uppercase: true }, clips: [C('text-rise', at(0) + 0.15, 0.5), ...swaps] }),
+      ]);
+    },
+  },
+  {
     id: 'giantcaps', name: 'Giant captions', description: 'Big captions from the voice-over, each word slamming in as it is said (transcribe the voice first).',
     build: () => ({ id: 'giant', type: 'captions', name: 'Giant captions', box: { x: 50, y: 62, w: 86 }, style: { fontSize: 9, fontWeight: 900, color: '#ffffff' }, uppercase: true, maxWords: 2, motion: 'slam', mode: 'word', highlight: '#ffd166', clips: [] } as Layer),
   },

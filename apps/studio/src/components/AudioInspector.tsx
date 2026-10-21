@@ -3,7 +3,8 @@ import { NumberField, Section, SelectField, TextField } from './fields';
 import { removeAudio, setAudio, type AudioInfo } from '../lib/audio';
 import { SFX_CATALOG, parseSfxSrc, sfxMeta, sfxSrc } from '@unysonplus/scene-player/sfx';
 import { WordsSection } from './WordsSection';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { separateClip } from '../lib/separate';
 import { analyseMusic, sceneBeats, snapToBeats, strongMoments } from '../lib/beats';
 
 /** The Inspector for a selected audio clip: timing, trim, volume and fades. */
@@ -54,6 +55,8 @@ export function AudioInspector(props: {
       {!builtIn && (clip.role === 'music') && <BeatsSection scene={scene} clip={clip} onCommit={props.onCommit} decode={props.decode} />}
 
       {!builtIn && <WordsSection scene={scene} clip={clip} onCommit={props.onCommit} onSeek={props.onSeek} onMakeScene={props.onMakeScene ? () => props.onMakeScene!(clip.id) : undefined} />}
+
+      {!builtIn && clip.role !== 'sfx' && <SeparateSection scene={scene} clip={clip} onCommit={props.onCommit} />}
 
       <Section title="Level">
         <NumberField label="Volume" value={Math.round((clip.volume ?? 1) * 100)} step={5} min={0} max={200} unit="%" onCommit={(v) => set({ volume: v === undefined || v === 100 ? undefined : v / 100 })} />
@@ -125,6 +128,36 @@ function BeatsSection(props: { scene: Scene; clip: AudioClip; onCommit: (scene: 
         {clip.beats && <button type="button" className="btn small" onClick={snap} title="Big reveals move up to 0.15 s onto a strong moment, smaller entrances up to 0.10 s onto a beat; at most 8 per scene">Snap reveals to the beat</button>}
       </div>
       {note && <p className="field-hint wide" role="status">{note}</p>}
+    </Section>
+  );
+}
+
+/** Splits the clip into its voice and its music (the AI Dev Kit, on this computer). */
+function SeparateSection(props: { scene: Scene; clip: AudioClip; onCommit: (s: Scene) => void }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const abort = useRef<AbortController | null>(null);
+  const go = async () => {
+    setNote(null);
+    setBusy('Separating the voice from the music');
+    const ctl = new AbortController();
+    abort.current = ctl;
+    try {
+      const r = await separateClip(props.scene, props.clip.id, (s) => setBusy(s), ctl.signal);
+      props.onCommit(r.scene);
+    } catch (e) {
+      setNote((e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message);
+    } finally { setBusy(null); abort.current = null; }
+  };
+  return (
+    <Section title="Voice and music">
+      <div className="insp-start wide">
+        <button type="button" className="btn small" disabled={!!busy} onClick={go} title="Replaces this clip with two in its place: the voice, and the music and effects">Separate voice and music</button>
+        {busy && <button type="button" className="btn small ghost" onClick={() => abort.current?.abort()}>Stop</button>}
+      </div>
+      <p className="field-hint wide" role="status">
+        {busy ? `${busy}…` : note ?? 'Splits this clip into a voice track and a music track: transcribe the voice alone, remove or replace the music, or keep both (music is lowered under the voice). Runs in the AI Dev Kit on your computer and takes about as long as the clip.'}
+      </p>
     </Section>
   );
 }

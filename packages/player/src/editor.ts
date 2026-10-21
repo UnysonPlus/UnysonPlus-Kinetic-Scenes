@@ -20,6 +20,7 @@
 import type { Anchor, Box, Scene } from './types';
 import type { ScenePlayer } from './player';
 import { allLayers } from './groups';
+import { layoutIssues, settledMoments } from './layout';
 
 type Api = { mount: (host: HTMLElement, scene: unknown, opts: Record<string, unknown>) => ScenePlayer };
 
@@ -769,6 +770,24 @@ function start() {
     if (m.type === 'play') player.play();
     else if (m.type === 'pause') player.pause();
     else if (m.type === 'seek') player.seek(Number(m.time) || 0);
+    else if (m.type === 'check-layout') {
+      // Check the layout: measure the frame at each moment a part of the scene has landed, then go back.
+      const back = player.time;
+      const was = player.playing;
+      player.pause();
+      void (async () => {
+        const found = [];
+        for (const t of settledMoments(player.scene)) {
+          player.seek(t);
+          await player.settle(800);
+          await new Promise((r) => requestAnimationFrame(() => r(null)));
+          found.push(...layoutIssues(player.canvas(), player.scene, t));
+        }
+        player.seek(back);
+        if (was) player.play();
+        send({ type: 'upw:layout-check', issues: found, breakpoint: player.breakpoint });
+      })();
+    }
     else if (m.type === 'safe') player.setSafeArea(!!m.show);
     else if (m.type === 'camera') { player.setCamera(!!m.on); redraw(); report(); }
     else if (m.type === 'select') setSelection(Array.isArray(m.ids) ? m.ids : m.id ? [m.id] : [], false);

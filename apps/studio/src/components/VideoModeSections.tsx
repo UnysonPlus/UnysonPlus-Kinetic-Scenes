@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Scene, VideoFormat, VideoLayer, VideoSettings } from '@unysonplus/scene-player/types';
 import { cutOutPerson, followFace, useFootageSound } from '../lib/footageKit';
+import { separateFootage } from '../lib/separate';
 import { PLATFORM_LIMITS, VIDEO_FORMATS } from '@unysonplus/scene-player/video';
 import { CheckField, NumberField, Section, SelectField, TextField } from './fields';
 import { Segmented } from './Segmented';
@@ -120,6 +121,11 @@ export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCo
           props.onCommit(r.scene);
           return 'Added the footage\'s sound as a voice track (select it, Words, to transcribe it for captions).';
         })} title="The footage's sound as a voice track: transcribe it for captions and for timing effects to the words">Use its sound</button>
+        <button type="button" className="btn small" disabled={!!busy} onClick={() => run('Separating the voice from the music', async (signal) => {
+          const r = await separateFootage(props.scene, props.layer.id, (s) => setBusy(s), signal);
+          props.onCommit(r.scene);
+          return 'Added the voice and the music as two tracks in step with the footage. Transcribe the voice (select it, Words) for cleaner word times, delete the music to remove it, or keep it: music is lowered under the voice automatically.';
+        })} title="The footage's sound as two tracks: the voice, and the music and effects">Separate voice and music</button>
         {busy && <button type="button" className="btn small ghost" onClick={() => abort.current?.abort()}>Stop</button>}
       </div>
       {(busy || note) && <p className="field-hint wide" role="status">{busy ? `${busy}…` : note}</p>}
