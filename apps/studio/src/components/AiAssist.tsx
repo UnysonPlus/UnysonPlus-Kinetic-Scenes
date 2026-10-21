@@ -196,7 +196,10 @@ export function AiAssist(props: {
       }
       setPhase(mode === 'create' ? 'Building' : 'Working');
       const brief = [extra?.brief, style ? styleBrief(style) : '', musicCues(extra?.base ?? before)].filter(Boolean).join('\n\n') || undefined;
-      const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets: extra?.assets, additions: extra?.additions });
+      // A brand kit's logo can be placed by name ("brand:logo"); the Studio fills it in.
+      const assets = new Map(extra?.assets ?? []);
+      if (style?.logo) assets.set('brand:logo', style.logo);
+      const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets, additions: extra?.additions });
       // A scene built from a base (a voice-over) gets the style's exact colours and fonts too.
       if (style && extra?.base) r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
       // A new scene in a style gets exactly the style's colours and fonts.
@@ -378,7 +381,7 @@ export function AiAssist(props: {
         <section className="assist-panel" role="dialog" aria-label="AI assist" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); props.onOpenChange(false); } }}>
           <header className="assist-head">
             <strong><span className="assist-spark" aria-hidden="true">✦</span> AI assist</strong>
-            <span className="assist-beta">Alpha</span>
+            <span className="assist-beta">Beta</span>
             {messages.length > 0 && !busy && <button type="button" className="link-btn" onClick={() => props.onMessages(() => [])}>New chat</button>}
             <button type="button" className="assist-close" aria-label="Close AI assist" onClick={() => props.onOpenChange(false)}>×</button>
           </header>

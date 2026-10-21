@@ -35,6 +35,8 @@ import { VIDEO_FORMATS, zonesFor } from '@unysonplus/scene-player/video';
 import type { VideoFormat } from '@unysonplus/scene-player/types';
 import { footageIds, getFootage, probeVideo, putFootage } from './lib/footage';
 import { insertPiece } from './lib/pieces';
+import { logoLayer } from './lib/brand';
+import { sortFormats } from './lib/videoMode';
 import { PiecesLibrary } from './components/PiecesLibrary';
 import { DEVICES, Preview, type Device } from './components/Preview';
 import { Transport } from './components/Transport';
@@ -654,12 +656,12 @@ export function App() {
           <div>
             <h1>
               Kinetic Scenes
-              <button type="button" className="stage-tag" {...{ popovertarget: 'stage-info' }} aria-describedby="stage-info">Alpha</button>
+              <button type="button" className="stage-tag" {...{ popovertarget: 'stage-info' }} aria-describedby="stage-info">Beta</button>
             </h1>
             <p className="brand-sub">Unyson+ · {__STUDIO_VERSION__}</p>
             <div id="stage-info" className="stage-info" {...{ popover: 'auto' }} role="note">
-              <strong>Alpha: early testing</strong>
-              <p>The Studio works, but features are still missing, things may break, and the scene file format may change between versions.</p>
+              <strong>Beta: feature-complete, still being polished</strong>
+              <p>Everything on the roadmap is built. You may still meet rough edges, and the scene file format can still change between versions.</p>
               <p>Use <em>Save</em> to keep a project file of anything you want to hold on to. Pages you export or embed keep working whatever changes later.</p>
             </div>
           </div>
@@ -789,6 +791,19 @@ export function App() {
                 saveCustomStyles(next);
                 if (aiStyle === id) setAiStyle(null);
               }}
+              onUpsert={(style) => {
+                const exists = customStyles.some((s) => s.id === style.id);
+                const next = exists ? customStyles.map((s) => (s.id === style.id ? style : s)) : [...customStyles, style];
+                setCustomStyles(next);
+                setNotice(saveCustomStyles(next) ? `${exists ? 'Updated' : 'Added'} the style “${style.name}”.` : `Added “${style.name}” for now; this browser won't keep it after closing.`);
+              }}
+              onAddLogo={(logo) => {
+                const s = latest.current.scene;
+                const layer = logoLayer(s, logo);
+                commit({ ...s, layers: [...s.layers, layer] });
+                setSelection({ layerId: layer.id, clipId: null });
+                setNotice('Added your logo at the top. Drag it where it belongs.');
+              }}
             />
           }
           sounds={(() => {
@@ -815,6 +830,15 @@ export function App() {
                   commit(r.scene);
                   setSelection({ layerId: null, clipId: null, audio: r.id });
                 }}
+                onAddFile={(src, name, seconds) => {
+                  const s = latest.current.scene;
+                  const start = Math.max(0, Math.min(s.duration - 0.05, Math.round(latest.current.state.time * 100) / 100));
+                  const r = addAudio(s, { name, src, start, role: 'sfx' });
+                  const end = start + seconds;
+                  commit(end > r.scene.duration ? { ...r.scene, duration: Math.ceil(end * 10) / 10 } : r.scene);
+                  setSelection({ layerId: null, clipId: null, audio: r.id });
+                  setNotice(`Added “${name}” at the playhead.`);
+                }}
                 onSuggest={() => {
                   const s = latest.current.scene;
                   const n = soundCounts(s).suggestible;
@@ -834,7 +858,7 @@ export function App() {
                 legend="Format"
                 value={format}
                 onChange={(f) => setFormatId(f as VideoFormat)}
-                options={video.formats.map((f) => ({ value: f, label: VIDEO_FORMATS[f].label.split(' ')[1], hint: `${VIDEO_FORMATS[f].label}, ${VIDEO_FORMATS[f].width} × ${VIDEO_FORMATS[f].height}` }))}
+                options={sortFormats(video.formats).map((f) => ({ value: f, label: VIDEO_FORMATS[f].label.split(' ')[1], hint: `${VIDEO_FORMATS[f].label}, ${VIDEO_FORMATS[f].width} × ${VIDEO_FORMATS[f].height}` }))}
               />
             ) : (
               <>

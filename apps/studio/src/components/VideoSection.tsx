@@ -3,6 +3,7 @@ import type { Layer, Scene, VideoFormat } from '@unysonplus/scene-player/types';
 import { VIDEO_FORMATS } from '@unysonplus/scene-player/video';
 import { VIDEO_SIZES, canRender, renderVideo, type RenderCheck, type VideoOptions } from '../lib/video';
 import { DownloadIcon } from './icons';
+import { sortFormats } from '../lib/videoMode';
 import { browserCanRender, renderInBrowser } from '../lib/browserVideo';
 
 const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
@@ -27,7 +28,7 @@ const hasReference = (list: Layer[]): boolean => list.some((l) => (l.type === 'v
  */
 export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note: string) => void }) {
   const video = props.scene.mode === 'video' && props.scene.video ? props.scene.video : null;
-  const formats = video?.formats ?? [];
+  const formats = sortFormats(video?.formats ?? []);
   const [check, setCheck] = useState<RenderCheck | null>(null);
   const [size, setSize] = useState(video ? (formats.length > 1 ? 'all' : formats[0]) : '1080p');
   const [fps, setFps] = useState(video?.fps ?? 30);

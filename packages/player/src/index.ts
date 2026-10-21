@@ -14,6 +14,7 @@ export { expandRepeats, expandRepeat } from './repeat';
 export { sceneTranscript, transcriptHtml, TRANSCRIPT_CLASS, type TranscriptItem } from './transcript';
 export { SFX_CATALOG, SFX_IDS, SFX_CATEGORY_LABELS, sfxMeta, suggestedSound, soundTrack, synthSfx, sfxWav, sfxSrc, parseSfxSrc, sfxPeak, type SfxMeta, type SfxCategory } from './sfx';
 export { allLayers, groupDuration, groupOffset, groupPath } from './groups';
+export { playPreset, type PlayPresetOptions, type PresetPlayback } from './standalone';
 export { VIDEO_FORMATS, SAFE_ZONES, PLATFORM_LIMITS, formatBreakpoints, zonesFor, isVideo, type Zone } from './video';
 
 export const PLAYER_VERSION = __PLAYER_VERSION__;

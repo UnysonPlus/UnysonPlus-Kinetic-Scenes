@@ -4,9 +4,9 @@ import { cutOutPerson, followFace, useFootageSound } from '../lib/footageKit';
 import { PLATFORM_LIMITS, VIDEO_FORMATS } from '@unysonplus/scene-player/video';
 import { CheckField, NumberField, Section, SelectField, TextField } from './fields';
 import { Segmented } from './Segmented';
-import { setVideo, toVideo, toWeb } from '../lib/videoMode';
+import { FORMAT_ORDER, setVideo, toVideo, toWeb } from '../lib/videoMode';
 
-const FORMATS = Object.keys(VIDEO_FORMATS) as VideoFormat[];
+const FORMATS = FORMAT_ORDER;
 
 /** Frames round a picture or footage. */
 export const FRAME_OPTIONS = [

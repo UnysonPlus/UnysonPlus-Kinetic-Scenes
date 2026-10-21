@@ -64,3 +64,7 @@ export function setVideo(scene: Scene, patch: Partial<VideoSettings>): Scene {
 
 /** The pixel size of a format (full HD). */
 export const formatSize = (f: VideoFormat) => ({ width: VIDEO_FORMATS[f].width, height: VIDEO_FORMATS[f].height });
+
+/** The order video formats are listed in: widest first. */
+export const FORMAT_ORDER: VideoFormat[] = ['16x9', '1x1', '4x5', '9x16'];
+export const sortFormats = (list: VideoFormat[]) => FORMAT_ORDER.filter((f) => list.includes(f));

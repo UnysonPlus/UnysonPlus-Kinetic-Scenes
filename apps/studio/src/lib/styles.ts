@@ -21,6 +21,12 @@ export interface SceneStyle {
   description: string;
   /** Made by the user from a scene (kept in this browser). */
   custom?: boolean;
+  /** A brand kit (edited in the brand editor). */
+  brand?: boolean;
+  /** The built-in style a brand kit takes its motion and sounds from. */
+  basedOn?: string;
+  /** The brand's logo (an image data: URL or an https address): starter scenes show it. */
+  logo?: string;
   palette: {
     /** Any CSS background for the stage. */
     background: string;
@@ -483,6 +489,10 @@ export function starterScene(style: SceneStyle, base?: Scene): Scene {
         clips: [{ id: 'glow-in', preset: 'fade', start: 0, duration: t(1.2), params: { y: 0, scale: 0.8 } }, { id: 'glow-drift', preset: 'drift', start: t(1.2), duration: Math.max(0.5, exitAt - t(1.2)), params: { x: 0, y: -2, scale: 1.08 } }],
         overrides: ov({ w: 120 }),
       },
+      ...(style.logo ? [{
+        id: 'logo', name: 'Logo', type: 'image' as const, src: style.logo, alt: 'Logo', fit: 'contain' as const, box: { x: 50, y: 13, w: 12, h: 8 },
+        clips: [{ id: 'logo-in', preset: 'fade', start: 0, duration: t(0.6) }, ...exit('logo-out', 'image')],
+      }] : []),
       {
         id: 'kicker', name: 'Kicker', type: 'text', text: style.sample.kicker, box: { x: 50, y: 28 },
         style: { ...body, fontSize: 1.4, fontWeight: Math.max(style.fonts.bodyWeight, 500), letterSpacing: 0.3, uppercase: true, color: style.palette.accent, align: 'center' },
@@ -611,5 +621,5 @@ export function styleBrief(style: SceneStyle): string {
 - Stage background: ${style.palette.background}. Colours: text ${style.palette.text}, secondary text ${style.palette.muted}, accent ${style.palette.accent}${style.palette.accent2 ? `, second accent ${style.palette.accent2}` : ''}. Use the accent sparingly, on what matters most.
 - Fonts: headlines "${style.fonts.heading}" weight ${style.fonts.headingWeight}${style.fonts.uppercase ? ' in capitals' : ''}; other text "${style.fonts.body}" weight ${style.fonts.bodyWeight}.${style.fonts.href ? ` Set stage.fonts to [{ "family": "${style.fonts.heading}", "href": "${style.fonts.href}" }].` : ''}
 - Motion: headlines enter with ${mv(m.headline)}, other text with ${mv(m.text)}, shapes with ${mv(m.shape)}; exits use ${mv(m.exit)}. Entrances ease "${m.easeIn}", exits "${m.easeOut}". Pace ${m.pace < 0.95 ? 'snappy: shorter moves and tighter gaps' : m.pace > 1.15 ? 'calm: longer moves and more breathing room' : 'steady'}. Vary supporting entrances a little where it helps, but keep this personality.
-- Sounds: ${style.sounds.density === 'none' ? 'none.' : `${style.sounds.density === 'light' ? 'a few, only the key moments' : 'on the key moments'}: entrances "${style.sounds.enter}", exits "${style.sounds.exit}", landings "${style.sounds.hit}", accents "${style.sounds.accent}".`}`;
+${style.logo ? '- Logo: the brand has a logo. Show it where a brand would (the opening or the call to action): an image layer with "src": "brand:logo", "fit": "contain", about 12 to 20 wide.\n' : ''}- Sounds: ${style.sounds.density === 'none' ? 'none.' : `${style.sounds.density === 'light' ? 'a few, only the key moments' : 'on the key moments'}: entrances "${style.sounds.enter}", exits "${style.sounds.exit}", landings "${style.sounds.hit}", accents "${style.sounds.accent}".`}`;
 }

@@ -205,8 +205,8 @@ deploy, so only committed versions stay online.
 
 ## Release stage
 
-The Studio is in **alpha**: features are still missing and the scene file format may change between
-versions. Exported pages and embeds keep working regardless, since they carry or pin their player.
+The Studio is in **beta**: every planned feature is built, rough edges are still being polished, and the scene file
+format may still change between versions. Exported pages and embeds keep working regardless, since they carry or pin their player.
 
 ## Deploy
 

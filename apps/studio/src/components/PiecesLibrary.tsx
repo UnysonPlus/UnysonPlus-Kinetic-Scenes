@@ -12,6 +12,7 @@ export function PiecesLibrary(props: { onInsert: (piece: Piece) => void }) {
         <input type="search" className="lib-search" placeholder="Search pieces" aria-label="Search pieces" value={query} onChange={(e) => setQuery(e.target.value)} />
         <p className="lib-help">Ready-made pieces from short-form video. Click one to add it at the playhead; it is an ordinary group you can change.</p>
       </div>
+      <div className="lib-scroll">
       <ul className="piece-list">
         {list.map((p) => (
           <li key={p.id}>
@@ -22,6 +23,7 @@ export function PiecesLibrary(props: { onInsert: (piece: Piece) => void }) {
           </li>
         ))}
       </ul>
+      </div>
     </>
   );
 }

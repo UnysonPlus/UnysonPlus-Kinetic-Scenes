@@ -5,6 +5,7 @@ import { SFX_CATALOG, SFX_CATEGORY_LABELS, sfxSrc, type SfxCategory } from '@uny
  * The built-in sounds: click to hear one, then add it to the selected clip (it plays with the clip and
  * moves with it) or, with no clip selected, as a sound on its own at the playhead.
  */
+import { MoreSounds } from './MoreSounds';
 export function SoundLibrary(props: {
   /** A clip is selected: "Add" attaches the sound to it. */
   clipSelected: boolean;
@@ -18,6 +19,8 @@ export function SoundLibrary(props: {
   onAdd: (id: string) => void;
   onSuggest: () => void;
   onClearAll: () => void;
+  /** Adds a sound file (made, or found on Freesound) at the playhead. */
+  onAddFile?: (src: string, name: string, seconds: number) => void;
 }) {
   const [query, setQuery] = useState('');
   const groups = useMemo(() => {
@@ -48,6 +51,7 @@ export function SoundLibrary(props: {
         </div>
       </div>
       <div className="lib-scroll">
+        {props.onAddFile && !query && <MoreSounds onPreview={props.onPreview} onAdd={props.onAddFile} />}
         {groups.map((g) => (
           <section key={g.c} className="lib-group">
             <h3>{SFX_CATEGORY_LABELS[g.c]}</h3>
