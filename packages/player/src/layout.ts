@@ -35,9 +35,12 @@ export function settledMoments(scene: Scene): number[] {
     return { landed, leaving };
   };
   const parts = new Map<number, number>();
-  const add = (leaving: number, landed: number) => {
+  // Every layer's time on screen, to make sure nothing is still arriving at a chosen moment.
+  const spans: Array<{ from: number; landed: number; leaving: number }> = [];
+  const add = (leaving: number, landed: number, from = 0) => {
     const k = r2(Math.min(leaving, dur));
     parts.set(k, Math.max(parts.get(k) ?? 0, landed));
+    spans.push({ from, landed, leaving });
   };
   for (const l of scene.layers) {
     if (l.type === 'group') {
@@ -45,16 +48,17 @@ export function settledMoments(scene: Scene): number[] {
       const kids = l.layers.map((k) => span(k, a));
       const own = span(l, 0);
       const leaving = Math.min(own.leaving, a + groupDuration(l), ...kids.map((k) => k.leaving));
-      add(leaving, Math.max(own.landed, ...kids.filter((k) => k.leaving >= leaving - 0.05).map((k) => k.landed)));
+      add(leaving, Math.max(own.landed, ...kids.filter((k) => k.leaving >= leaving - 0.05).map((k) => k.landed)), a);
     } else {
       const s = span(l, 0);
-      add(s.leaving, s.landed);
+      add(s.leaving, s.landed, l.start ?? 0);
     }
   }
   const out: number[] = [];
   for (const [leaving, landed] of [...parts].sort((x, y) => x[0] - y[0])) {
     const t = r2(Math.min(leaving - 0.1, dur - 0.05));
-    if (t >= landed - 0.01 && t >= 0 && !out.some((o) => Math.abs(o - t) < 1)) out.push(t);
+    const arriving = spans.some((p) => p.from <= t && t < p.leaving && p.landed > t + 0.01);
+    if (t >= landed - 0.01 && t >= 0 && !arriving && !out.some((o) => Math.abs(o - t) < 1)) out.push(t);
   }
   return out.slice(0, 16);
 }
