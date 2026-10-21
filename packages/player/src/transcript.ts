@@ -129,7 +129,8 @@ export function transcriptHtml(scene: Scene): string {
   const body = items.map((i) => {
     if (i.link) {
       const tab = i.link.newTab ? ' target="_blank" rel="noopener"' : '';
-      return `<p><a href="${esc(i.link.href)}" data-upw-link="${esc(i.layer ?? '')}"${tab}>${esc(i.text)}</a></p>`;
+      const jump = i.link.jump !== undefined && i.link.jump !== '' ? ` data-upw-jump="${esc(String(i.link.jump))}"` : '';
+      return `<p><a href="${esc(i.link.href)}" data-upw-link="${esc(i.layer ?? '')}"${jump}${tab}>${esc(i.text)}</a></p>`;
     }
     return i.level ? `<h${i.level}>${esc(i.text)}</h${i.level}>` : `<p>${esc(i.text)}</p>`;
   }).join('');

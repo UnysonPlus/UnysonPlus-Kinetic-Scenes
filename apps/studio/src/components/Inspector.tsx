@@ -15,7 +15,8 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
-import { CaptionsSection, CodeSection, DiagramSection, FlowSection, PathSection, RepeatSection, SplitImageSection } from './VectorSections';
+import { CaptionsSection, CodeSection, CursorSection, CutOutSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, SplitImageSection, StepsSection } from './VectorSections';
+import { focusCamera } from '../lib/tour';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
@@ -223,6 +224,18 @@ function SceneInspector({ scene, onCommit, time }: Props) {
             const id = `bp-${n}`;
             setStage({ breakpoints: [...scene.stage.breakpoints, { id, label: `Breakpoint ${n}`, minWidth: 0, aspect: [1, 1] }] });
           }}>Add breakpoint</button>
+          {!scene.stage.breakpoints.some((b) => b.minRatio !== undefined) && (
+            <button type="button" className="btn ghost small" title="A layout used only when the stage is much wider than tall (an ultrawide hero filling the window), so its content can spread out" onClick={() => {
+              const widest = [...scene.stage.breakpoints].sort((a, b) => b.minWidth - a.minWidth)[0];
+              setStage({ breakpoints: [{ id: 'ultrawide', label: 'Ultrawide', minWidth: widest?.minWidth ?? 1200, aspect: [21, 9], minRatio: 2.1 }, ...scene.stage.breakpoints] });
+            }}>Add an ultrawide layout</button>
+          )}
+          {scene.stage.breakpoints.some((b) => b.minRatio !== undefined) && (
+            <p className="field-hint wide">
+              {scene.stage.breakpoints.filter((b) => b.minRatio !== undefined).map((b) => `${b.label ?? b.id} is used when the stage is at least ${b.minRatio}:1 wide`).join('; ')}
+              {scene.stage.heightMode === 'ratio' ? ' (only with the Capped or Fill height, which give the stage a free shape).' : '.'}
+            </p>
+          )}
         </div>
       </Section>
 
@@ -236,6 +249,8 @@ function SceneInspector({ scene, onCommit, time }: Props) {
         ))}
         <button type="button" className="btn ghost small wide-btn" onClick={() => setStage({ fonts: [...fonts, { family: 'Inter', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap' }] })}>Add font</button>
       </Section>
+
+      <StepsSection scene={scene} onCommit={onCommit} />
 
       <TranscriptSection scene={scene} onCommit={onCommit} />
     </div>
@@ -302,12 +317,13 @@ function PinField({ scene, layer, onChange }: { scene: Scene; layer: Layer; onCh
 }
 
 /** Makes a layer (or a whole group) a link. */
-function LinkSection({ layer, onChange }: { layer: Layer; onChange: (link: Layer['link']) => void }) {
+function LinkSection({ layer, scene, onChange }: { layer: Layer; scene: Scene; onChange: (link: Layer['link']) => void }) {
   const link = layer.link;
+  const markers = scene.markers ?? [];
   const words = layer.type === 'text' ? layer.text : layer.type === 'image' ? layer.alt ?? '' : layer.type === 'group' ? groupWords(layer) : '';
   const set = (patch: Partial<NonNullable<Layer['link']>>) => {
     const next = { href: link?.href ?? '', ...link, ...patch };
-    onChange(next.href.trim() ? { href: next.href.trim(), ...(next.newTab ? { newTab: true } : {}), ...(next.label?.trim() ? { label: next.label.trim() } : {}) } : undefined);
+    onChange(next.href.trim() ? { href: next.href.trim(), ...(next.newTab ? { newTab: true } : {}), ...(next.label?.trim() ? { label: next.label.trim() } : {}), ...(next.jump !== undefined && next.jump !== '' ? { jump: next.jump } : {}) } : undefined);
   };
   const bad = !!link?.href && !SAFE_HREF.test(link.href);
   return (
@@ -317,6 +333,10 @@ function LinkSection({ layer, onChange }: { layer: Layer; onChange: (link: Layer
         <>
           <CheckField label="Open in a new tab" checked={!!link.newTab} onChange={(v) => set({ newTab: v })} />
           <TextField label="Link text" value={link.label} placeholder={words.trim().slice(0, 60) || 'Needed for a shape'} wide onCommit={(v) => set({ label: v })} />
+          <SelectField label="Hotspot: play from" value={link.jump === undefined ? '' : String(link.jump)}
+            options={[{ value: '', label: 'No: follow the address' }, ...markers.map((m) => ({ value: m.id, label: `${m.label ?? m.id} (${m.t} s)` }))]}
+            onChange={(v) => set({ jump: v || undefined })} />
+          {markers.length === 0 && <p className="field-hint wide">Add markers (or Steps) to make hotspots that jump to a part of the scene.</p>}
         </>
       )}
       <p className={`field-hint wide${bad ? ' is-error' : ''}`}>
@@ -416,7 +436,7 @@ function GroupInspector({ scene, group, onCommit, onSelect, alignTo, onAlignTo, 
         </Section>
       )}
 
-      <LinkSection layer={group} onChange={(link) => props({ link })} />
+      <LinkSection layer={group} scene={scene} onChange={(link) => props({ link })} />
 
       <section className="insp-section">
         <header><h3>Align</h3></header>
@@ -498,7 +518,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
   return (
     <div className="insp">
       <div className="insp-head">
-        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram', code: 'Code', repeat: 'List', captions: 'Captions' } as Record<Layer['type'], string>)[layer.type]}</p>
+        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram', code: 'Code', repeat: 'List', captions: 'Captions', cursor: 'Cursor' } as Record<Layer['type'], string>)[layer.type]}</p>
         <input className="insp-title" aria-label="Layer name" defaultValue={layer.name ?? layer.id} key={layer.id + (layer.name ?? '')}
           onBlur={(e) => { if (e.target.value !== (layer.name ?? layer.id)) props({ name: e.target.value || undefined }); }}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
@@ -561,6 +581,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'path' && <PathSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'cursor' && <CursorSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'repeat' && <RepeatSection layer={layer} set={(p) => props(p as Record<string, unknown>)} onUnpack={() => onCommit(repeatToGroup(scene, layer.id))} />}
       {layer.type === 'captions' && <CaptionsSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'code' && <CodeSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
@@ -577,6 +598,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'image' && (
         <SplitImageSection scene={scene} layer={layer} onCommit={onCommit} />
       )}
+      {layer.type === 'image' && <CutOutSection scene={scene} layer={layer} onCommit={onCommit} onSelect={(id) => onSelect({ layerId: id, clipId: null })} />}
 
       {layer.type !== 'flow' && layer.type !== 'repeat' && <Section title="Position and size">
         <PinField scene={scene} layer={layer} onChange={(pin) => props({ pin })} />
@@ -620,7 +642,16 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         <NumberField label="Opacity" value={layer.opacity ?? 1} step={0.05} min={0} max={1} onCommit={(v) => props({ opacity: v === undefined || v >= 1 ? undefined : v })} />
       </Section>
 
-      <LinkSection layer={layer} onChange={(link) => props({ link })} />
+      <LinkSection layer={layer} scene={scene} onChange={(link) => props({ link })} />
+      {layer.type !== 'cursor' && layer.type !== 'flow' && <HoverSection layer={layer} set={(hover) => props({ hover })} />}
+      {layer.type !== 'cursor' && layer.type !== 'flow' && layer.type !== 'repeat' && (
+        <Section title="Camera">
+          <div className="insp-start">
+            <button type="button" className="btn small" onClick={() => onCommit(focusCamera(scene, layer.id, playheadOf(scene)))} title="The camera glides in to frame this layer from the playhead, holds, and glides back">Focus the camera on it</button>
+          </div>
+          <p className="field-hint wide">Adds camera keys from the playhead: in to frame this layer, a hold, and back out. Add a Spotlight or a Callout to point it out.</p>
+        </Section>
+      )}
 
       <div className="insp-actions">
         <button type="button" className="btn small" disabled={idx >= scene.layers.length - 1} onClick={() => onCommit(moveLayer(scene, layer.id, 1))}>Bring forward</button>
@@ -718,7 +749,7 @@ function ClipInspector({ scene, layer, clipId, onCommit, onSelect, selection, ti
 
       {meta && meta.fields.length > 0 && (
         <Section title="Settings">
-          {meta.fields.map((f) => <ParamField key={f.key} field={f} value={params[f.key]} onChange={(v) => setParam(f.key, v)} />)}
+          {meta.fields.map((f) => <ParamField key={f.key} field={f} value={params[f.key]} onChange={(v) => setParam(f.key, v)} layers={f.type === 'layer' ? layerChoices(scene, layer.id) : undefined} />)}
         </Section>
       )}
       {clip.preset === 'keyframes' && (
@@ -798,8 +829,26 @@ function SoundSection({ sound, suggested, onChange, onPreview }: {
   );
 }
 
-function ParamField({ field, value, onChange }: { field: PresetField; value: unknown; onChange: (v: unknown) => void }) {
+/** Every other layer in the scene, for a preset that points at one. */
+function layerChoices(scene: Scene, self: string): Array<{ value: string; label: string }> {
+  const out: Array<{ value: string; label: string }> = [];
+  const walk = (list: Layer[]) => list.forEach((l) => { if (l.id !== self) out.push({ value: l.id, label: l.name ? `${l.name} (${l.id})` : l.id }); if (l.type === 'group') walk(l.layers); });
+  walk(scene.layers);
+  return out;
+}
+
+/** The playhead, as the Studio last reported it (for actions that start "here"). */
+function playheadOf(scene: Scene): number {
+  const t = (window as unknown as { __upwPlayhead?: number }).__upwPlayhead;
+  return typeof t === 'number' ? Math.min(scene.duration, Math.max(0, t)) : 0;
+}
+
+function ParamField({ field, value, onChange, layers }: { field: PresetField; value: unknown; onChange: (v: unknown) => void; layers?: Array<{ value: string; label: string }> }) {
   switch (field.type) {
+    case 'longtext':
+      return <TextField label={field.label} value={typeof value === 'string' ? value : ''} wide mono multiline onCommit={onChange} />;
+    case 'layer':
+      return <SelectField label={field.label} value={typeof value === 'string' ? value : ''} options={[{ value: '', label: 'None' }, ...(layers ?? [])]} onChange={onChange} />;
     case 'number':
       return <NumberField label={field.label} value={typeof value === 'number' ? value : undefined} step={field.step} min={field.min} max={field.max} unit={field.unit} onCommit={(v) => v !== undefined && onChange(v)} />;
     case 'select':

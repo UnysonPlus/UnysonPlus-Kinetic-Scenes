@@ -69,7 +69,7 @@ function tickStep(pps: number) {
   return 120;
 }
 
-const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC' };
+const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚' };
 
 export function Timeline(props: Props) {
   const { scene, selection, scope } = props;
@@ -321,6 +321,7 @@ export function Timeline(props: Props) {
           <button type="button" className="btn small" onClick={() => props.onAddLayer('path')} title="A line or curve that can draw itself, with arrowheads and glow; other layers can travel along it">+ Line</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('code')} title="An editor or terminal showing code that can be typed, changed, highlighted and run">+ Code</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('diagram')} title="Nodes and connections: a flowchart, an architecture diagram or a branch graph">+ Diagram</button>
+          <button type="button" className="btn small" onClick={() => props.onAddLayer('cursor')} title="A pointer for product tours: Move to a layer, then Click">+ Cursor</button>
           <button type="button" className="btn small" onClick={() => props.onAddLayer('repeat')} title="A list: one designed row or card, copied for every entry and staggered">+ List</button>
           {!scope && <button type="button" className="btn small" onClick={() => props.onAddLayer('captions')} title="Captions from a transcribed voice-over, lighting up each word as it is said">+ Captions</button>}
           <button type="button" className="btn small" onClick={() => props.onAddLayer('flow')} title="A bundle of glowing curves joining two layers, which stays attached as they move">+ Flow</button>

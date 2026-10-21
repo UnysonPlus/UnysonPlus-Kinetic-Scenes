@@ -52,7 +52,17 @@ function sampleScene(p: PresetMeta): Scene {
     format: 'unysonplus-scene', version: 1, duration: d + 0.75,
     stage: { breakpoints: [{ id: 'a', minWidth: 0, aspect: [16, 10] }], heightMode: 'ratio', safeArea: 0 },
     playback: { trigger: 'manual', loop: true, repeatDelay: 0.3 },
-    layers: p.id === 'morph'
+    layers: p.id === 'cursor-move' || p.id === 'cursor-click'
+      ? [{ id: 'b', type: 'shape', shape: 'rect', fill: '#2271b1', radius: 2, link: { href: '#' }, box: { x: 50, y: 50, w: 40, h: 22 }, clips: [] },
+        { id: 's', type: 'cursor', box: { x: p.id === 'cursor-move' ? 96 : 50, y: p.id === 'cursor-move' ? 92 : 52, w: 12, ratio: 0.7 }, clips: p.id === 'cursor-move'
+          ? [{ id: 'c', preset: 'cursor-move', start: 0.15, duration: d, params: { to: 'b' } }]
+          : [{ id: 'c', preset: 'cursor-click', start: 0.3, duration: 0.4 }] }]
+      : p.id === 'spotlight' || p.id === 'callout'
+      ? [{ id: 'bg', type: 'shape', shape: 'rect', fill: '#e9edf2', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [] },
+        { id: 's', type: 'shape', shape: 'rect', fill: '#2271b1', radius: 2, box: { x: 50, y: p.id === 'callout' ? 66 : 50, w: 30, h: 18 }, clips: [{ id: 'c', preset: p.id, start: 0.15, duration: d, params: p.id === 'callout' ? { text: 'Save', size: 6, gap: 6 } : undefined }] }]
+      : p.id === 'image-swap'
+      ? [{ id: 's', type: 'image', src: SCROLL_SAMPLE, radius: 2, box: { x: 50, y: 50, w: 34, h: 76 }, clips: [{ id: 'c', preset: 'image-swap', start: 0.5, duration: 0.5, params: { style: 'wipe', src: SCROLL_SAMPLE.replace(/2ad38b/g, 'f59e0b') } }] }]
+      : p.id === 'morph'
       ? [{ id: 's', type: 'shape', shape: 'rect', fill: '#3b82f6', radius: 3, box: { x: 28, y: 32, w: 22, ratio: 1 }, clips: [{ id: 'c', preset: 'morph', start: 0.15, duration: d, params: { to: 'b' } }] },
         { id: 'b', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 70, y: 66, w: 36, ratio: 1.4 }, clips: [] }]
       : p.category === 'code' ? [codeSample(p.id, d)] : p.id === 'draw' ? [{ ...line, clips: layer.clips }] : p.id === 'follow-path' ? [{ ...line, stroke: 'rgba(255,255,255,.18)' }, { id: 's', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 0, y: 0, w: 8, ratio: 1 }, clips: [{ ...layer.clips[0], params: { path: 'ln', trail: 0.4, trailColor: '#2ad38b' } }] }] : [layer],
@@ -96,7 +106,7 @@ export function Library(props: {
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = PRESET_CATALOG.filter((p) => !q || p.label.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-    const order: PresetCategory[] = ['text', 'reveal', 'motion', 'emphasis', 'transition', 'ambient', 'code', '3d'];
+    const order: PresetCategory[] = ['text', 'reveal', 'motion', 'emphasis', 'tour', 'transition', 'ambient', 'code', '3d'];
     return order.map((c) => ({ c, items: list.filter((p) => p.category === c) })).filter((g) => g.items.length);
   }, [query]);
 

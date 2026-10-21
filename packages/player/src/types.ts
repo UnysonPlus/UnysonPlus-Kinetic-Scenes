@@ -31,6 +31,11 @@ export interface Scene {
   camera?: { keys: CameraKey[] };
   /** How the scene's words reach search engines and screen readers (see transcript.ts). */
   transcript?: TranscriptSettings;
+  /**
+   * A walkthrough as steps (the Studio turns them into clips and markers; the player ignores them): each
+   * step says what changes, [{ id, label?, at?, hold?, do: [{ layer, preset, params?, duration?, offset? }] }].
+   */
+  steps?: Array<{ id: string; label?: string; at?: number; hold?: number; do: Array<{ layer: string; preset: string; params?: Record<string, unknown>; duration?: number; offset?: number; ease?: string }> }>;
 }
 
 export interface CameraKey {
@@ -151,6 +156,11 @@ export interface Breakpoint {
   minWidth: number;
   /** Width and height of the stage shape, e.g. [16, 9]. */
   aspect: [number, number];
+  /**
+   * A layout by shape: used only when the stage is at least this much wider than tall (width / height), so
+   * an ultrawide hero can spread its content out. Only the fill and capped height modes have a free shape.
+   */
+  minRatio?: number;
 }
 
 /**
@@ -248,6 +258,11 @@ export interface LayerOverride {
 export interface LayerLink {
   /** A web address (https://…), a path on the same site (/download), an anchor (#pricing), mailto: or tel:. */
   href: string;
+  /**
+   * A hotspot: instead of leaving the page, jump to a moment of this scene (a marker's id, or seconds) and
+   * play from there, so a visitor chooses what to see next. href is then only the fallback.
+   */
+  jump?: string | number;
   /** Open in a new tab. */
   newTab?: boolean;
   /**
@@ -286,6 +301,11 @@ interface LayerBase {
    * layers (Split into layers) becomes a 2.5D shot.
    */
   depth?: number;
+  /**
+   * What happens when a visitor points at the layer (on devices with a mouse; on phones a tap just follows
+   * its link). Applied around the layer, so it never fights the layer's own animation.
+   */
+  hover?: { effect: 'lift' | 'grow' | 'glow' | 'brighten' | 'shine' | 'underline' | 'color'; color?: string; css?: string };
   /** Per-breakpoint changes, keyed by breakpoint id. Layout only: clips are shared by every breakpoint. */
   overrides?: Record<string, LayerOverride>;
   clips: Clip[];
@@ -573,7 +593,22 @@ export interface CaptionsLayer extends LayerBase {
   uppercase?: boolean;
 }
 
-export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer;
+/**
+ * A cursor for product tours. Its box's x / y is where the tip starts (put it off the stage so it enters)
+ * and its width is its size: about 4-7% of the stage reads well in a video. Its clips move it to layers
+ * (Move to) and press (Click).
+ */
+export interface CursorLayer extends LayerBase {
+  type: 'cursor';
+  /** auto: an arrow that turns into a pointing hand over links and buttons. */
+  shape?: 'auto' | 'arrow' | 'hand';
+  /** light: a white pointer with a dark outline (the usual); dark: the reverse. */
+  theme?: 'light' | 'dark';
+  /** The colour of the ring a click ripples. */
+  ringColor?: string;
+}
+
+export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer;
 
 export interface Clip {
   id: string;
@@ -588,6 +623,8 @@ export interface Clip {
   params?: Record<string, unknown>;
   /** A built-in sound effect that plays with this clip and moves with it. */
   sound?: ClipSound;
+  /** Made from a step (the Studio's Steps): the step's id. Applying the steps again replaces these clips. */
+  step?: string;
 }
 
 export interface ClipSound {

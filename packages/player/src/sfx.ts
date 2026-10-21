@@ -264,6 +264,7 @@ const SUGGESTED: Record<string, { in: string; out?: string }> = {
   'follow-path': { in: 'whoosh' },
   morph: { in: 'whoosh' },
   'code-type': { in: 'typing' },
+  'cursor-click': { in: 'click' },
   'code-edit': { in: 'typing' },
   'code-run': { in: 'click' },
   'code-note': { in: 'pop' },

@@ -9,6 +9,7 @@ import { TRANSITION_BUILDERS } from './transitions';
 import { FX_BUILDERS, REACT_BUILDERS, directionalBlur, speedOf, typewriterCaret } from './fx';
 import { easeOf, drive } from './more';
 import { PATH_BUILDERS } from './paths';
+import { TOUR_BUILDERS } from './tour';
 
 /**
  * Preset animation code. Each builder adds its tweens to the scene timeline at the clip's start.
@@ -393,7 +394,7 @@ const BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   },
 };
 
-const ALL_BUILDERS: Record<string, (ctx: PresetContext) => void> = { ...BUILDERS, ...MORE_BUILDERS, ...TRANSITION_BUILDERS, ...FX_BUILDERS, ...PATH_BUILDERS, ...REACT_BUILDERS };
+const ALL_BUILDERS: Record<string, (ctx: PresetContext) => void> = { ...BUILDERS, ...MORE_BUILDERS, ...TRANSITION_BUILDERS, ...FX_BUILDERS, ...PATH_BUILDERS, ...REACT_BUILDERS, ...TOUR_BUILDERS };
 
 export const presets: Record<string, PresetDefinition> = Object.fromEntries(
   PRESET_CATALOG.map((meta) => {

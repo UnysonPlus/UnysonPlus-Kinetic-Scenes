@@ -212,6 +212,9 @@ export function addLayer(scene: Scene, type: Exclude<Layer['type'], 'group'>, ex
     };
   } else if (type === 'path') {
     layer = { id, type: 'path', name: 'Line', d: 'M 0 80 C 35 80, 65 20, 100 20', stroke: '#2ad38b', strokeWidth: 0.3, arrow: 'end', box: { x: 50, y: 50, w: 30, h: 20 }, clips: [] };
+  } else if (type === 'cursor') {
+    // It starts just off the right edge, so it enters rather than appears.
+    layer = { id, type: 'cursor', name: 'Cursor', box: { x: 104, y: 70, w: 3.2, ratio: 0.7 }, clips: [] };
   } else if (type === 'repeat') {
     layer = {
       id, type: 'repeat', name: 'List', stagger: 0.12, step: { y: 12 },

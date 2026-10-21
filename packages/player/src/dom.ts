@@ -3,6 +3,7 @@ import { REST_3D, type Runtime3D, type State3D } from './model3d';
 import { buildDiagram, buildFlow, buildPath } from './vector';
 import { buildCode } from './code';
 import { buildCaptions } from './captions';
+import { buildCursor } from './cursor';
 
 /** The elements created for one layer. */
 export interface LayerRefs {
@@ -78,6 +79,7 @@ function addLink(doc: Document, outer: HTMLElement, link: LayerLink) {
   const a = doc.createElement('a');
   a.className = 'upw-link';
   a.href = link.href;
+  if (link.jump !== undefined && link.jump !== '') a.dataset.upwJump = String(link.jump);
   a.tabIndex = -1;
   if (link.newTab) { a.target = '_blank'; a.rel = 'noopener'; }
   outer.dataset.link = '';
@@ -88,7 +90,8 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
   const outer = doc.createElement('div');
   outer.className = `upw-layer upw-${layer.type}`;
   outer.dataset.layer = layer.id;
-  outer.style.zIndex = String(z);
+  // A cursor stays above everything else, spotlights and callouts included: it leads the eye.
+  outer.style.zIndex = String(layer.type === 'cursor' ? 9500 + z : z);
 
   const inner = doc.createElement('div');
   inner.className = 'upw-li';
@@ -96,6 +99,10 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
 
   const refs: LayerRefs = { layer, outer, inner, words: [], chars: [], pinned: pinned || layer.pin === 'stage' };
   if (layer.link) addLink(doc, outer, layer.link);
+  if (layer.hover?.effect) {
+    outer.dataset.hover = layer.hover.effect;
+    if (layer.hover.color) outer.style.setProperty('--upw-hover', layer.hover.color);
+  }
 
   if (layer.type === 'group') {
     // The group's frame wraps its contents; inside it, a stage-sized "proxy" keeps the children's
@@ -147,6 +154,9 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
   } else if (layer.type === 'flow') {
     inner.setAttribute('aria-hidden', 'true');
     buildFlow(doc, inner, layer);
+  } else if (layer.type === 'cursor') {
+    inner.setAttribute('aria-hidden', 'true');
+    buildCursor(doc, inner, layer);
   } else if (layer.type === 'captions') {
     // The spoken words are in the transcript.
     inner.setAttribute('aria-hidden', 'true');
@@ -259,7 +269,7 @@ export function applyLayout(refs: LayerRefs, bpId: string | null) {
     os.aspectRatio = '';
     os.height = typeof box.h === 'number' ? `${box.h}${hu}` : '';
   }
-  const [sx, sy] = ANCHOR_SHIFT[box.anchor ?? 'center'];
+  const [sx, sy] = refs.layer.type === 'cursor' ? [0, 0] : ANCHOR_SHIFT[box.anchor ?? 'center'];
   os.transform = `translate(${sx}%, ${sy}%)${box.rotate ? ` rotate(${box.rotate}deg)` : ''}`;
   if (typeof refs.layer.opacity === 'number') os.opacity = String(refs.layer.opacity);
 

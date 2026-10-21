@@ -17,6 +17,7 @@ import { defaultEaseFor } from './presets/catalog';
 import { drawDiagram, drawFlow, drawPath } from './vector';
 import { drawCode } from './code';
 import { drawCaptions } from './captions';
+import { drawCursor } from './cursor';
 import { expandRepeats } from './repeat';
 import { presetMeta } from './presets/catalog';
 
@@ -107,10 +108,15 @@ export interface ScenePlayer {
 
 const prefersReducedMotion = (win: Window) => win.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
-function pickBreakpoint(bps: Breakpoint[], width: number): Breakpoint {
-  // Sorted widest first by the validator.
-  return bps.find((bp) => width >= bp.minWidth) ?? bps[bps.length - 1];
+function pickBreakpoint(bps: Breakpoint[], width: number, ratio = 0): Breakpoint {
+  // Sorted widest first by the validator (a layout by shape before the plain one of the same width).
+  return bps.find((bp) => width >= bp.minWidth && (bp.minRatio === undefined || ratio >= bp.minRatio))
+    ?? bps.find((bp) => width >= bp.minWidth && bp.minRatio === undefined)
+    ?? bps[bps.length - 1];
 }
+
+/** Numbers each mounted scene, so styles a scene adds stay inside it. */
+let sceneCount = 0;
 
 function validated(input: unknown): Scene {
   // Repeat layers play as the groups they expand into.
@@ -137,6 +143,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
 
   const root = doc.createElement('div');
   root.className = 'upw-scene';
+  const sid = String(++sceneCount);
+  root.dataset.upwSid = sid;
   if (options.safeArea) root.dataset.safe = '';
   // Editing: links on the stage stay inert, so a click selects the layer instead of leaving the page.
   if (options.editor && !options.present) root.dataset.editor = '';
@@ -175,6 +183,23 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   const onFocusOut = (e: FocusEvent) => { if (linkTarget(e)) root.querySelectorAll<HTMLElement>('.upw-layer[data-focus]').forEach((el) => delete el.dataset.focus); };
   host.addEventListener('focusin', onFocusIn);
   host.addEventListener('focusout', onFocusOut);
+  // Hotspots: a link with a jump plays the scene from that moment instead of leaving the page. Works for the
+  // click area on the stage and for its copy in the transcript (keyboard and screen readers).
+  const onJump = (e: MouseEvent) => {
+    const a = (e.target as HTMLElement | null)?.closest?.('a[data-upw-jump]') as HTMLElement | null;
+    if (!a || !host.contains(a)) return;
+    const j = a.dataset.upwJump ?? '';
+    const marker = scene.markers?.find((m) => m.id === j);
+    const t = marker ? marker.t : Number(j);
+    if (!Number.isFinite(t)) return;
+    e.preventDefault();
+    player.seek(Math.max(0, Math.min(scene.duration, t)));
+    player.play();
+  };
+  host.addEventListener('click', onJump);
+  // A window of a new shape may want a layout by shape (an ultrawide one).
+  const onWinResize = () => { if (scene.stage.breakpoints.some((b) => b.minRatio !== undefined)) setBreakpointFromWidth(root.getBoundingClientRect().width || win.innerWidth); };
+  win.addEventListener('resize', onWinResize);
 
   // Events
   const listeners = new Map<PlayerEvent, Set<() => void>>();
@@ -358,6 +383,19 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     });
     start3d();
     setupSound();
+    // A hover's custom CSS, only where the page allows custom code (its author is trusted), scoped to its layer.
+    if (options.allowCode) {
+      const rules: string[] = [];
+      for (const r of flatRefs(layers)) {
+        const css = r.layer.hover?.css;
+        if (css && !/[<]|@import|url\(\s*['"]?javascript:/i.test(css)) rules.push(`[data-upw-sid="${sid}"] .upw-layer[data-layer="${CSS.escape(r.layer.id)}"]:hover{${css}}`);
+      }
+      if (rules.length) {
+        const st = doc.createElement('style');
+        st.textContent = `@media (hover:hover){${rules.join('')}}`;
+        root.appendChild(st);
+      }
+    }
   }
 
   /** A clip's ease as a function (for layers that draw themselves from their clips). */
@@ -468,6 +506,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       else if (layer.type === 'flow') lateDraw.push(() => drawFlow(inner, layer, t.time()));
       else if (layer.type === 'diagram') lateDraw.push(() => drawDiagram(inner, layer, t.time() - (layer.start ?? 0)));
       else if (layer.type === 'code') lateDraw.push(() => drawCode(inner, layer, t.time(), easeFnOf));
+      // The cursor goes last: it measures the layers it points at after they have drawn this frame.
+      else if (layer.type === 'cursor') lateFns.push(() => drawCursor(inner, layer, t.time(), easeFnOf));
       // Captions follow the voice-over, which runs on the scene's own clock.
       else if (layer.type === 'captions') lateDraw.push(() => drawCaptions(inner, layer, scene.audio, tl ? tl.time() : 0));
 
@@ -511,7 +551,11 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
 
   function chooseBreakpoint(width: number) {
     const bps = scene.stage.breakpoints;
-    return forced ? bps.find((b) => b.id === forced) ?? pickBreakpoint(bps, width) : pickBreakpoint(bps, width);
+    // The stage's shape, where it has a free one (filling the window, or capped to it).
+    const mode = scene.stage.heightMode;
+    const tall = (win.innerHeight || 0) - (scene.stage.heightOffset ?? 0);
+    const ratio = mode !== 'ratio' && tall > 0 ? width / tall : 0;
+    return forced ? bps.find((b) => b.id === forced) ?? pickBreakpoint(bps, width, ratio) : pickBreakpoint(bps, width, ratio);
   }
 
   function applyBreakpoint(next: Breakpoint) {
@@ -745,6 +789,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       cancelLoop();
       tl?.kill();
       host.removeEventListener('focusin', onFocusIn);
+      host.removeEventListener('click', onJump);
+      win.removeEventListener('resize', onWinResize);
       host.removeEventListener('focusout', onFocusOut);
       scrollLink?.destroy();
       dispose3d();

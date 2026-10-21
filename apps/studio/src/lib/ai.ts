@@ -68,7 +68,7 @@ function catalogForAi() {
     description: p.description,
     appliesTo: p.appliesTo,
     defaultDuration: p.defaultDuration,
-    params: Object.fromEntries(p.fields.map((f) => [f.key, f.type === 'select' ? f.options.map((o) => o.value) : f.type])),
+    params: Object.fromEntries(p.fields.map((f) => [f.key, f.type === 'select' ? f.options.map((o) => o.value) : f.type === 'layer' ? 'layer id' : f.type === 'longtext' ? 'text' : f.type])),
   }));
 }
 

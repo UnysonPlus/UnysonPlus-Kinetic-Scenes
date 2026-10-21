@@ -140,6 +140,8 @@ export function App() {
   /** Sound in the Studio (the preview's audio, played here in step with it). */
   const [soundOn, setSoundOn] = useState(true);
   const { engine: audioEngine, info: audioInfo, peaksPerSecond, waiting: soundWaiting } = useSceneAudio(scene, state, soundOn);
+  // The playhead, for inspector actions that start "here" (Focus the camera on it).
+  (window as unknown as { __upwPlayhead?: number }).__upwPlayhead = state.time;
   const audioRef = useRef<HTMLInputElement>(null);
   const [frameError, setFrameError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);

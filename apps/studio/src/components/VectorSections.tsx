@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import type { CaptionsLayer, CodeLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
+import type { CaptionsLayer, CodeLayer, CursorLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
+import { applySteps, cutOut } from '../lib/tour';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 import { splitImageLayer, splitPicture, splitStatus, type SplitStatus } from '../lib/split';
 
@@ -228,6 +229,102 @@ export function SplitImageSection(props: { scene: Scene; layer: Layer; onCommit:
           <div className="insp-start"><button type="button" className="btn small" disabled={busy || !layer.src} onClick={run}>{busy ? 'Splitting…' : 'Split into layers'}</button></div>
         </>
       )}
+      {note && <p className="field-hint wide" role="status">{note}</p>}
+    </Section>
+  );
+}
+
+export function CursorSection(props: { layer: CursorLayer; set: (patch: Partial<CursorLayer>) => void }) {
+  const { layer, set } = props;
+  return (
+    <Section title="Cursor">
+      <SelectField label="Shape" value={layer.shape ?? 'auto'} options={[{ value: 'auto', label: 'Arrow, a hand over links' }, { value: 'arrow', label: 'Always an arrow' }, { value: 'hand', label: 'Always a hand' }]} onChange={(v) => set({ shape: v === 'auto' ? undefined : v })} />
+      <SelectField label="Look" value={layer.theme ?? 'light'} options={[{ value: 'light', label: 'White, dark outline' }, { value: 'dark', label: 'Dark, white outline' }]} onChange={(v) => set({ theme: v === 'light' ? undefined : v })} />
+      <ColorField label="Click ring" value={layer.ringColor} placeholder="#ffffff" onCommit={(v) => set({ ringColor: v || undefined })} />
+      <p className="field-hint wide">
+        Its position is where the tip starts: keep it off the stage so it enters. Add <strong>Move to</strong> (pick the layer to
+        point at) and <strong>Click</strong> from the Cursor and tours presets. Its width is its size: 3 to 7% reads well in a video.
+      </p>
+    </Section>
+  );
+}
+
+const HOVERS = [
+  { value: '', label: 'Nothing' }, { value: 'lift', label: 'Lift' }, { value: 'grow', label: 'Grow' }, { value: 'glow', label: 'Glow' },
+  { value: 'brighten', label: 'Brighten' }, { value: 'shine', label: 'A shine sweeps across' }, { value: 'underline', label: 'Underline draws in' }, { value: 'color', label: 'Change colour' },
+];
+
+export function HoverSection(props: { layer: Layer; set: (hover: Layer['hover']) => void }) {
+  const h = props.layer.hover;
+  const set = (patch: Partial<NonNullable<Layer['hover']>>) => {
+    const next = { ...(h ?? { effect: 'lift' }), ...patch } as NonNullable<Layer['hover']>;
+    props.set(next.effect ? next : undefined);
+  };
+  return (
+    <Section title="Hover">
+      <SelectField label="When pointed at" value={h?.effect ?? ''} options={HOVERS} onChange={(v) => (v ? set({ effect: v as NonNullable<Layer['hover']>['effect'] }) : props.set(undefined))} />
+      {h && ['glow', 'underline', 'color'].includes(h.effect) && <ColorField label="Colour" value={h.color} placeholder="#2ad38b" onCommit={(v) => set({ color: v || undefined })} />}
+      {h && <TextField label="Custom CSS (trusted pages)" value={h.css} mono wide placeholder="e.g. rotate: -2deg;" onCommit={(v) => set({ css: v.trim() || undefined })} />}
+      <p className="field-hint wide">On a page, with a mouse. Phones just follow the link on a tap. Custom CSS runs only where custom code is allowed (in WordPress, for authors who may post HTML).</p>
+    </Section>
+  );
+}
+
+export function CutOutSection(props: { scene: Scene; layer: Layer; onCommit: (scene: Scene) => void; onSelect: (id: string) => void }) {
+  const { scene, layer } = props;
+  const [r, setR] = useState({ x: 60, y: 70, w: 25, h: 15 });
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  if (layer.type !== 'image') return null;
+  const run = async () => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const out = await cutOut(scene, layer.id, r);
+      props.onCommit(out.scene);
+      props.onSelect(out.id);
+    } catch (e) {
+      setNote(`Could not cut it out: ${(e as Error).message}.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Section title="Cut a piece out">
+      <p className="field-hint wide">A button, a panel or a row of the screenshot becomes its own layer in exactly the same place (ready to press, slide or glow), and the gap behind it is filled from its surroundings. The box is in % of this layer.</p>
+      <NumberField label="Left" value={r.x} step={0.5} min={0} max={100} unit="%" onCommit={(v) => v !== undefined && setR({ ...r, x: v })} />
+      <NumberField label="Top" value={r.y} step={0.5} min={0} max={100} unit="%" onCommit={(v) => v !== undefined && setR({ ...r, y: v })} />
+      <NumberField label="Width" value={r.w} step={0.5} min={0.5} max={100} unit="%" onCommit={(v) => v && setR({ ...r, w: v })} />
+      <NumberField label="Height" value={r.h} step={0.5} min={0.5} max={100} unit="%" onCommit={(v) => v && setR({ ...r, h: v })} />
+      <div className="insp-start"><button type="button" className="btn small" disabled={busy || !layer.src} onClick={run}>{busy ? 'Cutting…' : 'Cut it out'}</button></div>
+      {note && <p className="field-hint wide" role="alert">{note}</p>}
+    </Section>
+  );
+}
+
+export function StepsSection(props: { scene: Scene; onCommit: (scene: Scene) => void }) {
+  const { scene } = props;
+  const [note, setNote] = useState<string | null>(null);
+  const steps = scene.steps ?? [];
+  const save = (v: string) => {
+    try {
+      const data = v.trim() ? JSON.parse(v) : [];
+      if (!Array.isArray(data) || data.some((s) => !s || typeof s.id !== 'string' || !Array.isArray(s.do))) throw new Error('each step needs an id and a "do" list');
+      const r = applySteps({ ...scene, steps: data.length ? data : undefined });
+      props.onCommit(r.scene);
+      setNote(r.warnings.length ? r.warnings.join(' ') : `${data.length} ${data.length === 1 ? 'step' : 'steps'} applied.`);
+    } catch (e) {
+      setNote(`That text is not valid: ${(e as Error).message}.`);
+    }
+  };
+  return (
+    <Section title="Steps">
+      <p className="field-hint wide">
+        A walkthrough as a list of steps, each saying what changes ({'{'} "id": "save", "label": "Save", "do": [{'{'} "layer": "cursor", "preset": "cursor-click" {'}'}, {'{'} "layer": "status", "preset": "text-swap", "params": {'{'} "to": "Saved" {'}'} {'}'}] {'}'}).
+        Each step starts when the one before has finished and held ("hold", seconds; or "at"); its changes start together ("offset" to stagger). Each step also gets a marker, for click-to-advance and hotspots.
+      </p>
+      <TextField label="Steps" value={steps.length ? JSON.stringify(steps, null, 1) : ''} wide mono multiline placeholder="[]" onCommit={save} />
+      {steps.length > 0 && <div className="insp-start"><button type="button" className="btn small" onClick={() => save(JSON.stringify(steps))}>Apply the steps again</button></div>}
       {note && <p className="field-hint wide" role="status">{note}</p>}
     </Section>
   );

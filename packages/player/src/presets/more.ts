@@ -348,6 +348,31 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     ctx.late(() => renderSwaps(el, layer.clips.map((c) => c.id), tl.time()));
   },
 
+  'image-swap'(ctx) {
+    // Before and after: a second picture of the same screen takes over (the menu opened, the setting saved),
+    // cut on the frame, or with a quick fade or wipe. Several on one layer step through screens.
+    const img = ctx.el.querySelector<HTMLImageElement>(':scope > img');
+    if (ctx.layer.type !== 'image' || !img) return;
+    const p = ctx.params;
+    const src = typeof p.src === 'string' ? p.src : '';
+    if (!src) return;
+    const style = pick(p, 'style', ['cut', 'fade', 'wipe'] as const, 'cut');
+    ctx.el.style.position = 'relative';
+    const next = owned(ctx, 'upw-after');
+    let pic = next.querySelector('img');
+    if (!pic) { pic = ctx.el.ownerDocument.createElement('img'); next.appendChild(pic); }
+    pic.src = src;
+    pic.alt = '';
+    pic.decoding = 'async';
+    Object.assign(next.style, { position: 'absolute', inset: '0', pointerEvents: 'none', borderRadius: 'inherit', overflow: 'hidden' });
+    Object.assign(pic.style, { width: '100%', height: '100%', display: 'block', objectFit: img.style.objectFit || 'cover', objectPosition: img.style.objectPosition || '' });
+    drive(ctx, (e) => {
+      const v = style === 'cut' ? (e > 0 ? 1 : 0) : e;
+      next.style.opacity = style === 'wipe' ? (v > 0 ? '1' : '0') : v.toFixed(3);
+      next.style.clipPath = style === 'wipe' && v < 1 ? `inset(0 ${((1 - v) * 100).toFixed(2)}% 0 0)` : '';
+    }, { always: true });
+  },
+
   sheen(ctx) {
     const p = ctx.params;
     const angle = num(p, 'angle', 110);

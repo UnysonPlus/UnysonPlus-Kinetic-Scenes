@@ -26,6 +26,9 @@ export const PATH_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   'code-highlight': codeClip,
   'code-run': codeClip,
   'code-note': codeClip,
+  // The Cursor layer draws itself from these (cursor.ts).
+  'cursor-move': codeClip,
+  'cursor-click': codeClip,
 
   draw(ctx) {
     const out = isOut(ctx.params);

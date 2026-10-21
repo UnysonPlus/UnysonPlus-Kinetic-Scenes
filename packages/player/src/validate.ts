@@ -73,7 +73,7 @@ export function validateScene(input: unknown): ValidationResult {
       if (!st.breakpoints.some((bp) => isObj(bp) && bp.minWidth === 0)) {
         warnings.push('stage.breakpoints: none has minWidth 0, so the narrowest one is used below its minimum.');
       }
-      st.breakpoints.sort((a, b) => b.minWidth - a.minWidth);
+      st.breakpoints.sort((a, b) => b.minWidth - a.minWidth || (b.minRatio ?? 0) - (a.minRatio ?? 0));
     }
     if (st.heightMode === undefined) st.heightMode = 'ratio-capped';
     if (!HEIGHT_MODES.includes(st.heightMode)) fail('stage.heightMode', `must be one of ${HEIGHT_MODES.join(', ')}`);
@@ -288,6 +288,9 @@ export function validateScene(input: unknown): ValidationResult {
           const t = layer.tag as unknown;
           if (!isObj(t) || typeof t.label !== 'string' || !Array.isArray(t.stops) || t.stops.some((s: unknown) => !isObj(s) || !ids.has(s.node as string) || !isNum(s.t))) fail(`${lp}.tag`, 'must be { label, stops: [{ node, t }] } with node ids');
         }
+      } else if (layer.type === 'cursor') {
+        if (layer.shape !== undefined && !['auto', 'arrow', 'hand'].includes(layer.shape)) fail(`${lp}.shape`, 'must be auto, arrow or hand');
+        if (layer.theme !== undefined && !['light', 'dark'].includes(layer.theme)) fail(`${lp}.theme`, 'must be light or dark');
       } else if (layer.type === 'captions') {
         if (!isObj(layer.style) || !isNum(layer.style.fontSize) || layer.style.fontSize <= 0) fail(`${lp}.style.fontSize`, 'is required (stage units)');
         if (layer.maxWords !== undefined && (!isNum(layer.maxWords) || layer.maxWords < 1 || layer.maxWords > 12)) fail(`${lp}.maxWords`, 'must be 1 to 12');
@@ -308,7 +311,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.theme !== undefined && !['dark', 'light'].includes(layer.theme)) fail(`${lp}.theme`, 'must be dark or light');
         if (layer.fontSize !== undefined && (!isNum(layer.fontSize) || layer.fontSize <= 0 || layer.fontSize > 20)) fail(`${lp}.fontSize`, 'must be more than 0 and at most 20 stage units');
       } else {
-        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow, diagram, code, captions or repeat');
+        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow, diagram, code, captions, repeat or cursor');
       }
 
       if (layer.type !== 'group' && layer.type !== 'flow' && layer.type !== 'repeat') {
@@ -321,6 +324,7 @@ export function validateScene(input: unknown): ValidationResult {
           if (sized && !isNum(layer.box.h) && !isNum(layer.box.ratio)) fail(`${lp}.box`, 'needs h or ratio (all layers but text and captions)');
         }
       }
+      if (layer.hover !== undefined && (!isObj(layer.hover) || !['lift', 'grow', 'glow', 'brighten', 'shine', 'underline', 'color'].includes(layer.hover.effect as string))) fail(`${lp}.hover`, 'must be { effect: lift, grow, glow, brighten, shine, underline or color }');
       if (layer.depth !== undefined && (!isNum(layer.depth) || layer.depth < -1 || layer.depth > 1)) fail(`${lp}.depth`, 'must be -1 (far) to 1 (near)');
       if (layer.start !== undefined && (!isNum(layer.start) || layer.start < 0)) fail(`${lp}.start`, 'must be 0 or more seconds');
       if (layer.end !== undefined && (!isNum(layer.end) || layer.end <= (layer.start ?? 0))) fail(`${lp}.end`, 'must come after start');
@@ -341,6 +345,7 @@ export function validateScene(input: unknown): ValidationResult {
           ln.href = ln.href.trim();
           if (ln.newTab !== undefined && typeof ln.newTab !== 'boolean') fail(`${lp}.link.newTab`, 'must be true or false');
           if (ln.label !== undefined && typeof ln.label !== 'string') fail(`${lp}.link.label`, 'must be text');
+          if (ln.jump !== undefined && typeof ln.jump !== 'string' && !isNum(ln.jump)) fail(`${lp}.link.jump`, 'must be a marker id or seconds');
         }
       }
 

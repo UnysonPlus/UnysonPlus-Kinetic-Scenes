@@ -7,7 +7,7 @@ import { EXIT_EASE } from '../eases';
  * loading GSAP. presets/index.ts supplies the build function for every id listed here.
  */
 
-export type PresetCategory = 'text' | 'reveal' | 'motion' | 'emphasis' | 'ambient' | '3d' | 'transition' | 'code';
+export type PresetCategory = 'text' | 'reveal' | 'motion' | 'emphasis' | 'ambient' | '3d' | 'transition' | 'code' | 'tour';
 
 export const CATEGORY_LABELS: Record<PresetCategory, string> = {
   text: 'Text',
@@ -18,6 +18,7 @@ export const CATEGORY_LABELS: Record<PresetCategory, string> = {
   '3d': '3D',
   transition: 'Scene transitions',
   code: 'Code',
+  tour: 'Cursor and tours',
 };
 
 export type PresetField =
@@ -26,7 +27,11 @@ export type PresetField =
   | { key: string; label: string; type: 'boolean' }
   | { key: string; label: string; type: 'text' }
   | { key: string; label: string; type: 'color' }
-  | { key: string; label: string; type: 'code' };
+  | { key: string; label: string; type: 'code' }
+  /** Several lines of plain text (not code to run). */
+  | { key: string; label: string; type: 'longtext' }
+  /** Another layer of the scene, by id. */
+  | { key: string; label: string; type: 'layer' };
 
 export interface PresetMeta {
   id: string;
@@ -64,7 +69,7 @@ const SIDE: PresetField = {
   ],
 };
 // Presets that animate the layer as a whole also work on a group (its frame).
-const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram', 'code', 'captions', 'repeat'];
+const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram', 'code', 'captions', 'repeat', 'cursor'];
 
 export const PRESET_CATALOG: PresetMeta[] = [
   // ---- Text ----
@@ -336,7 +341,7 @@ export const PRESET_CATALOG: PresetMeta[] = [
     description: 'Glides into another layer: to its place and size (and, between two shapes, its colour and corners), then hands over to it in a short crossfade, so the same word, card or screenshot carries on into the next act instead of fading out and in again. The other layer stays hidden until the handover.',
     defaultEase: 'power3.inOut', defaultDuration: 0.9,
     defaults: { to: '', fade: 0.3 },
-    fields: [{ key: 'to', label: 'Into layer (id)', type: 'text' }, { key: 'fade', label: 'Handover', type: 'number', min: 0.05, max: 1, step: 0.05 }],
+    fields: [{ key: 'to', label: 'Into layer', type: 'layer' }, { key: 'fade', label: 'Handover', type: 'number', min: 0.05, max: 1, step: 0.05 }],
   },
   {
     id: 'follow-path', label: 'Follow path', category: 'motion', appliesTo: ['text', 'shape', 'image', 'model', 'group', 'diagram', 'code', 'repeat'],
@@ -344,7 +349,7 @@ export const PRESET_CATALOG: PresetMeta[] = [
     defaultEase: 'power1.inOut', defaultDuration: 1.6,
     defaults: { path: '', line: 1, from: 0, to: 100, rotate: false, trail: 0, trailColor: '#ffffff', trailWidth: 0.35 },
     fields: [
-      { key: 'path', label: 'Line layer (id)', type: 'text' },
+      { key: 'path', label: 'Line or flow layer', type: 'layer' },
       { key: 'line', label: 'Which flow line', type: 'number', min: 1, max: 40, step: 1 },
       { key: 'from', label: 'From', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
       { key: 'to', label: 'To', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
@@ -352,6 +357,55 @@ export const PRESET_CATALOG: PresetMeta[] = [
       { key: 'trail', label: 'Trail length', type: 'number', min: 0, max: 1, step: 0.05 },
       { key: 'trailColor', label: 'Trail colour', type: 'color' },
       { key: 'trailWidth', label: 'Trail width', type: 'number', min: 0.05, max: 3, step: 0.05, unit: 'su' },
+    ],
+  },
+  // ---- Cursor (for Cursor layers: the cursor draws itself from these clips) ----
+  {
+    id: 'cursor-move', label: 'Move to', category: 'tour', appliesTo: ['cursor'],
+    description: 'The cursor travels to a layer (a point on it, in % of the layer: 50 / 50 is its centre) along a gentle curve with a pointer\'s easing, or to a point on the stage when no layer is given (beyond the edges to leave). Over a link or a button it turns into a pointing hand as it arrives.',
+    defaultEase: 'power3.inOut', defaultDuration: 0.9,
+    defaults: { to: '', x: 50, y: 50, px: 50, py: 50, arc: 0.18, hand: 'auto' },
+    fields: [
+      { key: 'to', label: 'To layer', type: 'layer' },
+      { key: 'x', label: 'Point across it', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
+      { key: 'y', label: 'Point down it', type: 'number', min: 0, max: 100, step: 1, unit: '%' },
+      { key: 'px', label: 'Or stage X', type: 'number', min: -50, max: 150, step: 1, unit: '%' },
+      { key: 'py', label: 'Or stage Y', type: 'number', min: -50, max: 150, step: 1, unit: '%' },
+      { key: 'arc', label: 'Curve', type: 'number', min: -0.6, max: 0.6, step: 0.02 },
+      { key: 'hand', label: 'Pointing hand', type: 'select', options: [{ value: 'auto', label: 'Over links' }, { value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+    ],
+  },
+  {
+    id: 'cursor-click', label: 'Click', category: 'tour', appliesTo: ['cursor'],
+    description: 'The cursor presses: it dips, a ring ripples out from the tip and the layer under it dips too, all on the same frame. Give it a click sound, and start what the click causes on its last frame.',
+    defaultEase: 'none', defaultDuration: 0.35,
+    defaults: { dip: true },
+    fields: [{ key: 'dip', label: 'The layer under it dips', type: 'boolean' }],
+  },
+  {
+    id: 'image-swap', label: 'Before and after', category: 'tour', appliesTo: ['image'],
+    description: 'A second picture of the same screen takes over (the menu opened, the setting saved): cut on the frame a click lands, or a quick fade or wipe. Several on one picture step through screens.',
+    defaultEase: 'power2.out', defaultDuration: 0.25,
+    defaults: { src: '', style: 'cut' },
+    fields: [{ key: 'src', label: 'Picture after (address or data URL)', type: 'text' }, { key: 'style', label: 'Change', type: 'select', options: [{ value: 'cut', label: 'Cut' }, { value: 'fade', label: 'Fade' }, { value: 'wipe', label: 'Wipe' }] }],
+  },
+  {
+    id: 'spotlight', label: 'Spotlight', category: 'tour', appliesTo: ALL,
+    description: 'Everything but this layer dims, with a rounded window around it, and stays that way until an Out clip. Follows the layer through camera moves.',
+    defaultEase: 'power2.inOut', defaultDuration: 0.5,
+    defaults: { direction: 'in', pad: 1.2, radius: 1.2, dim: 0.62 },
+    fields: [DIRECTION, { key: 'pad', label: 'Room around it', type: 'number', min: 0, max: 20, step: 0.1, unit: 'su' }, { key: 'radius', label: 'Corners', type: 'number', min: 0, max: 30, step: 0.1, unit: 'su' }, { key: 'dim', label: 'Shade', type: 'number', min: 0, max: 1, step: 0.05 }],
+  },
+  {
+    id: 'callout', label: 'Callout', category: 'tour', appliesTo: ALL,
+    description: 'A labelled pill beside this layer, joined to it by a short line, saying what it is ("Save your changes here"). Stays until an Out clip.',
+    defaultEase: 'power3.out', defaultDuration: 0.45,
+    defaults: { direction: 'in', text: 'Look here', side: 'top', gap: 3, color: '#ffd166', size: 1.5 },
+    fields: [
+      DIRECTION, { key: 'text', label: 'Label', type: 'text' },
+      { key: 'side', label: 'Side', type: 'select', options: [{ value: 'top', label: 'Above' }, { value: 'right', label: 'Right' }, { value: 'bottom', label: 'Below' }, { value: 'left', label: 'Left' }] },
+      { key: 'gap', label: 'Distance', type: 'number', min: 0, max: 30, step: 0.5, unit: 'su' },
+      { key: 'color', label: 'Colour', type: 'color' }, { key: 'size', label: 'Text size', type: 'number', min: 0.5, max: 6, step: 0.1, unit: 'su' },
     ],
   },
   // ---- Code (for Code layers: the layer draws itself from these clips) ----
@@ -371,7 +425,7 @@ export const PRESET_CATALOG: PresetMeta[] = [
     description: 'Turns the code into a new version the way a person would edit it: each changed part is selected and deleted, then the new text is typed in its place, and lines slide to make room or close up. Give the whole new version; only what differs is touched.',
     defaultEase: 'none', defaultDuration: 3,
     defaults: { to: '', suggest: false },
-    fields: [{ key: 'to', label: 'New version', type: 'code' }, { key: 'suggest', label: 'Autocomplete popup', type: 'boolean' }],
+    fields: [{ key: 'to', label: 'New version', type: 'longtext' }, { key: 'suggest', label: 'Autocomplete popup', type: 'boolean' }],
   },
   {
     id: 'code-highlight', label: 'Highlight code', category: 'code', appliesTo: ['code'],
@@ -392,7 +446,7 @@ export const PRESET_CATALOG: PresetMeta[] = [
     description: 'Presses the Run button and shows the output in a panel under the code, one line at a time over the clip.',
     defaultEase: 'none', defaultDuration: 1.2,
     defaults: { output: 'Hello, world', rows: 0 },
-    fields: [{ key: 'output', label: 'Output', type: 'code' }, { key: 'rows', label: 'Panel height (lines, 0 = fit)', type: 'number', min: 0, max: 40, step: 1 }],
+    fields: [{ key: 'output', label: 'Output', type: 'longtext' }, { key: 'rows', label: 'Panel height (lines, 0 = fit)', type: 'number', min: 0, max: 40, step: 1 }],
   },
   {
     id: 'code-note', label: 'Code note', category: 'code', appliesTo: ['code'],
