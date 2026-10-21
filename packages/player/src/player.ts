@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-import type { Box, Breakpoint, ModelLayer, Scene, TextStyle } from './types';
+import type { Box, Breakpoint, Clip, ModelLayer, Scene, TextStyle } from './types';
 import { validateScene } from './validate';
 import { applyLayout, buildText, createLayer, createStage, flatRefs, layoutTree, measureGroup, resolveLayer, type LayerRefs } from './dom';
 import { groupDuration } from './groups';
@@ -15,6 +15,8 @@ import { TRANSCRIPT_CLASS, transcriptHtml } from './transcript';
 import { buildCamera, cameraTransform, isRest, CAMERA_REST, type CameraState } from './camera';
 import { defaultEaseFor } from './presets/catalog';
 import { drawDiagram, drawFlow, drawPath } from './vector';
+import { drawCode } from './code';
+import { presetMeta } from './presets/catalog';
 
 // The measured eases, usable by name in any clip (and in custom code clips).
 NAMED_EASES.forEach((e) => gsap.registerEase(e.id, e.fn));
@@ -345,6 +347,15 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     setupSound();
   }
 
+  /** A clip's ease as a function (for layers that draw themselves from their clips). */
+  const easeFnOf = (clip: Clip): ((t: number) => number) => {
+    const meta = presetMeta[clip.preset];
+    const e = resolveEase(clip.ease ?? (meta ? defaultEaseFor(meta, clip.params) : 'none'));
+    if (typeof e === 'function') return e;
+    const f = gsap.parseEase(e) as ((t: number) => number) | undefined;
+    return typeof f === 'function' ? f : (t: number) => t;
+  };
+
   /** Loop the last part: where the repeats start, or null to loop everything (or not at all). */
   const loopFrom = (): number | null => {
     const lf = scene.playback.loopFrom;
@@ -441,6 +452,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       if (layer.type === 'path') lateDraw.push(() => drawPath(inner, layer));
       else if (layer.type === 'flow') lateDraw.push(() => drawFlow(inner, layer, t.time()));
       else if (layer.type === 'diagram') lateDraw.push(() => drawDiagram(inner, layer, t.time() - (layer.start ?? 0)));
+      else if (layer.type === 'code') lateDraw.push(() => drawCode(inner, layer, t.time(), easeFnOf));
 
       if (layer.type === 'group' && refs.children) {
         const dur = groupDuration(layer);

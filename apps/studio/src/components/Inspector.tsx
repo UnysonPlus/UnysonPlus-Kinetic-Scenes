@@ -15,7 +15,7 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
-import { DiagramSection, FlowSection, PathSection } from './VectorSections';
+import { CodeSection, DiagramSection, FlowSection, PathSection } from './VectorSections';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
@@ -497,7 +497,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
   return (
     <div className="insp">
       <div className="insp-head">
-        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram' } as Record<Layer['type'], string>)[layer.type]}</p>
+        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram', code: 'Code' } as Record<Layer['type'], string>)[layer.type]}</p>
         <input className="insp-title" aria-label="Layer name" defaultValue={layer.name ?? layer.id} key={layer.id + (layer.name ?? '')}
           onBlur={(e) => { if (e.target.value !== (layer.name ?? layer.id)) props({ name: e.target.value || undefined }); }}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
@@ -557,6 +557,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'path' && <PathSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'code' && <CodeSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'diagram' && <DiagramSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
 
       {layer.type === 'image' && (
@@ -599,10 +600,10 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         </Field>
       </Section>}
 
-      <section className="insp-section">
+      {layer.type !== 'flow' && <section className="insp-section">
         <header><h3>Align</h3></header>
         <AlignPanel count={1} to={alignTo} onTo={onAlignTo} onAlign={onAlign} />
-      </section>
+      </section>}
 
       <Section title="Timing">
         <NumberField label="Appears" value={layer.start ?? 0} step={0.1} min={0} max={scene.duration} unit="s" onCommit={(v) => props({ start: v || undefined })} />

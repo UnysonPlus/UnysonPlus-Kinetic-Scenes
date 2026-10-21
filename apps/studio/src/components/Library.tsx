@@ -12,6 +12,18 @@ const SCROLL_SAMPLE = 'data:image/svg+xml,' + encodeURIComponent(
   + Array.from({ length: 12 }, (_, i) => `<rect x="16" y="${54 + i * 70}" width="${i % 3 === 0 ? 168 : 110}" height="${i % 3 === 0 ? 50 : 14}" rx="5" fill="${i % 3 === 0 ? '#2ad38b' : '#c6ced6'}"/>`).join('')
   + '</svg>');
 
+/** A small code window showing one of the code presets. */
+function codeSample(id: string, d: number): Layer {
+  const code = 'name = input()\nprint(name)';
+  const clip = (preset: string, start: number, duration: number, params?: Record<string, unknown>) => ({ id: preset + start, preset, start, duration, params });
+  const clips = id === 'code-type' ? [clip('code-type', 0.15, d)]
+    : id === 'code-edit' ? [clip('code-edit', 0.15, d, { to: 'def hi(n):\n    print(n)\n\nhi(input())' })]
+    : id === 'code-run' ? [clip('code-run', 0.15, d, { output: 'John' })]
+    : id === 'code-note' ? [clip('code-note', 0.15, 0.4, { line: 1, text: 'reads a line' })]
+    : [clip('code-highlight', 0.15, 0.4, { line: 1, token: 'input' })];
+  return { id: 's', type: 'code', title: 'main.py', run: true, fontSize: 5, code, box: { x: id === 'code-note' ? 38 : 50, y: 50, w: id === 'code-note' ? 60 : 92, h: 86 }, clips };
+}
+
 function sampleScene(p: PresetMeta): Scene {
   const textual = p.appliesTo.includes('text');
   const word = p.id === 'text-scramble' || p.id === 'text-typewriter' ? 'Motion' : p.id === 'text-count' ? '$1,280'
@@ -40,7 +52,7 @@ function sampleScene(p: PresetMeta): Scene {
     format: 'unysonplus-scene', version: 1, duration: d + 0.75,
     stage: { breakpoints: [{ id: 'a', minWidth: 0, aspect: [16, 10] }], heightMode: 'ratio', safeArea: 0 },
     playback: { trigger: 'manual', loop: true, repeatDelay: 0.3 },
-    layers: p.id === 'draw' ? [{ ...line, clips: layer.clips }] : p.id === 'follow-path' ? [{ ...line, stroke: 'rgba(255,255,255,.18)' }, { id: 's', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 0, y: 0, w: 8, ratio: 1 }, clips: [{ ...layer.clips[0], params: { path: 'ln', trail: 0.4, trailColor: '#2ad38b' } }] }] : [layer],
+    layers: p.category === 'code' ? [codeSample(p.id, d)] : p.id === 'draw' ? [{ ...line, clips: layer.clips }] : p.id === 'follow-path' ? [{ ...line, stroke: 'rgba(255,255,255,.18)' }, { id: 's', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 0, y: 0, w: 8, ratio: 1 }, clips: [{ ...layer.clips[0], params: { path: 'ln', trail: 0.4, trailColor: '#2ad38b' } }] }] : [layer],
   };
 }
 
@@ -81,7 +93,7 @@ export function Library(props: {
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = PRESET_CATALOG.filter((p) => !q || p.label.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-    const order: PresetCategory[] = ['text', 'reveal', 'motion', 'emphasis', 'transition', 'ambient', '3d'];
+    const order: PresetCategory[] = ['text', 'reveal', 'motion', 'emphasis', 'transition', 'ambient', 'code', '3d'];
     return order.map((c) => ({ c, items: list.filter((p) => p.category === c) })).filter((g) => g.items.length);
   }, [query]);
 

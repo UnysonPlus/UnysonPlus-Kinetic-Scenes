@@ -7,7 +7,7 @@ import { EXIT_EASE } from '../eases';
  * loading GSAP. presets/index.ts supplies the build function for every id listed here.
  */
 
-export type PresetCategory = 'text' | 'reveal' | 'motion' | 'emphasis' | 'ambient' | '3d' | 'transition';
+export type PresetCategory = 'text' | 'reveal' | 'motion' | 'emphasis' | 'ambient' | '3d' | 'transition' | 'code';
 
 export const CATEGORY_LABELS: Record<PresetCategory, string> = {
   text: 'Text',
@@ -17,6 +17,7 @@ export const CATEGORY_LABELS: Record<PresetCategory, string> = {
   ambient: 'Ambient and backgrounds',
   '3d': '3D',
   transition: 'Scene transitions',
+  code: 'Code',
 };
 
 export type PresetField =
@@ -63,7 +64,7 @@ const SIDE: PresetField = {
   ],
 };
 // Presets that animate the layer as a whole also work on a group (its frame).
-const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram'];
+const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram', 'code'];
 
 export const PRESET_CATALOG: PresetMeta[] = [
   // ---- Text ----
@@ -332,6 +333,59 @@ export const PRESET_CATALOG: PresetMeta[] = [
       { key: 'trail', label: 'Trail length', type: 'number', min: 0, max: 1, step: 0.05 },
       { key: 'trailColor', label: 'Trail colour', type: 'color' },
       { key: 'trailWidth', label: 'Trail width', type: 'number', min: 0.05, max: 3, step: 0.05, unit: 'su' },
+    ],
+  },
+  // ---- Code (for Code layers: the layer draws itself from these clips) ----
+  {
+    id: 'code-type', label: 'Type code', category: 'code', appliesTo: ['code'],
+    description: 'Types lines of the code in, character by character with a caret, in a natural rhythm: quick within a word, a beat at punctuation and new lines, indentation arriving with the line. The lines are hidden until typed. Several clips can type a file part by part, in step with a voice-over. Suggest shows an autocomplete popup while longer words are typed.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { fromLine: 1, toLine: 0, suggest: false },
+    fields: [
+      { key: 'fromLine', label: 'From line', type: 'number', min: 1, max: 2000, step: 1 },
+      { key: 'toLine', label: 'To line (0 = the end)', type: 'number', min: 0, max: 2000, step: 1 },
+      { key: 'suggest', label: 'Autocomplete popup', type: 'boolean' },
+    ],
+  },
+  {
+    id: 'code-edit', label: 'Change code', category: 'code', appliesTo: ['code'],
+    description: 'Turns the code into a new version the way a person would edit it: each changed part is selected and deleted, then the new text is typed in its place, and lines slide to make room or close up. Give the whole new version; only what differs is touched.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { to: '', suggest: false },
+    fields: [{ key: 'to', label: 'New version', type: 'code' }, { key: 'suggest', label: 'Autocomplete popup', type: 'boolean' }],
+  },
+  {
+    id: 'code-highlight', label: 'Highlight code', category: 'code', appliesTo: ['code'],
+    description: 'Marks lines with a coloured band, or one word on a line with a box (give the word in Word). Stays until an Out clip for the same line.',
+    defaultEase: 'power2.out', defaultDuration: 0.4,
+    defaults: { direction: 'in', line: 1, toLine: 0, token: '', nth: 1, color: '#2ad38b' },
+    fields: [
+      DIRECTION,
+      { key: 'line', label: 'Line', type: 'number', min: 1, max: 2000, step: 1 },
+      { key: 'toLine', label: 'To line', type: 'number', min: 0, max: 2000, step: 1 },
+      { key: 'token', label: 'Word', type: 'text' },
+      { key: 'nth', label: 'Which one on the line', type: 'number', min: 1, max: 20, step: 1 },
+      { key: 'color', label: 'Colour', type: 'color' },
+    ],
+  },
+  {
+    id: 'code-run', label: 'Run code', category: 'code', appliesTo: ['code'],
+    description: 'Presses the Run button and shows the output in a panel under the code, one line at a time over the clip.',
+    defaultEase: 'none', defaultDuration: 1.2,
+    defaults: { output: 'Hello, world', rows: 0 },
+    fields: [{ key: 'output', label: 'Output', type: 'code' }, { key: 'rows', label: 'Panel height (lines, 0 = fit)', type: 'number', min: 0, max: 40, step: 1 }],
+  },
+  {
+    id: 'code-note', label: 'Code note', category: 'code', appliesTo: ['code'],
+    description: 'A pill beside a line of the code, joined to it by a short dashed connector, explaining it ("sc.nextLine() reads the text into name"). Stays until an Out clip for the same line.',
+    defaultEase: 'power2.out', defaultDuration: 0.4,
+    defaults: { direction: 'in', line: 1, text: 'What this line does', side: 'right', color: '#2ad38b' },
+    fields: [
+      DIRECTION,
+      { key: 'line', label: 'Line', type: 'number', min: 1, max: 2000, step: 1 },
+      { key: 'text', label: 'Note', type: 'text' },
+      { key: 'side', label: 'Side', type: 'select', options: [{ value: 'right', label: 'Right' }, { value: 'left', label: 'Left' }] },
+      { key: 'color', label: 'Colour', type: 'color' },
     ],
   },
   // ---- Scene transitions (for groups: an "out" on the scene leaving, an "in" on the next) ----

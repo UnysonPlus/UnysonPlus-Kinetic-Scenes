@@ -17,7 +17,16 @@ const ANCHOR_FRACTION: Record<string, [number, number]> = {
   'bottom-left': [0, 1], bottom: [0.5, 1], 'bottom-right': [1, 1],
 };
 
+// The Code layer draws itself from its clips after every update (code.ts), so these add nothing here.
+const codeClip = () => {};
+
 export const PATH_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
+  'code-type': codeClip,
+  'code-edit': codeClip,
+  'code-highlight': codeClip,
+  'code-run': codeClip,
+  'code-note': codeClip,
+
   draw(ctx) {
     const out = isOut(ctx.params);
     drive(ctx, (e) => { drawState.set(ctx.el, clamp01(out ? 1 - e : e)); }, { always: !out });

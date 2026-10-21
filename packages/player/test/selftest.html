@@ -80,6 +80,21 @@
     { id: 'n3', x: 90, y: 50, shape: 'value', label: 'name', sub: 'John', at: 1.1 }, { id: 'n4', x: 50, y: 90, shape: 'dot', label: 'a1f', at: 1.4 } ],
     edges: [{ from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3', kind: 'step', label: 'save', dashed: true }, { from: 'n2', to: 'n4', kind: 'straight' }],
     tag: { label: 'HEAD', stops: [{ node: 'n1', t: 0.5 }, { node: 'n2', t: 1.2 }, { node: 'n3', t: 2.1 }] }, clips: [] });
+  // A code layer: typed, highlighted, noted, changed (lines inserted and replaced), then run.
+  layers.push({ id: 'code', type: 'code', title: 'main.py', run: true, code: `name = input()
+print(name)
+print(name)`, box: { x: 80, y: 30, w: 30, h: 30 }, clips: [
+    { id: 'ct', preset: 'code-type', start: 0.2, duration: 1.2, params: { suggest: true } },
+    { id: 'ch', preset: 'code-highlight', start: 1.5, duration: 0.3, params: { line: 1, token: 'name' } },
+    { id: 'cn', preset: 'code-note', start: 1.5, duration: 0.3, params: { line: 2, text: 'shows it' } },
+    { id: 'ce', preset: 'code-edit', start: 2, duration: 1.5, params: { to: `def hi(n):
+    print(n)
+
+name = input()
+hi(name)` } },
+    { id: 'cr', preset: 'code-run', start: 3.6, duration: 0.6, params: { output: `John
+John` } },
+  ] });
   // A layer pinned to the stage (placed in the stage-wide pin space, outside the camera).
   layers.push({ id: 'pin', type: 'text', text: 'Pinned', pin: 'stage', style: { fontSize: 2 }, box: { x: 100, y: 100, anchor: 'bottom-right' }, clips: [{ id: 'pf', preset: 'fade', start: 0.35, duration: 0.6 }] });
   layers.push({ id: 'g', type: 'group', start: 1, clips: [{ id: 'gf', preset: 'slide', start: 0.2, duration: 0.6 }], layers: [

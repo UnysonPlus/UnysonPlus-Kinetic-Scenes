@@ -184,6 +184,12 @@ export function addLayer(scene: Scene, type: Exclude<Layer['type'], 'group'>, ex
     };
   } else if (type === 'path') {
     layer = { id, type: 'path', name: 'Line', d: 'M 0 80 C 35 80, 65 20, 100 20', stroke: '#2ad38b', strokeWidth: 0.3, arrow: 'end', box: { x: 50, y: 50, w: 30, h: 20 }, clips: [] };
+  } else if (type === 'code') {
+    layer = {
+      id, type: 'code', name: 'Code', title: 'main.py', run: true, box: { x: 50, y: 50, w: 46, h: 56 },
+      code: 'name = input("Your name: ")\nprint("Hello, " + name)',
+      clips: [{ id: `${id}-type`, preset: 'code-type', start: 0.3, duration: 2.4 }],
+    };
   } else if (type === 'diagram') {
     layer = {
       id, type: 'diagram', name: 'Diagram', box: { x: 50, y: 50, w: 60, h: 30 },

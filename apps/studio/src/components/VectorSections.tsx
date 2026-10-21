@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { DiagramLayer, FlowLayer, Layer, PathLayer, Scene } from '@unysonplus/scene-player/types';
-import { ColorField, NumberField, Section, SelectField, TextField } from './fields';
+import type { CodeLayer, DiagramLayer, FlowLayer, Layer, PathLayer, Scene } from '@unysonplus/scene-player/types';
+import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 
 /** Ready-made line shapes (coordinates are % of the layer's box). */
 export const LINE_SHAPES: Array<{ value: string; label: string; d: string }> = [
@@ -98,6 +98,25 @@ export function DiagramSection(props: { layer: DiagramLayer; set: (patch: Partia
       <NumberField label="Label size" value={look.fontSize ?? 1.4} step={0.1} min={0.4} max={10} unit="su" onCommit={(v) => set({ look: { ...look, fontSize: v } })} />
       <NumberField label="Line width" value={look.lineWidth ?? 0.2} step={0.05} min={0.05} max={3} unit="su" onCommit={(v) => set({ look: { ...look, lineWidth: v } })} />
       <TextField label="Font" value={look.fontFamily} placeholder="System" onCommit={(v) => set({ look: { ...look, fontFamily: v.trim() || undefined } })} />
+    </Section>
+  );
+}
+
+const LANGS = ['auto', 'js', 'ts', 'python', 'java', 'php', 'csharp', 'go', 'rust', 'c', 'cpp', 'sql', 'bash', 'html', 'css', 'json', 'text'] as const;
+
+export function CodeSection(props: { layer: CodeLayer; set: (patch: Partial<CodeLayer>) => void }) {
+  const { layer, set } = props;
+  return (
+    <Section title="Code">
+      <TextField label="Code" value={layer.code} wide mono multiline onCommit={(v) => set({ code: v })} />
+      <p className="field-hint wide">The code at the start. Type code clips hide the lines they type until they are typed; Change code turns it into a new version.</p>
+      <TextField label="File name" value={layer.title} placeholder="main.py" onCommit={(v) => set({ title: v.trim() || undefined })} />
+      <SelectField label="Language" value={layer.language ?? 'auto'} options={LANGS.map((l) => ({ value: l, label: l === 'auto' ? 'From the file name' : l }))} onChange={(v) => set({ language: v === 'auto' ? undefined : v })} />
+      <SelectField label="Look" value={layer.frame ?? 'window'} options={[{ value: 'window', label: 'Editor window' }, { value: 'terminal', label: 'Terminal' }, { value: 'plain', label: 'Just the code' }]} onChange={(v) => set({ frame: v === 'window' ? undefined : v })} />
+      <SelectField label="Theme" value={layer.theme ?? 'dark'} options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} onChange={(v) => set({ theme: v === 'dark' ? undefined : v })} />
+      <NumberField label="Text size" value={layer.fontSize ?? 1.5} step={0.1} min={0.4} max={20} unit="su" onCommit={(v) => set({ fontSize: v })} />
+      <CheckField label="Line numbers" checked={layer.lineNumbers ?? (layer.frame ?? 'window') !== 'terminal'} onChange={(v) => set({ lineNumbers: v })} />
+      <CheckField label="Run button" checked={!!layer.run} onChange={(v) => set({ run: v || undefined })} />
     </Section>
   );
 }

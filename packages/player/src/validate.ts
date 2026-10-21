@@ -286,8 +286,13 @@ export function validateScene(input: unknown): ValidationResult {
           const t = layer.tag as unknown;
           if (!isObj(t) || typeof t.label !== 'string' || !Array.isArray(t.stops) || t.stops.some((s: unknown) => !isObj(s) || !ids.has(s.node as string) || !isNum(s.t))) fail(`${lp}.tag`, 'must be { label, stops: [{ node, t }] } with node ids');
         }
+      } else if (layer.type === 'code') {
+        if (typeof layer.code !== 'string' || layer.code.length > 50000) fail(`${lp}.code`, 'must be text (50,000 characters at most)');
+        if (layer.frame !== undefined && !['window', 'terminal', 'plain'].includes(layer.frame)) fail(`${lp}.frame`, 'must be window, terminal or plain');
+        if (layer.theme !== undefined && !['dark', 'light'].includes(layer.theme)) fail(`${lp}.theme`, 'must be dark or light');
+        if (layer.fontSize !== undefined && (!isNum(layer.fontSize) || layer.fontSize <= 0 || layer.fontSize > 20)) fail(`${lp}.fontSize`, 'must be more than 0 and at most 20 stage units');
       } else {
-        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow or diagram');
+        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow, diagram or code');
       }
 
       if (layer.type !== 'group' && layer.type !== 'flow') {

@@ -484,7 +484,36 @@ export interface DiagramLook {
   lineWidth?: number;
 }
 
-export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer;
+/**
+ * Code: an editor window (or a terminal) showing real code with syntax colours and line numbers. What
+ * happens to it is set by its clips: Type code types lines in, Change code turns it into a new version
+ * (selecting and deleting, retyping, lines sliding to make room), Highlight code marks a line or a word,
+ * Run code shows output, and Code note puts a pill beside a line.
+ */
+export interface CodeLayer extends LayerBase {
+  type: 'code';
+  /** The code at the start (lines typed in later are part of it: Type code hides them until typed). */
+  code: string;
+  /** auto picks from the file name in title (main.py → python). */
+  language?: 'auto' | 'js' | 'ts' | 'python' | 'java' | 'php' | 'csharp' | 'go' | 'rust' | 'c' | 'cpp' | 'sql' | 'bash' | 'html' | 'css' | 'json' | 'text';
+  /** The file name shown in the tab ("main.py"). */
+  title?: string;
+  /** window: a title bar with a tab; terminal: a title bar, no line numbers, $ prompts; plain: just the code. */
+  frame?: 'window' | 'terminal' | 'plain';
+  lineNumbers?: boolean;
+  /** Shows a Run button in the title bar (Run code presses it). */
+  run?: boolean;
+  /** Stage units. Defaults to 1.5. */
+  fontSize?: number;
+  fontFamily?: string;
+  theme?: 'dark' | 'light';
+  /** Corner radius in stage units. Defaults to 1. */
+  radius?: number;
+  /** Seconds the caret keeps blinking after the last keystroke. Defaults to 1.2. */
+  caretHold?: number;
+}
+
+export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer;
 
 export interface Clip {
   id: string;
