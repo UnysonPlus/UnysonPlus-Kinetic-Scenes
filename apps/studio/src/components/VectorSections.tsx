@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { CodeLayer, DiagramLayer, FlowLayer, Layer, PathLayer, Scene } from '@unysonplus/scene-player/types';
+import { useState, type ReactNode } from 'react';
+import type { CaptionsLayer, CodeLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 
 /** Ready-made line shapes (coordinates are % of the layer's box). */
@@ -117,6 +117,71 @@ export function CodeSection(props: { layer: CodeLayer; set: (patch: Partial<Code
       <NumberField label="Text size" value={layer.fontSize ?? 1.5} step={0.1} min={0.4} max={20} unit="su" onCommit={(v) => set({ fontSize: v })} />
       <CheckField label="Line numbers" checked={layer.lineNumbers ?? (layer.frame ?? 'window') !== 'terminal'} onChange={(v) => set({ lineNumbers: v })} />
       <CheckField label="Run button" checked={!!layer.run} onChange={(v) => set({ run: v || undefined })} />
+    </Section>
+  );
+}
+
+/** The {{field}} names a list's item uses. */
+function placeholders(item: unknown): string[] {
+  const found = JSON.stringify(item).match(/\{\{\s*([\w.-]+)\s*\}\}/g) ?? [];
+  return [...new Set(found.map((m) => m.replace(/[{}\s]/g, '')))];
+}
+
+export function RepeatSection(props: { layer: RepeatLayer; set: (patch: Partial<RepeatLayer>) => void; onUnpack: () => void }) {
+  const { layer, set } = props;
+  const [note, setNote] = useState<string | null>(null);
+  const fields = placeholders(layer.item);
+  const parse = (key: 'items' | 'item', v: string) => {
+    try {
+      const data = JSON.parse(v);
+      if (key === 'items' && (!Array.isArray(data) || data.some((e) => !e || typeof e !== 'object'))) throw new Error('entries must be a list of objects');
+      if (key === 'item' && (!data || typeof data !== 'object' || !data.type)) throw new Error('the item must be a layer');
+      set({ [key]: data } as Partial<RepeatLayer>);
+      setNote(null);
+    } catch (e) {
+      setNote(`That text is not valid: ${(e as Error).message}`);
+    }
+  };
+  const fieldList: ReactNode[] = fields.flatMap((f, i) => [i ? ', ' : '', <code key={f}>{`{{${f}}}`}</code>]);
+  return (
+    <Section title="List">
+      <TextField label="Entries" value={JSON.stringify(layer.items, null, 1)} wide mono multiline onCommit={(v) => parse('items', v)} />
+      <p className="field-hint wide">
+        One entry per copy. {fields.length
+          ? <>The item uses {fieldList}: give each entry those fields.</>
+          : <>Put placeholders like <code>{'{{title}}'}</code> in the item text and give each entry those fields.</>}
+      </p>
+      {note && <p className="field-hint wide" role="alert">{note}</p>}
+      <NumberField label="Step across" value={layer.step?.x ?? 0} step={0.5} min={-100} max={100} unit="%" onCommit={(v) => set({ step: { ...layer.step, x: v } })} />
+      <NumberField label="Step down" value={layer.step?.y ?? 12} step={0.5} min={-100} max={100} unit="%" onCommit={(v) => set({ step: { ...layer.step, y: v } })} />
+      <NumberField label="Columns" value={layer.columns ?? 1} step={1} min={1} max={20} onCommit={(v) => set({ columns: v && v > 1 ? Math.round(v) : undefined })} />
+      {(layer.columns ?? 1) > 1 && <NumberField label="Row step" value={layer.rowStep ?? 12} step={0.5} min={0} max={100} unit="%" onCommit={(v) => set({ rowStep: v })} />}
+      <NumberField label="Stagger" value={layer.stagger ?? 0.12} step={0.01} min={0} max={5} unit="s" onCommit={(v) => set({ stagger: v })} />
+      <TextField label="Item (advanced)" value={JSON.stringify(layer.item, null, 1)} wide mono multiline onCommit={(v) => parse('item', v)} />
+      <p className="field-hint wide">To redesign the item on the stage, unpack the list into ordinary layers, change one copy, group it and turn it into a list again.</p>
+      <div className="insp-start"><button type="button" className="btn small" onClick={props.onUnpack}>Unpack into layers</button></div>
+    </Section>
+  );
+}
+
+export function CaptionsSection(props: { scene: Scene; layer: CaptionsLayer; set: (patch: Partial<CaptionsLayer>) => void }) {
+  const { scene, layer, set } = props;
+  const voices = (scene.audio ?? []).filter((a) => a.words?.length);
+  const style = layer.style;
+  return (
+    <Section title="Captions">
+      {voices.length
+        ? <SelectField label="Words from" value={layer.audio ?? ''} options={[{ value: '', label: 'The first voice-over' }, ...voices.map((a) => ({ value: a.id, label: a.name ?? a.id }))]} onChange={(v) => set({ audio: v || undefined })} />
+        : <p className="field-hint wide">Captions need a voice-over with its words: add the audio, then transcribe it in its settings.</p>}
+      <NumberField label="Words at a time" value={layer.maxWords ?? 4} step={1} min={1} max={12} onCommit={(v) => set({ maxWords: v ? Math.round(v) : undefined })} />
+      <SelectField label="Light up" value={layer.mode ?? 'word'} options={[{ value: 'word', label: 'The word being said' }, { value: 'karaoke', label: 'Every word said so far' }, { value: 'none', label: 'Nothing' }]} onChange={(v) => set({ mode: v === 'word' ? undefined : v })} />
+      <ColorField label="Lit colour" value={layer.highlight} placeholder="#ffd166" onCommit={(v) => set({ highlight: v || undefined })} />
+      <NumberField label="Size" value={style.fontSize} step={0.1} min={0.3} max={20} unit="su" onCommit={(v) => v && set({ style: { ...style, fontSize: v } })} />
+      <ColorField label="Colour" value={style.color} placeholder="#ffffff" onCommit={(v) => set({ style: { ...style, color: v || undefined } })} />
+      <TextField label="Font" value={style.fontFamily} placeholder="System" onCommit={(v) => set({ style: { ...style, fontFamily: v.trim() || undefined } })} />
+      <NumberField label="Weight" value={style.fontWeight ?? 800} step={100} min={100} max={900} onCommit={(v) => set({ style: { ...style, fontWeight: v } })} />
+      <ColorField label="Box behind" value={layer.background} placeholder="None" onCommit={(v) => set({ background: v || undefined })} />
+      <CheckField label="Capitals" checked={!!layer.uppercase} onChange={(v) => set({ uppercase: v || undefined })} />
     </Section>
   );
 }

@@ -1,5 +1,6 @@
 import { SAFE_HREF, SCENE_FORMAT, SCENE_VERSION } from './types';
-import type { Anchor, Box, Breakpoint, Clip, HeightMode, Layer, Scene } from './types';
+import type { Anchor, Box, Breakpoint, Clip, HeightMode, Layer, RepeatLayer, Scene } from './types';
+import { expandRepeat } from './repeat';
 import { PRESET_IDS } from './presets/catalog';
 import { SFX_IDS, parseSfxSrc } from './sfx';
 import { CAMERA_LIMITS, CAMERA_PROPS } from './camera';
@@ -286,22 +287,37 @@ export function validateScene(input: unknown): ValidationResult {
           const t = layer.tag as unknown;
           if (!isObj(t) || typeof t.label !== 'string' || !Array.isArray(t.stops) || t.stops.some((s: unknown) => !isObj(s) || !ids.has(s.node as string) || !isNum(s.t))) fail(`${lp}.tag`, 'must be { label, stops: [{ node, t }] } with node ids');
         }
+      } else if (layer.type === 'captions') {
+        if (!isObj(layer.style) || !isNum(layer.style.fontSize) || layer.style.fontSize <= 0) fail(`${lp}.style.fontSize`, 'is required (stage units)');
+        if (layer.maxWords !== undefined && (!isNum(layer.maxWords) || layer.maxWords < 1 || layer.maxWords > 12)) fail(`${lp}.maxWords`, 'must be 1 to 12');
+        if (layer.mode !== undefined && !['word', 'karaoke', 'none'].includes(layer.mode)) fail(`${lp}.mode`, 'must be word, karaoke or none');
+        if (!(scene.audio ?? []).some((a) => Array.isArray(a?.words) && a.words.length)) warnings.push(`${lp}: captions need a voice-over with its words (transcribe it in the AI Dev Kit).`);
+      } else if (layer.type === 'repeat') {
+        // Played as the group it expands into; checked as that group.
+        const r = layer as RepeatLayer;
+        if (!isObj(r.item)) fail(`${lp}.item`, 'is required (the layer each entry copies)');
+        else if (!Array.isArray(r.items) || r.items.length > 200 || r.items.some((e) => !isObj(e))) fail(`${lp}.items`, 'must be a list of at most 200 entries (objects)');
+        else {
+          const g = expandRepeat(r);
+          checkLayers((g as { layers: Layer[] }).layers, `${lp}.copies`, depth + 1);
+        }
       } else if (layer.type === 'code') {
         if (typeof layer.code !== 'string' || layer.code.length > 50000) fail(`${lp}.code`, 'must be text (50,000 characters at most)');
         if (layer.frame !== undefined && !['window', 'terminal', 'plain'].includes(layer.frame)) fail(`${lp}.frame`, 'must be window, terminal or plain');
         if (layer.theme !== undefined && !['dark', 'light'].includes(layer.theme)) fail(`${lp}.theme`, 'must be dark or light');
         if (layer.fontSize !== undefined && (!isNum(layer.fontSize) || layer.fontSize <= 0 || layer.fontSize > 20)) fail(`${lp}.fontSize`, 'must be more than 0 and at most 20 stage units');
       } else {
-        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow, diagram or code');
+        fail(`${lp}.type`, 'must be text, shape, image, model, group, path, flow, diagram, code, captions or repeat');
       }
 
-      if (layer.type !== 'group' && layer.type !== 'flow') {
+      if (layer.type !== 'group' && layer.type !== 'flow' && layer.type !== 'repeat') {
         if (!isObj(layer.box)) fail(`${lp}.box`, 'is required');
         else {
           if (!isNum(layer.box.x) || !isNum(layer.box.y)) fail(`${lp}.box`, 'needs x and y');
           if (layer.box.anchor !== undefined && !ANCHORS.includes(layer.box.anchor)) fail(`${lp}.box.anchor`, `must be one of ${ANCHORS.join(', ')}`);
-          if (layer.type !== 'text' && !isNum(layer.box.w)) fail(`${lp}.box.w`, 'is required (all layers but text)');
-          if (layer.type !== 'text' && !isNum(layer.box.h) && !isNum(layer.box.ratio)) fail(`${lp}.box`, 'needs h or ratio for shapes and images');
+          const sized = layer.type !== 'text' && layer.type !== 'captions';
+          if (sized && !isNum(layer.box.w)) fail(`${lp}.box.w`, 'is required (all layers but text and captions)');
+          if (sized && !isNum(layer.box.h) && !isNum(layer.box.ratio)) fail(`${lp}.box`, 'needs h or ratio (all layers but text and captions)');
         }
       }
       if (layer.start !== undefined && (!isNum(layer.start) || layer.start < 0)) fail(`${lp}.start`, 'must be 0 or more seconds');

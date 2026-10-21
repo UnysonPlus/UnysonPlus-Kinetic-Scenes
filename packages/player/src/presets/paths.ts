@@ -32,6 +32,61 @@ export const PATH_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     drive(ctx, (e) => { drawState.set(ctx.el, clamp01(out ? 1 - e : e)); }, { always: !out });
   },
 
+  morph(ctx) {
+    // This layer glides into another layer's place and size (and, between shapes, its colour and corners),
+    // then hands over to it in a short crossfade. The other layer stays hidden until the handover, so the
+    // two read as one thing moving between acts.
+    const p = ctx.params;
+    const targetId = text(p, 'to', '');
+    if (!targetId) return;
+    const fade = Math.max(0.05, Math.min(1, num(p, 'fade', 0.3)));
+    const state = { e: 0 };
+    drive(ctx, (e) => { state.e = e; }, { always: true });
+    const end = ctx.at + ctx.duration;
+    ctx.late(() => {
+      const stage = ctx.el.closest('.upw-stage');
+      const bOuter = stage?.querySelector<HTMLElement>(`.upw-layer[data-layer="${CSS.escape(targetId)}"]`);
+      const aOuter = ctx.el.parentElement as HTMLElement | null;
+      if (!bOuter || !aOuter) return;
+      const bInner = bOuter.querySelector<HTMLElement>(':scope > .upw-li');
+      if (bOuter.dataset.upwBaseOpacity === undefined) bOuter.dataset.upwBaseOpacity = bOuter.style.opacity || '1';
+      const baseB = Number(bOuter.dataset.upwBaseOpacity) || 1;
+      const now = ctx.now();
+      const el = ctx.el;
+      if (now < ctx.at) {
+        el.style.translate = ''; el.style.scale = ''; el.style.opacity = '';
+        if (ctx.layer.type === 'shape') {
+          // Back to the shape's own fill and corners (clearing them would wipe the fill set as a shorthand).
+          if (ctx.layer.fill) el.style.background = ctx.layer.fill;
+          el.style.borderRadius = ctx.layer.shape === 'ellipse' ? '50%' : `${ctx.layer.radius ?? 0}cqw`;
+        }
+        bOuter.style.opacity = '0';
+        return;
+      }
+      const v = now >= end ? 1 : state.e;
+      const ra = aOuter.getBoundingClientRect(), rb = bOuter.getBoundingClientRect();
+      const k = aOuter.offsetWidth ? ra.width / aOuter.offsetWidth : 1;
+      const dx = ((rb.left + rb.width / 2) - (ra.left + ra.width / 2)) / k;
+      const dy = ((rb.top + rb.height / 2) - (ra.top + ra.height / 2)) / k;
+      const uniform = ctx.layer.type !== 'shape';
+      const kx = ra.width ? rb.width / ra.width : 1, ky = ra.height ? rb.height / ra.height : 1;
+      const sx = uniform ? ky : kx, sy = ky;
+      el.style.translate = `${(dx * v).toFixed(2)}px ${(dy * v).toFixed(2)}px`;
+      el.style.scale = `${(1 + (sx - 1) * v).toFixed(4)} ${(1 + (sy - 1) * v).toFixed(4)}`;
+      if (ctx.layer.type === 'shape' && bInner && ctx.layer.fill && !/gradient|url\(/i.test(ctx.layer.fill)) {
+        const bFill = getComputedStyle(bInner).backgroundColor;
+        el.style.backgroundColor = `color-mix(in oklch, ${bFill} ${(v * 100).toFixed(1)}%, ${ctx.layer.fill})`;
+        const ar = parseFloat(getComputedStyle(aOuter.querySelector(':scope > .upw-li') ?? el).borderTopLeftRadius) || 0;
+        const br = (parseFloat(getComputedStyle(bInner).borderTopLeftRadius) || 0) / ((1 + (sx - 1) * v) || 1);
+        el.style.borderRadius = `${(ar + (br - ar) * v).toFixed(2)}px`;
+      }
+      // The handover: this layer fades as the other appears in exactly the same place.
+      const f = clamp01((v - (1 - fade)) / fade);
+      el.style.opacity = now >= end ? '0' : (1 - f).toFixed(3);
+      bOuter.style.opacity = now >= end ? String(baseB) : (baseB * f).toFixed(3);
+    });
+  },
+
   'follow-path'(ctx) {
     const p = ctx.params;
     const targetId = text(p, 'path', '');

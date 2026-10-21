@@ -1,3 +1,4 @@
+import { expandRepeats } from './repeat';
 import type { Anchor, Box, Breakpoint, Clip, Layer, Scene, TextLayer } from './types';
 import { groupDuration } from './groups';
 import { presetMeta } from './presets/catalog';
@@ -166,7 +167,14 @@ function isVoiced(text: string, from: number, to: number, spoken: Array<{ w: str
   return mine.filter((w) => near.has(w)).length / mine.length >= 0.6;
 }
 
-export function lintScene(scene: Scene): LintIssue[] {
+export function lintScene(input: Scene): LintIssue[] {
+  // A repeat is checked as the copies it plays as.
+  const scene = expandRepeats(input);
+  const lists: string[] = [];
+  const findLists = (list: Layer[]) => list.forEach((l) => { if (l.type === 'repeat') lists.push(l.id); else if (l.type === 'group') findLists(l.layers); });
+  findLists(input.layers);
+  /** The list a generated copy belongs to (copies are named <list id>_<n>_<item layer id>), or null. */
+  const copyOfList = (id: string) => lists.find((r) => id.startsWith(`${r}_`) && /^\d+_/.test(id.slice(r.length + 1))) ?? null;
   const issues: LintIssue[] = [];
   const all = entries(scene);
   const spoken = spokenWords(scene);
@@ -327,7 +335,8 @@ export function lintScene(scene: Scene): LintIssue[] {
   }
 
   // Everything entering the same way reads as a template.
-  const entrances = all.map((e) => e.layer.clips.filter((c) => dirOf(c) === 'in').sort((a, b) => a.start - b.start)[0]).filter(Boolean) as Clip[];
+  // A list's copies enter alike on purpose (staggered), so they are left out.
+  const entrances = all.filter((e) => !copyOfList(e.layer.id)).map((e) => e.layer.clips.filter((c) => dirOf(c) === 'in').sort((a, b) => a.start - b.start)[0]).filter(Boolean) as Clip[];
   const counts = new Map<string, number>();
   for (const c of entrances) {
     const key = `${c.preset}|${c.duration}|${JSON.stringify(c.params ?? {})}`;
@@ -340,5 +349,17 @@ export function lintScene(scene: Scene): LintIssue[] {
     }
   }
 
-  return issues;
+  // Issues on a list's copies belong to the list: reported once (for its first copy), on the list itself,
+  // with no fix (the copies are generated; the fix goes in the list's item).
+  const out: LintIssue[] = [];
+  const seen = new Set<string>();
+  for (const issue of issues) {
+    const list = issue.layerId ? copyOfList(issue.layerId) : null;
+    if (!list) { out.push(issue); continue; }
+    const key = `${list}|${issue.breakpoint ?? ''}|${issue.message.replace(/"[^"]*"/, '')}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...issue, id: `${issue.id}:list`, layerId: list, clipId: undefined, fix: undefined, message: `In the list: ${issue.message}` });
+  }
+  return out;
 }

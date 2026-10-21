@@ -327,6 +327,8 @@ export interface GroupLayer extends Omit<LayerBase, 'box'> {
   layers: Layer[];
   /** Length of the group's own timeline, in seconds. Defaults to the end of its last clip. */
   duration?: number;
+  /** Set on the group a repeat layer becomes when it plays (its copies are generated, not edited). */
+  fromRepeat?: boolean;
 }
 
 /**
@@ -513,7 +515,50 @@ export interface CodeLayer extends LayerBase {
   caretHold?: number;
 }
 
-export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer;
+/**
+ * Repeat from a list: one designed item and a list of entries; it plays as one copy of the item per
+ * entry. Words in the item (text, labels, alt text, a link) may hold {{field}} placeholders that each
+ * entry fills in. Copies step along a row or a column (or fill a grid), and each copy's clips start one
+ * stagger after the one before.
+ */
+export interface RepeatLayer extends Omit<LayerBase, 'box'> {
+  type: 'repeat';
+  box?: Box;
+  /** The item, laid out for the first entry: usually a group (a card, a row). */
+  item: Layer;
+  /** One entry per copy, e.g. [{ "title": "git init", "sub": "Create a repository" }, …]. */
+  items: Array<Record<string, string | number>>;
+  /** Copies are named <repeat id>_<n>_<item layer id>. Where each next copy goes, in % of the stage. Defaults to 12 down (a column). */
+  step?: { x?: number; y?: number };
+  /** A grid: copies per row; rows are rowStep apart (% of the stage). */
+  columns?: number;
+  rowStep?: number;
+  /** Seconds between one copy's clips and the next's. Defaults to 0.12. */
+  stagger?: number;
+}
+
+/**
+ * Captions from a voice-over: the spoken words, a few at a time, with the word being said lit up. Built
+ * from the transcription of an audio clip, so they follow the voice exactly.
+ */
+export interface CaptionsLayer extends LayerBase {
+  type: 'captions';
+  /** The audio clip whose words are shown (its id). Defaults to the first voice-over. */
+  audio?: string;
+  style: TextStyle;
+  /** Most words on screen at once. Defaults to 4. */
+  maxWords?: number;
+  /** The colour of the word being said. */
+  highlight?: string;
+  /** word: only the word being said is lit; karaoke: every word said so far is lit; none: plain captions. */
+  mode?: 'word' | 'karaoke' | 'none';
+  /** A box behind the words (any CSS background). */
+  background?: string;
+  /** Capitals. */
+  uppercase?: boolean;
+}
+
+export type Layer = TextLayer | ShapeLayer | ImageLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer;
 
 export interface Clip {
   id: string;

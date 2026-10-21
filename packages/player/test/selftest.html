@@ -95,12 +95,21 @@ hi(name)` } },
     { id: 'cr', preset: 'code-run', start: 3.6, duration: 0.6, params: { output: `John
 John` } },
   ] });
+  // A repeat (three staggered copies of a two-layer row), a morph between two shapes, captions from voice words.
+  layers.push({ id: 'rp', type: 'repeat', items: [{ t: 'one' }, { t: 'two' }, { t: 'three' }], step: { y: 4 }, stagger: 0.2, item: { id: 'row', type: 'group', clips: [], layers: [
+    { id: 'rb', type: 'shape', shape: 'rect', fill: '#345', box: { x: 10, y: 60, w: 8, h: 3 }, clips: [{ id: 'rbi', preset: 'stack-in', start: 0.3, duration: 0.4 }] },
+    { id: 'rt', type: 'text', text: 'Row {{t}}', style: { fontSize: 1 }, box: { x: 10, y: 60 }, clips: [{ id: 'rti', preset: 'fade', start: 0.4, duration: 0.3 }] } ] }, clips: [] });
+  layers.push({ id: 'ma', type: 'shape', shape: 'rect', fill: '#3b82f6', radius: 1, box: { x: 30, y: 75, w: 5, h: 5 }, clips: [{ id: 'mm', preset: 'morph', start: 1, duration: 0.8, params: { to: 'mb' } }] });
+  layers.push({ id: 'mb', type: 'shape', shape: 'ellipse', fill: '#f59e0b', box: { x: 40, y: 85, w: 8, h: 6 }, clips: [] });
+  layers.push({ id: 'cap', type: 'captions', style: { fontSize: 1.5 }, box: { x: 60, y: 95 }, clips: [] });
   // A layer pinned to the stage (placed in the stage-wide pin space, outside the camera).
   layers.push({ id: 'pin', type: 'text', text: 'Pinned', pin: 'stage', style: { fontSize: 2 }, box: { x: 100, y: 100, anchor: 'bottom-right' }, clips: [{ id: 'pf', preset: 'fade', start: 0.35, duration: 0.6 }] });
   layers.push({ id: 'g', type: 'group', start: 1, clips: [{ id: 'gf', preset: 'slide', start: 0.2, duration: 0.6 }], layers: [
     { id: 'g1', type: 'text', text: 'In a group', style: { fontSize: 3 }, box: { x: 50, y: 92 }, clips: [{ id: 'c', preset: 'text-rise', start: 0.5, duration: 0.8 }] },
   ] });
   const scene = { format: 'unysonplus-scene', version: 1, duration: Math.ceil(t + 2), stage: { breakpoints: [{ id: 'd', minWidth: 0, aspect: [16, 9] }], heightMode: 'ratio' }, playback: { trigger: 'manual', loop: false }, layers,
+    // A voice-over's words, for the captions.
+    audio: [{ id: 'vo', src: 'sfx:pop', start: 0.2, role: 'voice', words: 'One two three. Four five six seven eight nine.'.split(' ').map((w, i) => ({ w, t: 0.1 + i * 0.3, d: 0.25 })) }],
     // A camera, so its moves are checked for seeking too.
     camera: { keys: [{ id: 'k1', t: 0.5, zoom: 1, x: 0, tiltX: 0 }, { id: 'k2', t: 2, zoom: 1.3, x: 10, ease: 'softInOut' }, { id: 'k3', t: 4, zoom: 1, x: 0, tiltX: 15, roll: 4 }] } };
 

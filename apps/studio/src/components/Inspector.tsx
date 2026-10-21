@@ -3,7 +3,7 @@ import { SAFE_HREF } from '@unysonplus/scene-player/types';
 import { PRESET_CATALOG, defaultEaseFor, presetMeta, type PresetField } from '@unysonplus/scene-player/catalog';
 import { NAMED_EASES, NAMED_EASE_IDS } from '@unysonplus/scene-player/eases';
 import {
-  clearOverride, containerOf, duplicateLayer, layersIn, editsOverride, findClip, findLayer, moveLayer, primaryBreakpoint,
+  clearOverride, containerOf, duplicateLayer, groupToRepeat, repeatToGroup, layersIn, editsOverride, findClip, findLayer, moveLayer, primaryBreakpoint,
   removeClip, removeLayer, setClip, setClipParam, setLayerProps, writeLayout, type LayoutPatch,
 } from '../lib/sceneOps';
 import { validateScene } from '@unysonplus/scene-player/validate';
@@ -15,7 +15,7 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
-import { CodeSection, DiagramSection, FlowSection, PathSection } from './VectorSections';
+import { CaptionsSection, CodeSection, DiagramSection, FlowSection, PathSection, RepeatSection } from './VectorSections';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
@@ -387,6 +387,7 @@ function GroupInspector({ scene, group, onCommit, onSelect, alignTo, onAlignTo, 
         <div className="insp-start">
           <button type="button" className="btn small" onClick={() => onEnter(group.id)}>Open group</button>
           <button type="button" className="btn small" onClick={onUngroup} title="Ungroup (Ctrl+Shift+G)">Ungroup</button>
+          <button type="button" className="btn small" onClick={() => onCommit(groupToRepeat(scene, group.id))} title="Use this group as the design for a list: one copy per entry, with placeholders in its text">Turn into a list</button>
         </div>
         <ul className="multi-list">
           {group.layers.map((l) => (
@@ -497,7 +498,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
   return (
     <div className="insp">
       <div className="insp-head">
-        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram', code: 'Code' } as Record<Layer['type'], string>)[layer.type]}</p>
+        <p className="insp-kicker">{({ text: 'Text layer', shape: 'Shape layer', image: 'Image layer', model: '3D layer', group: 'Group', path: 'Line layer', flow: 'Flow lines', diagram: 'Diagram', code: 'Code', repeat: 'List', captions: 'Captions' } as Record<Layer['type'], string>)[layer.type]}</p>
         <input className="insp-title" aria-label="Layer name" defaultValue={layer.name ?? layer.id} key={layer.id + (layer.name ?? '')}
           onBlur={(e) => { if (e.target.value !== (layer.name ?? layer.id)) props({ name: e.target.value || undefined }); }}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
@@ -557,6 +558,8 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'path' && <PathSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'repeat' && <RepeatSection layer={layer} set={(p) => props(p as Record<string, unknown>)} onUnpack={() => onCommit(repeatToGroup(scene, layer.id))} />}
+      {layer.type === 'captions' && <CaptionsSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'code' && <CodeSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'diagram' && <DiagramSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
 
@@ -569,7 +572,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         </Section>
       )}
 
-      {layer.type !== 'flow' && <Section title="Position and size">
+      {layer.type !== 'flow' && layer.type !== 'repeat' && <Section title="Position and size">
         <PinField scene={scene} layer={layer} onChange={(pin) => props({ pin })} />
         <NumberField label="X" value={box.x} step={0.5} unit="%" onCommit={(v) => v !== undefined && layout({ box: { x: v } })} />
         <NumberField label="Y" value={box.y} step={0.5} unit="%" onCommit={(v) => v !== undefined && layout({ box: { y: v } })} />
@@ -600,7 +603,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         </Field>
       </Section>}
 
-      {layer.type !== 'flow' && <section className="insp-section">
+      {layer.type !== 'flow' && layer.type !== 'repeat' && <section className="insp-section">
         <header><h3>Align</h3></header>
         <AlignPanel count={1} to={alignTo} onTo={onAlignTo} onAlign={onAlign} />
       </section>}

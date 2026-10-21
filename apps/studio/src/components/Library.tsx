@@ -52,7 +52,10 @@ function sampleScene(p: PresetMeta): Scene {
     format: 'unysonplus-scene', version: 1, duration: d + 0.75,
     stage: { breakpoints: [{ id: 'a', minWidth: 0, aspect: [16, 10] }], heightMode: 'ratio', safeArea: 0 },
     playback: { trigger: 'manual', loop: true, repeatDelay: 0.3 },
-    layers: p.category === 'code' ? [codeSample(p.id, d)] : p.id === 'draw' ? [{ ...line, clips: layer.clips }] : p.id === 'follow-path' ? [{ ...line, stroke: 'rgba(255,255,255,.18)' }, { id: 's', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 0, y: 0, w: 8, ratio: 1 }, clips: [{ ...layer.clips[0], params: { path: 'ln', trail: 0.4, trailColor: '#2ad38b' } }] }] : [layer],
+    layers: p.id === 'morph'
+      ? [{ id: 's', type: 'shape', shape: 'rect', fill: '#3b82f6', radius: 3, box: { x: 28, y: 32, w: 22, ratio: 1 }, clips: [{ id: 'c', preset: 'morph', start: 0.15, duration: d, params: { to: 'b' } }] },
+        { id: 'b', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 70, y: 66, w: 36, ratio: 1.4 }, clips: [] }]
+      : p.category === 'code' ? [codeSample(p.id, d)] : p.id === 'draw' ? [{ ...line, clips: layer.clips }] : p.id === 'follow-path' ? [{ ...line, stroke: 'rgba(255,255,255,.18)' }, { id: 's', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 0, y: 0, w: 8, ratio: 1 }, clips: [{ ...layer.clips[0], params: { path: 'ln', trail: 0.4, trailColor: '#2ad38b' } }] }] : [layer],
   };
 }
 

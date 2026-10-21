@@ -2,6 +2,7 @@ import type { Anchor, Box, Layer, LayerLink, LayerOverride, Scene, TextStyle } f
 import { REST_3D, type Runtime3D, type State3D } from './model3d';
 import { buildDiagram, buildFlow, buildPath } from './vector';
 import { buildCode } from './code';
+import { buildCaptions } from './captions';
 
 /** The elements created for one layer. */
 export interface LayerRefs {
@@ -146,6 +147,10 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
   } else if (layer.type === 'flow') {
     inner.setAttribute('aria-hidden', 'true');
     buildFlow(doc, inner, layer);
+  } else if (layer.type === 'captions') {
+    // The spoken words are in the transcript.
+    inner.setAttribute('aria-hidden', 'true');
+    buildCaptions(inner, layer);
   } else if (layer.type === 'code') {
     // The code is in the transcript.
     inner.setAttribute('aria-hidden', 'true');

@@ -136,7 +136,7 @@ function start() {
 
   const scene = () => player.scene as Scene;
   const layerOf = (id: string) => allLayers(scene().layers).find((l) => l.id === id);
-  const isGroup = (id: string) => layerOf(id)?.type === 'group';
+  const isGroup = (id: string) => { const l = layerOf(id); return l?.type === 'group' && !l.fromRepeat; };
   /** The id of the group a layer sits in (null at the top of the scene), read from the page. */
   const parentOf = (id: string): string | null => {
     const node = player.layerElement(id);

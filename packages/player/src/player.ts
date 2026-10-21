@@ -16,6 +16,8 @@ import { buildCamera, cameraTransform, isRest, CAMERA_REST, type CameraState } f
 import { defaultEaseFor } from './presets/catalog';
 import { drawDiagram, drawFlow, drawPath } from './vector';
 import { drawCode } from './code';
+import { drawCaptions } from './captions';
+import { expandRepeats } from './repeat';
 import { presetMeta } from './presets/catalog';
 
 // The measured eases, usable by name in any clip (and in custom code clips).
@@ -111,7 +113,10 @@ function pickBreakpoint(bps: Breakpoint[], width: number): Breakpoint {
 }
 
 function validated(input: unknown): Scene {
-  const result = validateScene(input);
+  // Repeat layers play as the groups they expand into.
+  let expanded = input;
+  try { if (input && typeof input === 'object' && Array.isArray((input as Scene).layers)) expanded = expandRepeats(input as Scene); } catch { expanded = input; }
+  const result = validateScene(expanded);
   if (!result.ok) throw new Error(`This scene can't be played:\n- ${result.errors.join('\n- ')}`);
   return result.scene;
 }
@@ -453,6 +458,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       else if (layer.type === 'flow') lateDraw.push(() => drawFlow(inner, layer, t.time()));
       else if (layer.type === 'diagram') lateDraw.push(() => drawDiagram(inner, layer, t.time() - (layer.start ?? 0)));
       else if (layer.type === 'code') lateDraw.push(() => drawCode(inner, layer, t.time(), easeFnOf));
+      // Captions follow the voice-over, which runs on the scene's own clock.
+      else if (layer.type === 'captions') lateDraw.push(() => drawCaptions(inner, layer, scene.audio, tl ? tl.time() : 0));
 
       if (layer.type === 'group' && refs.children) {
         const dur = groupDuration(layer);

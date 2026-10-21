@@ -64,7 +64,7 @@ const SIDE: PresetField = {
   ],
 };
 // Presets that animate the layer as a whole also work on a group (its frame).
-const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram', 'code'];
+const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'model', 'group', 'path', 'flow', 'diagram', 'code', 'captions', 'repeat'];
 
 export const PRESET_CATALOG: PresetMeta[] = [
   // ---- Text ----
@@ -320,7 +320,14 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [DIRECTION],
   },
   {
-    id: 'follow-path', label: 'Follow path', category: 'motion', appliesTo: ['text', 'shape', 'image', 'model', 'group', 'diagram'],
+    id: 'morph', label: 'Morph into', category: 'motion', appliesTo: ['text', 'shape', 'image', 'model', 'group', 'diagram', 'code'],
+    description: 'Glides into another layer: to its place and size (and, between two shapes, its colour and corners), then hands over to it in a short crossfade, so the same word, card or screenshot carries on into the next act instead of fading out and in again. The other layer stays hidden until the handover.',
+    defaultEase: 'power3.inOut', defaultDuration: 0.9,
+    defaults: { to: '', fade: 0.3 },
+    fields: [{ key: 'to', label: 'Into layer (id)', type: 'text' }, { key: 'fade', label: 'Handover', type: 'number', min: 0.05, max: 1, step: 0.05 }],
+  },
+  {
+    id: 'follow-path', label: 'Follow path', category: 'motion', appliesTo: ['text', 'shape', 'image', 'model', 'group', 'diagram', 'code', 'repeat'],
     description: 'Travels along a line layer (or one of the lines of a flow layer), from one point of it to another. Turn to follow makes it face along the line; Trail leaves a fading streak behind it (a comet).',
     defaultEase: 'power1.inOut', defaultDuration: 1.6,
     defaults: { path: '', line: 1, from: 0, to: 100, rotate: false, trail: 0, trailColor: '#ffffff', trailWidth: 0.35 },

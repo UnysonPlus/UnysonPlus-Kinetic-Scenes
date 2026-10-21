@@ -1,4 +1,5 @@
-import type { Box, Clip, GroupLayer, Layer, LayerOverride, Scene, TextStyle } from '@unysonplus/scene-player/types';
+import type { Box, Clip, GroupLayer, Layer, LayerOverride, RepeatLayer, Scene, TextStyle } from '@unysonplus/scene-player/types';
+import { expandRepeat } from '@unysonplus/scene-player/repeat';
 import { presetMeta } from '@unysonplus/scene-player/catalog';
 import { allLayers } from '@unysonplus/scene-player/groups';
 
@@ -138,6 +139,8 @@ export function boxAt(layer: Layer, bp: string | null): Box {
 export function moveBy(scene: Scene, id: string, dx: number, dy: number, bp: string | null): Scene {
   const layer = findLayer(scene, id);
   if (!layer || (!dx && !dy)) return scene;
+  // A list moves its item (every copy follows it).
+  if (layer.type === 'repeat') return mapLayer(scene, id, (l) => ({ ...l, item: shiftLayer((l as RepeatLayer).item, dx, dy) }) as Layer);
   if (layer.type !== 'group') {
     const b = boxAt(layer, bp);
     return writeLayout(scene, id, bp, { box: { x: r2(b.x + dx), y: r2(b.y + dy) } });
@@ -145,6 +148,31 @@ export function moveBy(scene: Scene, id: string, dx: number, dy: number, bp: str
   let next = scene;
   for (const child of layer.layers) next = moveBy(next, child.id, dx, dy, bp);
   return next;
+}
+
+/** A layer (and, for a group, everything in it) moved by dx, dy (% of the stage), in its base layout. */
+function shiftLayer(l: Layer, dx: number, dy: number): Layer {
+  if (l.type === 'group') return { ...l, layers: l.layers.map((c) => shiftLayer(c, dx, dy)) };
+  if (!l.box) return l;
+  return { ...l, box: { ...l.box, x: r2(l.box.x + dx), y: r2(l.box.y + dy) } } as Layer;
+}
+
+/** Turns a group into a list whose item is that group (one entry to start with). */
+export function groupToRepeat(scene: Scene, id: string): Scene {
+  return mapLayer(scene, id, (l) => {
+    if (l.type !== 'group') return l;
+    const { id: gid, name, start, end, link, pin, ...rest } = l;
+    return { id: gid, name: name ? `${name} list` : 'List', type: 'repeat', start, end, link, pin, item: { ...rest, id: `${gid}-item`, clips: l.clips } as Layer, items: [{}], step: { y: 12 }, stagger: 0.12, clips: [] } as unknown as Layer;
+  });
+}
+
+/** Turns a list into an ordinary group of its copies, each editable on its own. */
+export function repeatToGroup(scene: Scene, id: string): Scene {
+  return mapLayer(scene, id, (l) => {
+    if (l.type !== 'repeat') return l;
+    const { fromRepeat: _f, ...g } = expandRepeat(l) as GroupLayer;
+    return g as Layer;
+  });
 }
 
 export function clearOverride(scene: Scene, layerId: string, bp: string): Scene {
@@ -184,6 +212,21 @@ export function addLayer(scene: Scene, type: Exclude<Layer['type'], 'group'>, ex
     };
   } else if (type === 'path') {
     layer = { id, type: 'path', name: 'Line', d: 'M 0 80 C 35 80, 65 20, 100 20', stroke: '#2ad38b', strokeWidth: 0.3, arrow: 'end', box: { x: 50, y: 50, w: 30, h: 20 }, clips: [] };
+  } else if (type === 'repeat') {
+    layer = {
+      id, type: 'repeat', name: 'List', stagger: 0.12, step: { y: 12 },
+      items: [{ title: 'First', sub: 'What it does' }, { title: 'Second', sub: 'What it does' }, { title: 'Third', sub: 'What it does' }],
+      item: {
+        id: 'row', type: 'group', clips: [], layers: [
+          { id: 'card', type: 'shape', shape: 'rect', fill: '#151b23', stroke: '#2b3644', strokeWidth: 0.1, radius: 0.8, box: { x: 50, y: 30, w: 36, h: 9 }, clips: [{ id: 'card-in', preset: 'stack-in', start: 0.2, duration: 0.5 }] },
+          { id: 'title', type: 'text', text: '{{title}}', style: { fontSize: 2, fontWeight: 700, color: '#f4f6f8' }, box: { x: 34, y: 28.6, anchor: 'left' }, clips: [{ id: 'title-in', preset: 'fade', start: 0.35, duration: 0.4 }] },
+          { id: 'sub', type: 'text', text: '{{sub}}', style: { fontSize: 1.2, color: '#2ad38b' }, box: { x: 34, y: 32, anchor: 'left' }, clips: [{ id: 'sub-in', preset: 'fade', start: 0.45, duration: 0.4 }] },
+        ],
+      },
+      clips: [],
+    } as Layer;
+  } else if (type === 'captions') {
+    layer = { id, type: 'captions', name: 'Captions', style: { fontSize: 3, fontWeight: 800, color: '#ffffff' }, highlight: '#ffd166', box: { x: 50, y: 86 }, clips: [] };
   } else if (type === 'code') {
     layer = {
       id, type: 'code', name: 'Code', title: 'main.py', run: true, box: { x: 50, y: 50, w: 46, h: 56 },
