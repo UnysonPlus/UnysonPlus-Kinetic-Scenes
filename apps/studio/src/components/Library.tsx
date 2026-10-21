@@ -14,7 +14,8 @@ const SCROLL_SAMPLE = 'data:image/svg+xml,' + encodeURIComponent(
 
 function sampleScene(p: PresetMeta): Scene {
   const textual = p.appliesTo.includes('text');
-  const word = p.id === 'text-scramble' || p.id === 'text-typewriter' ? 'Motion' : p.id === 'text-count' ? '$1,280' : 'Aa';
+  const word = p.id === 'text-scramble' || p.id === 'text-typewriter' ? 'Motion' : p.id === 'text-count' ? '$1,280'
+    : p.id === 'select-box' ? 'The goal' : p.id === 'text-swap' ? 'Before' : 'Aa';
   const layer: Layer = textual
     ? { id: 's', type: 'text', text: word, style: { fontSize: word === 'Aa' ? 30 : 17, fontWeight: 800, color: '#f4f6f8' }, box: { x: 50, y: 52 }, clips: [] }
     : p.category === '3d'
@@ -27,7 +28,8 @@ function sampleScene(p: PresetMeta): Scene {
         ? { id: 's', type: 'shape', shape: 'rect', fill: 'linear-gradient(90deg, #2ad38b, #3b82f6, #a855f7, #2ad38b)', radius: 3, box: { x: 50, y: 50, w: 70, h: 60 }, clips: [] }
         : { id: 's', type: 'shape', shape: 'rect', fill: '#2ad38b', radius: 3, box: { x: 50, y: 50, w: 26, ratio: 1 }, clips: [] };
   const d = Math.min(p.defaultDuration, 2.4);
-  layer.clips = [{ id: 'c', preset: p.id, start: 0.15, duration: d, params: p.id === 'keyframes' ? { frames: [{ t: 0, scale: 0.8, rotate: -8 }, { t: d, scale: 1.1, rotate: 8 }] } : undefined }];
+  layer.clips = [{ id: 'c', preset: p.id, start: 0.15, duration: d, params: p.id === 'keyframes' ? { frames: [{ t: 0, scale: 0.8, rotate: -8 }, { t: d, scale: 1.1, rotate: 8 }] }
+    : p.id === 'select-box' ? { word: 2 } : p.id === 'text-swap' ? { to: 'After' } : undefined }];
   return {
     format: 'unysonplus-scene', version: 1, duration: d + 0.75,
     stage: { breakpoints: [{ id: 'a', minWidth: 0, aspect: [16, 10] }], heightMode: 'ratio', safeArea: 0 },

@@ -294,7 +294,7 @@ type Chooser = (kind: 'text' | 'shape', original: Clip, layer: Layer) => StyleMo
 
 function restyleClip(c: Clip, layer: Layer, headline: boolean, style: SceneStyle, nextStart: number, choose: Chooser): Clip {
   const meta = presetMeta[c.preset];
-  if (!meta || !RESTYLE.has(meta.category) || c.preset === 'keyframes' || c.preset === 'code' || c.preset === 'text-count') return c;
+  if (!meta || !RESTYLE.has(meta.category) || c.preset === 'keyframes' || c.preset === 'code' || c.preset === 'text-count' || c.preset === 'text-swap') return c;
   const dir = dirOf(c);
   if (!dir) return c;
   const move = dir === 'out' ? style.motion.exit : layer.type === 'text' && headline ? style.motion.headline : choose(layer.type === 'text' ? 'text' : 'shape', c, layer);

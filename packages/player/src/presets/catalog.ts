@@ -232,6 +232,19 @@ export const PRESET_CATALOG: PresetMeta[] = [
     defaults: { from: 0 },
     fields: [{ key: 'from', label: 'Count from', type: 'number', step: 1 }],
   },
+  {
+    id: 'text-swap', label: 'Change text', category: 'text', appliesTo: ['text'],
+    description: 'Swaps the words for new ones on cue ("booting" to "ready in 45 s", "1 / 10" to "2 / 10"): the old text leaves as the new one arrives. Chain several on one layer to step through a sequence; each starts from the text the one before it left.',
+    defaultEase: 'power3.inOut', defaultDuration: 0.5,
+    defaults: { to: 'New text', style: 'roll' },
+    fields: [
+      { key: 'to', label: 'New text', type: 'text' },
+      { key: 'style', label: 'Style', type: 'select', options: [
+        { value: 'roll', label: 'Roll up' }, { value: 'slide', label: 'Slide across' },
+        { value: 'fade', label: 'Fade' }, { value: 'blur', label: 'Blur' },
+      ] },
+    ],
+  },
   // ---- Scene transitions (for groups: an "out" on the scene leaving, an "in" on the next) ----
   {
     id: 'tr-slash', label: 'Slash', category: 'transition', appliesTo: ALL,
@@ -302,6 +315,22 @@ export const PRESET_CATALOG: PresetMeta[] = [
     defaultEase: 'softInOut', defaultDuration: 0.9,
     defaults: { angle: 110, width: 22, strength: 0.45, color: '#ffffff' },
     fields: [{ key: 'angle', label: 'Angle', type: 'number', min: 0, max: 360, step: 5, unit: '°' }, { key: 'width', label: 'Width', type: 'number', min: 5, max: 60, step: 1, unit: '%' }, { key: 'strength', label: 'Strength', type: 'number', min: 0, max: 1, step: 0.05 }, { key: 'color', label: 'Colour', type: 'color' }],
+  },
+  {
+    id: 'select-box', label: 'Select box', category: 'emphasis', appliesTo: ['text'],
+    description: 'Draws a coloured box with square corner handles around one word (or a few) of the text, like a selected object in a design tool, and tints the word to match. The key word of a headline.',
+    defaultEase: 'back.out(1.6)', defaultDuration: 0.6,
+    defaults: { direction: 'in', word: 1, words: 1, color: '#3b82f6', tint: true, handles: true, padding: 0.2, stroke: 0.18 },
+    fields: [
+      DIRECTION,
+      { key: 'word', label: 'Word', type: 'number', min: 1, max: 200, step: 1 },
+      { key: 'words', label: 'How many words', type: 'number', min: 1, max: 20, step: 1 },
+      { key: 'color', label: 'Colour', type: 'color' },
+      { key: 'tint', label: 'Tint the words', type: 'boolean' },
+      { key: 'handles', label: 'Corner handles', type: 'boolean' },
+      { key: 'padding', label: 'Padding', type: 'number', min: 0, max: 1, step: 0.01, unit: 'em' },
+      { key: 'stroke', label: 'Line width', type: 'number', min: 0.05, max: 1, step: 0.01 },
+    ],
   },
   {
     id: 'scroll', label: 'Scroll', category: 'motion', appliesTo: ['image'],

@@ -20,16 +20,17 @@ function easeOf(ctx: PresetContext): (t: number) => number {
 }
 
 /** Runs render(progress 0..1) across the clip, seek-safe. Renders the start now when this is the layer's first clip. */
-function drive(ctx: PresetContext, render: (p: number) => void, opts: { ease?: boolean; renderFirst?: boolean } = {}) {
+function drive(ctx: PresetContext, render: (p: number) => void, opts: { ease?: boolean; renderFirst?: boolean; always?: boolean } = {}) {
   const e = opts.ease === false ? (t: number) => t : easeOf(ctx);
   const state = { p: 0 };
-  if (ctx.first && opts.renderFirst !== false) render(e(0));
+  // `always`: also for a later clip whose own elements would otherwise sit untouched until it first plays.
+  if ((ctx.first || opts.always) && opts.renderFirst !== false) render(e(0));
   ctx.tl.fromTo(state, { p: 0 }, { p: 1, duration: ctx.duration, ease: 'none', immediateRender: false, onUpdate: () => render(e(state.p)) }, ctx.at);
 }
 
 /** A child element this preset owns inside the layer, reused when the timeline is rebuilt. */
-function owned(ctx: PresetContext, cls: string): HTMLElement {
-  const key = `${cls}-${ctx.clip.id}`;
+function owned(ctx: PresetContext, cls: string, clipId = ctx.clip.id): HTMLElement {
+  const key = `${cls}-${clipId}`;
   let node = ctx.el.querySelector<HTMLElement>(`:scope > [data-upw-own="${key}"]`);
   if (!node) {
     node = ctx.el.ownerDocument.createElement('div');
@@ -50,6 +51,44 @@ const setMask = (el: HTMLElement, v: string) => {
 function tween3d(ctx: PresetContext, from: Vars, to: Vars, immediate: boolean) {
   if (!ctx.model) return;
   ctx.tl.fromTo(ctx.model, from, { ...to, duration: ctx.duration, ease: ctx.ease, immediateRender: immediate }, ctx.at);
+}
+
+interface Swap { start: number; dur: number; ease: (t: number) => number; node: HTMLElement; style: 'roll' | 'slide' | 'fade' | 'blur'; shiftX: string }
+/** Change text: each text layer's swaps, by clip id (rebuilt with the timeline). */
+const SWAPS = new WeakMap<HTMLElement, Map<string, Swap>>();
+
+/** Draws a text layer's chain of swaps at a moment of its timeline. */
+function renderSwaps(el: HTMLElement, clipIds: string[], now: number) {
+  const reg = SWAPS.get(el);
+  const original = el.querySelector<HTMLElement>(':scope > .upw-txt');
+  if (!reg || !original) return;
+  const list = clipIds.map((id) => reg.get(id)).filter((s): s is Swap => !!s).sort((a, b) => a.start - b.start);
+  const prog = (s: Swap) => s.ease(clamp01(s.dur > 0 ? (now - s.start) / s.dur : now >= s.start ? 1 : 0));
+  const put = (node: HTMLElement, v: number, entering: boolean, s: Swap | undefined, shiftX: string) => {
+    // v: 1 = fully shown, 0 = gone (on its way in from one side, or out to the other).
+    const away = 1 - v;
+    const dir = entering ? 1 : -1;
+    const style = s?.style ?? 'fade';
+    const x = style === 'slide' ? dir * away * 30 : 0;
+    const y = style === 'roll' ? dir * away * 100 : 0;
+    node.style.opacity = clamp01(v).toFixed(3);
+    node.style.transform = `translate(calc(${shiftX} + ${x.toFixed(2)}%), ${y.toFixed(2)}%)`;
+    node.style.filter = style === 'blur' && away > 0.001 ? `blur(${(away * 0.8).toFixed(3)}cqw)` : '';
+  };
+  let rolling = false;
+  for (let k = 0; k <= list.length; k++) {
+    const node = k === 0 ? original : list[k - 1].node;
+    const shiftX = k === 0 ? '0%' : list[k - 1].shiftX;
+    const inS = k === 0 ? undefined : list[k - 1];
+    const outS = list[k];
+    const inP = inS ? prog(inS) : 1;
+    const outP = outS ? prog(outS) : 0;
+    if (outP > 0) put(node, 1 - outP, false, outS, shiftX);
+    else put(node, inP, true, inS, shiftX);
+    if (outS?.style === 'roll' && outP > 0 && outP < 1) rolling = true;
+  }
+  // The text is clipped to its own line while it rolls, so the words wheel past rather than overlap.
+  el.style.clipPath = rolling ? 'inset(-0.05em -100vw)' : '';
 }
 
 export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
@@ -165,6 +204,110 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
       });
     };
     drive(ctx, render);
+  },
+
+  'select-box'(ctx) {
+    // A box with corner handles around a run of words. It is measured from the words' laid-out
+    // positions (offsets, which transforms don't change) and placed in % of the text block, so it
+    // keeps its place at any stage size: the words and the block scale together.
+    const words = ctx.words;
+    if (ctx.layer.type !== 'text' || !words.length) return;
+    const p = ctx.params;
+    const n = words.length;
+    const first = Math.min(n, Math.max(1, Math.round(num(p, 'word', 1)))) - 1;
+    const count = Math.min(n - first, Math.max(1, Math.round(num(p, 'words', 1))));
+    const picked = words.slice(first, first + count);
+    const color = typeof p.color === 'string' && p.color ? p.color : '#3b82f6';
+    const pad = Math.max(0, num(p, 'padding', 0.2));
+    const stroke = Math.max(0.05, num(p, 'stroke', 0.18));
+    const tint = p.tint !== false;
+    const out = isOut(p);
+    ctx.el.style.position = 'relative';
+    ctx.el.style.isolation = 'isolate';
+    // Keyed by the words, so an "out" clears the box an "in" drew on the same words.
+    const box = owned(ctx, 'upw-sel', `w${first}-${count}`);
+    Object.assign(box.style, {
+      position: 'absolute', zIndex: '-1', pointerEvents: 'none', boxSizing: 'border-box',
+      border: `${stroke}cqw solid ${color}`, background: `color-mix(in srgb, ${color} 16%, transparent)`,
+      transformOrigin: '50% 50%',
+    });
+    const want = p.handles === false ? 0 : 4;
+    while (box.children.length > want) box.lastChild!.remove();
+    while (box.children.length < want) box.appendChild(box.ownerDocument.createElement('i'));
+    const handles = Array.from(box.children) as HTMLElement[];
+    const hs = `${(stroke * 3.6).toFixed(3)}cqw`;
+    handles.forEach((h, i) => Object.assign(h.style, {
+      position: 'absolute', width: hs, height: hs, boxSizing: 'border-box', background: '#ffffff',
+      border: `${stroke}cqw solid ${color}`, left: i % 2 ? '100%' : '0', top: i > 1 ? '100%' : '0',
+      translate: '-50% -50%',
+    }));
+    const place = () => {
+      const W = ctx.el.offsetWidth;
+      const H = ctx.el.offsetHeight;
+      if (!W || !H) return;
+      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+      for (const w of picked) {
+        // offsetLeft/Top are measured from the positioned text block.
+        let x = 0, y = 0, node: HTMLElement | null = w;
+        while (node && node !== ctx.el) { x += node.offsetLeft; y += node.offsetTop; node = node.offsetParent as HTMLElement | null; }
+        l = Math.min(l, x); t = Math.min(t, y); r = Math.max(r, x + w.offsetWidth); b = Math.max(b, y + w.offsetHeight);
+      }
+      const em = parseFloat(getComputedStyle(ctx.el).fontSize) || 16;
+      const px = pad * em;
+      // Sit the box on the letters rather than the full line box (which adds the line gap above and below).
+      const trim = Math.max(0, (b - t) - em * 1.1) / 2;
+      box.style.left = `${(((l - px) / W) * 100).toFixed(3)}%`;
+      box.style.width = `${(((r - l + 2 * px) / W) * 100).toFixed(3)}%`;
+      box.style.top = `${(((t + trim - px * 0.6) / H) * 100).toFixed(3)}%`;
+      box.style.height = `${(((b - t - 2 * trim + px * 1.2) / H) * 100).toFixed(3)}%`;
+    };
+    if (!out) box.style.opacity = '0';
+    const render = (e: number) => {
+      // e is eased (and may overshoot with a springy curve); s is the plain 0..1 progress for fades.
+      const v = out ? 1 - e : e;
+      const s = clamp01(v);
+      place();
+      box.style.opacity = clamp01(s * 2.5).toFixed(3);
+      box.style.transform = `scale(${(0.82 + 0.18 * v).toFixed(4)})`;
+      const hv = clamp01((s - 0.35) / 0.65);
+      handles.forEach((h) => { h.style.transform = `scale(${hv.toFixed(3)})`; });
+      picked.forEach((w) => { w.style.color = tint && s > 0 ? `color-mix(in srgb, ${color} ${(s * 100).toFixed(1)}%, currentColor)` : ''; });
+    };
+    // An entrance draws its hidden start up front even after other clips (an exit must not: it would show the box early).
+    drive(ctx, render, { always: !out });
+  },
+
+  'text-swap'(ctx) {
+    // The new words are a second text block over the first, in the same place and type. Every swap on
+    // a layer draws the whole chain (the original text, then each swap's words) from the timeline's
+    // time, so the result never depends on which swap the engine happens to render first.
+    if (ctx.layer.type !== 'text') return;
+    const p = ctx.params;
+    ctx.el.style.position = 'relative';
+    const node = owned(ctx, 'upw-swap');
+    node.textContent = typeof p.to === 'string' ? p.to : 'New text';
+    // A layer with a width wraps like the original; one without stays on its lines and is placed by its anchor.
+    const sized = typeof ctx.layer.box.w === 'number';
+    const anchor = ctx.layer.box.anchor ?? 'center';
+    const hx = anchor.includes('left') ? 'left' : anchor.includes('right') ? 'right' : 'center';
+    Object.assign(node.style, {
+      position: 'absolute', top: '0', pointerEvents: 'none',
+      whiteSpace: sized ? 'pre-line' : 'pre',
+      left: sized || hx === 'left' ? '0' : hx === 'center' ? '50%' : 'auto',
+      right: sized || hx === 'right' ? '0' : 'auto',
+    });
+    if (!node.style.opacity) node.style.opacity = '0';
+    let reg = SWAPS.get(ctx.el);
+    if (!reg) SWAPS.set(ctx.el, (reg = new Map()));
+    reg.set(ctx.clip.id, {
+      start: ctx.at, dur: ctx.duration, ease: easeOf(ctx), node,
+      style: pick(p, 'style', ['roll', 'slide', 'fade', 'blur'] as const, 'roll'),
+      shiftX: !sized && hx === 'center' ? '-50%' : '0%',
+    });
+    const tl = ctx.tl;
+    const layer = ctx.layer;
+    const el = ctx.el;
+    drive(ctx, () => renderSwaps(el, layer.clips.map((c) => c.id), tl.time()), { ease: false, always: true });
   },
 
   sheen(ctx) {
@@ -290,6 +433,6 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
         d.style.opacity = (edge * tw).toFixed(3);
       });
     };
-    drive(ctx, render, { ease: false });
+    drive(ctx, render, { ease: false, always: true });
   },
 };
