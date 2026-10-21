@@ -1,6 +1,6 @@
 {
   "name": "@unysonplus/studio",
-  "version": "0.0.57",
+  "version": "0.0.58",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@unysonplus/scene-player": "*",
+    "mp4-muxer": "5.2.1",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },

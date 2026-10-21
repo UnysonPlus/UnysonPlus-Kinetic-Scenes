@@ -3,6 +3,7 @@ import type { Layer, Scene, VideoFormat } from '@unysonplus/scene-player/types';
 import { VIDEO_FORMATS } from '@unysonplus/scene-player/video';
 import { VIDEO_SIZES, canRender, renderVideo, type RenderCheck, type VideoOptions } from '../lib/video';
 import { DownloadIcon } from './icons';
+import { browserCanRender, renderInBrowser } from '../lib/browserVideo';
 
 const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
 const KIT_REPO = 'https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit';
@@ -38,6 +39,8 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   const refs = hasReference(props.scene.layers);
+  // Without the kit, a browser that can draw the page into a picture renders the video itself (MP4, no transparency).
+  const inBrowser = check !== null && !check.ok && check.reason === 'kit' && browserCanRender();
 
   useEffect(() => {
     if (!props.open) return;
@@ -69,8 +72,11 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
     try {
       for (const [i, j] of jobs.entries()) {
         setProgress({ done: 0, total: frames, label: jobs.length > 1 ? `${j.label} (${i + 1} of ${jobs.length})` : '' });
-        const r = await renderVideo(props.scene, { width: j.width, height: j.height, fps, format, transparent, composite, cover: cover && i === 0 },
-          (done, total) => setProgress((p) => ({ done, total, label: p?.label ?? '' })), ctl.signal);
+        const step = (done: number, total: number) => setProgress((p) => ({ done, total, label: p?.label ?? '' }));
+        const r = inBrowser
+          ? await renderInBrowser(props.scene, { width: j.width, height: j.height, fps, composite, cover: cover && i === 0 }, step, ctl.signal)
+            .then((x) => ({ blob: x.blob, name: x.name, warnings: [] as string[], cover: x.cover ? { blob: x.cover, name: x.name.replace(/\.mp4$/, '-cover.png') } : undefined }))
+          : await renderVideo(props.scene, { width: j.width, height: j.height, fps, format, transparent, composite, cover: cover && i === 0 }, step, ctl.signal);
         save(r.blob, r.name);
         if (r.cover) save(r.cover.blob, r.cover.name);
         notes.push(`${r.name} (${(r.blob.size / 1048576).toFixed(1)} MB)`);
@@ -97,7 +103,13 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
           : 'An MP4 or WebM for social posts, presentations or anywhere HTML can\'t go. The size picks the layout: a vertical video uses the scene\'s mobile layout. '}
         The AI Dev Kit on this computer renders it frame by frame, so every frame is exact.
       </p>
-      {check && !check.ok && (
+      {inBrowser && (
+        <p className="export-note">
+          This browser can render the video itself, with nothing installed: an MP4, frame by frame. See-through and ProRes
+          exports need the <a href={KIT_REPO} target="_blank" rel="noopener noreferrer">AI Dev Kit</a>.
+        </p>
+      )}
+      {check && !check.ok && !inBrowser && (
         <p className="export-warn">
           {check.reason === 'kit' && <>Video export runs through the <a href={KIT_REPO} target="_blank" rel="noopener noreferrer"><strong>AI Dev Kit</strong></a> on your computer. <a href={GUIDE} target="_blank" rel="noopener noreferrer">Set it up</a>, start it (start.bat or start.command), then open Export again.</>}
           {check.reason === 'outdated' && <>Your AI Dev Kit needs an update for video export. Close it and start it again: it updates itself.</>}
@@ -124,7 +136,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
         </label>
         <label className="field">
           <span>File</span>
-          <select value={format} onChange={(e) => setFormat(e.target.value as VideoOptions['format'])} disabled={busy}>
+          <select value={inBrowser ? 'mp4' : format} onChange={(e) => setFormat(e.target.value as VideoOptions['format'])} disabled={busy || inBrowser}>
             {!transparent && <option value="mp4" title="H.264: plays everywhere">MP4</option>}
             <option value="webm" title="VP9: smaller files; keeps transparency">WebM</option>
             <option value="mov" title="ProRes: for video editors (CapCut, Premiere, DaVinci Resolve); ProRes 4444 keeps transparency">ProRes (.mov)</option>
@@ -132,7 +144,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
         </label>
       </div>
       <div className="video-checks">
-        {video && (
+        {video && !inBrowser && (
           <label className="check"><input type="checkbox" checked={transparent} disabled={busy} onChange={(e) => setTransparent(e.target.checked)} /> See-through background (graphics only)</label>
         )}
         {refs && (
@@ -148,8 +160,8 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
         </div>
       ) : (
         <div className="export-row">
-          <button type="button" className="btn primary" onClick={start} disabled={!check?.ok}>
-            <DownloadIcon /> {jobs.length > 1 ? `Render ${jobs.length} videos` : 'Render video'}
+          <button type="button" className="btn primary" onClick={start} disabled={!check?.ok && !inBrowser}>
+            <DownloadIcon /> {jobs.length > 1 ? `Render ${jobs.length} videos` : inBrowser ? 'Render in this browser' : 'Render video'}
           </button>
           <span className="export-meta">{frames} frames, {props.scene.duration} s{check === null ? ' · looking for the AI Dev Kit…' : ''}</span>
         </div>

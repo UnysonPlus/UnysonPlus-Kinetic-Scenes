@@ -783,3 +783,4 @@ h1, h2, p { margin: 0; }
 .piece:hover, .piece:focus-visible { border-color: var(--accent, #2ad38b); }
 .piece strong { font-size: 13px; }
 .piece span { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.export-note { margin: 6px 0 10px; padding: 8px 10px; border-radius: 6px; background: color-mix(in srgb, var(--accent, #2ad38b) 12%, transparent); font-size: 12.5px; line-height: 1.45; }

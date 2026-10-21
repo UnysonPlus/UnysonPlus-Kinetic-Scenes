@@ -12,6 +12,8 @@ import { toVideo } from './videoMode';
 
 const BASES = ['http://localhost:8787', 'http://127.0.0.1:8787'];
 let base: string | null = null;
+/** What the running kit can do beyond the basics (an older kit reports none). */
+let features = new Set<string>();
 
 export type KitStatus =
   | { state: 'checking' }
@@ -34,6 +36,7 @@ export async function kitStatus(): Promise<KitStatus> {
       if (!r.ok) continue;
       const j = await r.json();
       base = b;
+      features = new Set(Array.isArray(j.features) ? j.features : []);
       if (!j.ready) return { state: 'off', version: j.version };
       return { state: 'ready', version: j.version, model: String(j.model || ''), backend: String(j.backend || '') };
     } catch {
@@ -93,7 +96,39 @@ async function call(body: Record<string, unknown>, signal: AbortSignal, brief?: 
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
-  return j as { scene: unknown; explanation: string; model: string };
+  return j as { scene: unknown; explanation: string; model: string; patch?: Patch };
+}
+
+/** An AI's additions to a scene: new layers (on top, or just under a named layer) and new clips on existing ones. */
+interface Patch { add: Array<Record<string, unknown>>; clips: Array<{ layer: string; clip: Record<string, unknown> }> }
+
+/** The scene with the AI's additions merged in (ids that clash are renamed, so nothing existing is replaced). */
+function applyPatch(scene: Scene, patch: Patch): Scene {
+  const taken = new Set<string>();
+  const collect = (list: AnyLayer[]) => list.forEach((l) => { taken.add(l.id); l.clips.forEach((c) => taken.add(c.id)); if (l.layers) collect(l.layers); });
+  collect(scene.layers as unknown as AnyLayer[]);
+  const fresh = (id: unknown) => { let v = String(id || 'x').replace(/[^\w-]/g, '') || 'x'; const b = v; let k = 2; while (taken.has(v)) v = `${b}-${k++}`; taken.add(v); return v; };
+  const renew = (l: Record<string, unknown>): Record<string, unknown> => ({
+    ...l, id: fresh(l.id), clips: (Array.isArray(l.clips) ? l.clips : []).map((c: Record<string, unknown>) => ({ ...c, id: fresh(c.id) })),
+    ...(Array.isArray(l.layers) ? { layers: (l.layers as Array<Record<string, unknown>>).map(renew) } : {}),
+  });
+  let layers = [...scene.layers] as unknown as Array<Record<string, unknown>>;
+  for (const raw of patch.add ?? []) {
+    if (!raw || typeof raw !== 'object') continue;
+    const { below, ...rest } = raw as Record<string, unknown> & { below?: string };
+    const l = renew(rest);
+    const k = typeof below === 'string' ? layers.findIndex((x) => x.id === below) : -1;
+    layers = k >= 0 ? [...layers.slice(0, k), l, ...layers.slice(k)] : [...layers, l];
+  }
+  // New clips on existing layers (anywhere in the tree).
+  const add = new Map<string, Array<Record<string, unknown>>>();
+  for (const c of patch.clips ?? []) if (c && typeof c.layer === 'string' && c.clip) add.set(c.layer, [...(add.get(c.layer) ?? []), { ...c.clip, id: fresh(c.clip.id) }]);
+  const walk = (list: Array<Record<string, unknown>>): Array<Record<string, unknown>> => list.map((l) => {
+    const more = add.get(l.id as string);
+    const out = more ? { ...l, clips: [...(l.clips as unknown[]), ...more] } : l;
+    return Array.isArray(out.layers) ? { ...out, layers: walk(out.layers as Array<Record<string, unknown>>) } : out;
+  });
+  return { ...scene, layers: walk(layers) as unknown as Scene['layers'] };
 }
 
 type AnyLayer = { id: string; clips: Array<{ id: string; preset: string; params?: Record<string, unknown> }>; layers?: AnyLayer[] };
@@ -183,10 +218,25 @@ export async function askForScene(opts: {
   context?: string;
   /** Files the AI may place by name (a website's screenshots as "shot:1"), filled in afterwards. */
   assets?: Map<string, string>;
+  /** Only additions are wanted (Edit my video): the AI returns just what it adds, which is much quicker. */
+  additions?: boolean;
 }): Promise<AiResult> {
   const keep = codeClips(opts.scene);
   const { scene: sent, assets } = forAi(opts.scene);
   for (const [k, v] of opts.assets ?? []) assets.set(k, v);
+  if (opts.additions && opts.mode === 'edit' && features.has('add')) {
+    const r = await call({ mode: 'add', prompt: opts.prompt, scene: sent, selection: opts.selection, context: opts.context }, opts.signal, opts.brief);
+    if (r.patch) {
+      const merged = applyPatch(opts.scene, restoreAssets(r.patch as unknown as Scene, assets, opts.scene, false) as unknown as Patch);
+      const v = validateScene(merged);
+      if (v.ok) return { scene: keepMode(guardCode(v.scene, keep), opts.scene), explanation: r.explanation, model: r.model, repaired: false };
+      // Additions that do not validate: one repair of the merged scene, as a whole.
+      const second = await call({ mode: 'repair', prompt: opts.prompt, scene: forAi(merged).scene, errors: v.errors, context: opts.context }, opts.signal, opts.brief);
+      const v2 = validateScene(restoreAssets(second.scene as Scene, assets, opts.scene, true));
+      if (v2.ok) return { scene: keepMode(guardCode(v2.scene, keep), opts.scene), explanation: second.explanation || r.explanation, model: second.model, repaired: true };
+      throw new Error(`The AI's additions still had problems after a second try:\n- ${v2.errors.slice(0, 6).join('\n- ')}`);
+    }
+  }
   const first = await call({ mode: opts.mode, prompt: opts.prompt, scene: sent, selection: opts.selection, context: opts.context }, opts.signal, opts.brief);
   // Validate with the real files back in (placeholders aren't valid addresses).
   let v = validateScene(restoreAssets(first.scene as Scene, assets, opts.scene, opts.mode !== 'create'));
@@ -226,6 +276,8 @@ export async function askForReview(opts: { scene: Scene; prompt: string; playerB
   // The real scene goes to the kit (it renders the frames from it; it shortens the files for the AI itself).
   const r = await post<{ ok: boolean; notes?: string; scene?: Scene; explanation?: string; looked: boolean; frames: number[] }>('/studio/review', {
     scene: opts.scene, prompt: opts.prompt, playerBase: opts.playerBase, catalog: catalogForAi(), rules: MOTION_RULES,
+    // Only the changed layers come back (the kit merges them); an older kit ignores this and returns the whole scene.
+    patch: true,
   }, opts.signal);
   if (r.ok || !r.scene) return { note: r.notes || 'No changes needed.', looked: r.looked, frames: r.frames?.length ?? 0 };
   const v = validateScene(r.scene);

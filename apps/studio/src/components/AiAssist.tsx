@@ -39,6 +39,8 @@ export type QueuedRequest = string | {
   context?: string;
   /** The voice-over a scene was made from: reveals are then landed on their words. */
   voiceClip?: string;
+  /** Only additions are wanted (quicker; the kit returns just what it adds). */
+  additions?: boolean;
   /** The scene the AI starts from (instead of the current one). */
   base?: Scene;
   /** A plan the person approved: build it without planning again. */
@@ -194,7 +196,7 @@ export function AiAssist(props: {
       }
       setPhase(mode === 'create' ? 'Building' : 'Working');
       const brief = [extra?.brief, style ? styleBrief(style) : '', musicCues(extra?.base ?? before)].filter(Boolean).join('\n\n') || undefined;
-      const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets: extra?.assets });
+      const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets: extra?.assets, additions: extra?.additions });
       // A scene built from a base (a voice-over) gets the style's exact colours and fonts too.
       if (style && extra?.base) r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
       // A new scene in a style gets exactly the style's colours and fonts.
@@ -330,7 +332,7 @@ export function AiAssist(props: {
     if (!s) return;
     const clip = s.audio!.find((a) => a.id === clipId)!;
     const ask = prompt.trim() || 'Edit this video: captions, a hook, and effects that suit what is said.';
-    send(ask, 'scene', { text: ask, base: s, voiceClip: clip.id, brief: VIDEO_EDIT_BRIEF, context: `VOICE-OVER WORDS (scene seconds)\n${beatsText(voiceBeats(clip))}` });
+    send(ask, 'scene', { text: ask, base: s, voiceClip: clip.id, brief: VIDEO_EDIT_BRIEF, additions: true, context: `VOICE-OVER WORDS (scene seconds)\n${beatsText(voiceBeats(clip))}` });
   };
 
   /** A quick scene from a website: its real words, colours, fonts and screenshots. */

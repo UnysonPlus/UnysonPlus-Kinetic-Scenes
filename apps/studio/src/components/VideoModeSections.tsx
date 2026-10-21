@@ -104,7 +104,7 @@ export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCo
   const tracked = !!props.layer.track?.length;
   return (
     <Section title="Footage tools">
-      <SelectField label="Cut-out quality" value={quality} options={[{ value: 'fine', label: 'Fine edges (about 0.5 s a frame)' }, { value: 'fast', label: 'Fast (about 20 times quicker)' }]} onChange={(v) => setQuality(v as 'fine' | 'fast')} />
+      <SelectField label="Cut-out quality" value={quality} options={[{ value: 'fine', label: 'Fine edges (hair)' }, { value: 'fast', label: 'Fast (the body only)' }]} onChange={(v) => setQuality(v as 'fine' | 'fast')} />
       <div className="insp-start wide">
         <button type="button" className="btn small" disabled={!!busy} onClick={() => run('Cutting out the person', async (signal) => {
           const r = await cutOutPerson(props.scene, props.layer.id, quality, (s) => setBusy(s), signal);
