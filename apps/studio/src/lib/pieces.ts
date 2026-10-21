@@ -109,7 +109,7 @@ export const PIECES: Piece[] = [
   },
   {
     id: 'storm', name: 'Headline storm', description: 'Tilted headline strips fly in from alternating sides and pile up.',
-    build: () => group('storm', 'Headline storm', ['CLAUDE NOW EDITS VIDEO', '20 EFFECTS. ONE PROMPT.', 'EDITORS ON NOTICE', 'EVERY WORD CAPTIONED', 'THE AI EDIT IS HERE'].map((t, i) =>
+    build: () => group('storm', 'Headline storm', ['EDITING JUST GOT FAST', 'ONE PROMPT. TWENTY EFFECTS.', 'EVERY WORD CAPTIONED', 'MOTION ON EVERY CUT', 'READY TO POST'].map((t, i) =>
       text(`h${i}`, t, 50 + (i % 2 ? -6 : 6), 18 + i * 9, 3.4, {
         style: { fontSize: 3.4, fontWeight: 900, color: i % 3 === 1 ? '#ffffff' : '#111111' }, pill: { fill: i % 3 === 1 ? '#e8202a' : '#ffffff', padX: 0.5, padY: 0.25, radius: 0.1 },
         clips: [C('strip-in', i * 0.22, 0.4, { from: i % 2 ? 'left' : 'right', tilt: [-6, 4, -3, 7, -5][i] })],
@@ -156,7 +156,7 @@ export const PIECES: Piece[] = [
     build: () => group('screenplay', 'Screenplay page', [
       rect('page', 50, 50, 100, 100, { fill: '#f4f0e6', clips: [C('fade', 0, 0.2)] }),
       text('scene', 'INT. GREEN ROOM - DAY', 10, 30, 3.4, { box: { anchor: 'left' }, style: { fontSize: 3.4, fontWeight: 500, color: '#222222', fontFamily: MONO }, clips: [C('text-typewriter', 0.2, 0.6)] }),
-      text('who', 'JUSTYN', 50, 38, 3.4, { style: { fontSize: 3.4, fontWeight: 500, color: '#222222', fontFamily: MONO }, clips: [C('text-typewriter', 0.9, 0.3)] }),
+      text('who', 'PRESENTER', 50, 38, 3.4, { style: { fontSize: 3.4, fontWeight: 500, color: '#222222', fontFamily: MONO }, clips: [C('text-typewriter', 0.9, 0.3)] }),
       text('line', 'Kinetic hook.\nTitle card dive.\nScreenplay page.', 50, 47, 3.4, { style: { fontSize: 3.4, fontWeight: 500, color: '#222222', fontFamily: MONO, align: 'center', lineHeight: 1.3 }, clips: [C('text-typewriter', 1.3, 1.2), C('select-box', 2.7, 0.4, { word: 5, words: 2, color: '#f5c542' })] }),
     ]),
   },
@@ -165,7 +165,7 @@ export const PIECES: Piece[] = [
     build: () => group('masthead', 'Magazine cover', [
       text('mast', 'TAKE', 50, 13, 30, { style: { fontSize: 30, fontWeight: 900, color: '#e8202a', letterSpacing: -0.04 }, clips: [C('fade', 0, 0.4)] }),
       text('issue', 'OCTOBER 2026 · ISSUE No. 1', 50, 4, 2.8, { style: { fontSize: 2.8, fontWeight: 700, color: '#ffffff', letterSpacing: 0.2 }, clips: [C('fade', 0.3, 0.4)] }),
-      text('line1', 'CLAUDE\nEDITS\nVIDEO', 86, 46, 4.2, { box: { anchor: 'right' }, style: { fontSize: 4.2, fontWeight: 900, color: '#ffffff', align: 'right', lineHeight: 0.95 }, clips: [C('strip-in', 0.5, 0.4, { from: 'right', tilt: 0 })] }),
+      text('line1', 'MOTION\nMADE\nEASY', 86, 46, 4.2, { box: { anchor: 'right' }, style: { fontSize: 4.2, fontWeight: 900, color: '#ffffff', align: 'right', lineHeight: 0.95 }, clips: [C('strip-in', 0.5, 0.4, { from: 'right', tilt: 0 })] }),
       { id: 'badge', type: 'shape', shape: 'ellipse', fill: '#e8202a', box: { x: 84, y: 68, w: 14, ratio: 1 }, clips: [C('pop', 0.8, 0.4)] } as Layer,
       text('badget', '20\nEFFECTS', 84, 68, 2.6, { style: { fontSize: 2.6, fontWeight: 900, color: '#ffffff', align: 'center', lineHeight: 0.95 }, clips: [C('fade', 0.9, 0.3)] }),
     ]),
