@@ -1,12 +1,12 @@
 import type { gsap as GSAP } from 'gsap';
-import type { Clip, Layer } from '../types';
+import type { AudioClip, Clip, Layer } from '../types';
 import { hash01 } from '../random';
 import { PRESET_CATALOG, type PresetMeta } from './catalog';
 import { resolveEase } from '../eases';
 import type { State3D } from '../model3d';
 import { MORE_BUILDERS } from './more';
 import { TRANSITION_BUILDERS } from './transitions';
-import { FX_BUILDERS, directionalBlur, speedOf, typewriterCaret } from './fx';
+import { FX_BUILDERS, REACT_BUILDERS, directionalBlur, speedOf, typewriterCaret } from './fx';
 import { easeOf, drive } from './more';
 import { PATH_BUILDERS } from './paths';
 
@@ -57,6 +57,9 @@ export interface PresetContext {
   late: (fn: () => void) => void;
   /** The current time on this clip's timeline (a group's own clock inside a group). */
   now: () => number;
+  /** The scene's audio clips, and the time on the scene's own clock (for presets that follow the music). */
+  sceneAudio: AudioClip[];
+  sceneNow: () => number;
 }
 
 export interface PresetDefinition extends PresetMeta {
@@ -390,7 +393,7 @@ const BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   },
 };
 
-const ALL_BUILDERS: Record<string, (ctx: PresetContext) => void> = { ...BUILDERS, ...MORE_BUILDERS, ...TRANSITION_BUILDERS, ...FX_BUILDERS, ...PATH_BUILDERS };
+const ALL_BUILDERS: Record<string, (ctx: PresetContext) => void> = { ...BUILDERS, ...MORE_BUILDERS, ...TRANSITION_BUILDERS, ...FX_BUILDERS, ...PATH_BUILDERS, ...REACT_BUILDERS };
 
 export const presets: Record<string, PresetDefinition> = Object.fromEntries(
   PRESET_CATALOG.map((meta) => {

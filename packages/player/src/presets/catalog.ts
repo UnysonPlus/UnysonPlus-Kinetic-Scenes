@@ -299,6 +299,18 @@ export const PRESET_CATALOG: PresetMeta[] = [
     ],
   },
   {
+    id: 'react', label: 'React to music', category: 'ambient', appliesTo: ALL,
+    description: 'Breathes with the music: its loudness or its bass gently drives a glow, a slight scale or brightness. Find the music’s beats first (in the music clip’s settings). Use it on one or two things, never as equaliser bars.',
+    defaultEase: 'none', defaultDuration: 4,
+    defaults: { source: 'loud', effect: 'glow', amount: 0.6, color: '#2ad38b', audio: '' },
+    fields: [
+      { key: 'source', label: 'Follows', type: 'select', options: [{ value: 'loud', label: 'Loudness' }, { value: 'bass', label: 'Bass' }] },
+      { key: 'effect', label: 'Drives', type: 'select', options: [{ value: 'glow', label: 'Glow' }, { value: 'scale', label: 'Scale' }, { value: 'brightness', label: 'Brightness' }, { value: 'opacity', label: 'Presence' }] },
+      { key: 'amount', label: 'Amount', type: 'number', min: 0, max: 1, step: 0.05 },
+      { key: 'color', label: 'Glow colour', type: 'color' },
+    ],
+  },
+  {
     id: 'march', label: 'Marching outline', category: 'ambient', appliesTo: ['shape'],
     description: 'The dashes of a dashed outline travel round it while something is working. Give the shape an outline and a dash length.',
     defaultEase: 'none', defaultDuration: 3,

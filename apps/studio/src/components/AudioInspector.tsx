@@ -3,6 +3,8 @@ import { NumberField, Section, SelectField, TextField } from './fields';
 import { removeAudio, setAudio, type AudioInfo } from '../lib/audio';
 import { SFX_CATALOG, parseSfxSrc, sfxMeta, sfxSrc } from '@unysonplus/scene-player/sfx';
 import { WordsSection } from './WordsSection';
+import { useState } from 'react';
+import { analyseMusic, sceneBeats, snapToBeats, strongMoments } from '../lib/beats';
 
 /** The Inspector for a selected audio clip: timing, trim, volume and fades. */
 export function AudioInspector(props: {
@@ -14,6 +16,8 @@ export function AudioInspector(props: {
   /** Jump the playhead (clicking a word). */
   onSeek: (t: number) => void;
   onMakeScene?: (clipId: string) => void;
+  /** Decodes the clip's file (for finding the beats). */
+  decode?: (src: string) => Promise<AudioBuffer | null>;
 }) {
   const { scene, clip, info } = props;
   const set = (patch: Partial<AudioClip>) => props.onCommit(setAudio(scene, clip.id, patch));
@@ -47,6 +51,8 @@ export function AudioInspector(props: {
         <p className="field-hint wide">Drag the clip on the timeline to move it; drag an edge to trim. Length left empty plays to the end of the file.</p>
       </Section>
 
+      {!builtIn && (clip.role === 'music') && <BeatsSection scene={scene} clip={clip} onCommit={props.onCommit} decode={props.decode} />}
+
       {!builtIn && <WordsSection scene={scene} clip={clip} onCommit={props.onCommit} onSeek={props.onSeek} onMakeScene={props.onMakeScene ? () => props.onMakeScene!(clip.id) : undefined} />}
 
       <Section title="Level">
@@ -79,5 +85,46 @@ export function AudioInspector(props: {
         <button type="button" className="btn small danger" onClick={() => { props.onCommit(removeAudio(scene, clip.id)); props.onDeselect(); }}>Delete audio</button>
       </div>
     </div>
+  );
+}
+/** Music: find the tempo and beats, and land reveals on them. */
+function BeatsSection(props: { scene: Scene; clip: AudioClip; onCommit: (scene: Scene) => void; decode?: (src: string) => Promise<AudioBuffer | null> }) {
+  const { scene, clip } = props;
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const beats = sceneBeats(clip);
+  const strong = strongMoments(beats);
+  const find = async () => {
+    if (!props.decode) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const buf = await props.decode(clip.src);
+      if (!buf) throw new Error('the file could not be read');
+      const r = analyseMusic(buf);
+      props.onCommit(setAudio(scene, clip.id, { beats: r.beats, envelope: r.envelope }));
+      setNote(`${r.beats.bpm} beats a minute.`);
+    } catch (e) {
+      setNote(`Could not find the beats: ${(e as Error).message}.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const snap = () => {
+    const r = snapToBeats(scene, clip);
+    if (r.moved) props.onCommit(r.scene);
+    setNote(r.moved ? `Moved ${r.moved} ${r.moved === 1 ? 'entrance' : 'entrances'} onto the beat (undo to put ${r.moved === 1 ? 'it' : 'them'} back).` : 'Nothing was close enough to a beat to snap (within 0.15 s for big reveals, 0.10 s for the rest).');
+  };
+  return (
+    <Section title="Beats">
+      {clip.beats
+        ? <p className="field-hint wide">{clip.beats.bpm} beats a minute · {beats.length} beats · {strong.length} strong {strong.length === 1 ? 'moment' : 'moments'} (the taller marks on the timeline).</p>
+        : <p className="field-hint wide">Find the music&apos;s tempo, beats and strongest moments, right here in the browser. They show on the timeline, AI assist times its reveals to them, and React to music can follow the music.</p>}
+      <div className="insp-start">
+        <button type="button" className="btn small" disabled={busy || !props.decode} onClick={find}>{busy ? 'Listening…' : clip.beats ? 'Find again' : 'Find the beats'}</button>
+        {clip.beats && <button type="button" className="btn small" onClick={snap} title="Big reveals move up to 0.15 s onto a strong moment, smaller entrances up to 0.10 s onto a beat; at most 8 per scene">Snap reveals to the beat</button>}
+      </div>
+      {note && <p className="field-hint wide" role="status">{note}</p>}
+    </Section>
   );
 }

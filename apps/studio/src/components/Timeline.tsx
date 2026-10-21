@@ -637,6 +637,17 @@ export function Timeline(props: Props) {
                       </svg>
                     )}
                     <span className="clip-label">{a.name || a.id}</span>
+                    {a.beats && (
+                      <svg className="beats" viewBox={`0 0 ${w} ${ROW_H - 8}`} preserveAspectRatio="none" aria-hidden="true">
+                        {a.beats.times.map((bt, k) => {
+                          const x = (bt - trimIn) * pps;
+                          if (bt < trimIn || x > w) return null;
+                          const st = a.beats!.strengths[k] ?? 0.5;
+                          const h = (ROW_H - 8) * (st >= 0.55 ? 0.9 : 0.35);
+                          return <line key={k} x1={x} x2={x} y1={ROW_H - 8} y2={ROW_H - 8 - h} stroke={st >= 0.55 ? '#ffd166' : 'rgba(255,255,255,.35)'} strokeWidth={st >= 0.55 ? 1.5 : 1} />;
+                        })}
+                      </svg>
+                    )}
                     {a.words && a.words.length > 0 && (() => {
                       // Words along the waveform: each where it is said; only those with room to show.
                       // (after the clip's name, which sits at its left edge)

@@ -1,3 +1,5 @@
+import { musicCues } from '../lib/beats';
+import { landOnWords } from '../lib/voiceScene';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { lintScene } from '@unysonplus/scene-player/lint';
@@ -29,6 +31,8 @@ export type QueuedRequest = string | {
   brief?: string;
   /** Data for the request (a voice-over's timed words). */
   context?: string;
+  /** The voice-over a scene was made from: reveals are then landed on their words. */
+  voiceClip?: string;
   /** The scene the AI starts from (instead of the current one). */
   base?: Scene;
 };
@@ -127,12 +131,17 @@ export function AiAssist(props: {
     try {
       const mode = useScope === 'new' ? 'create' : 'edit';
       const style = props.styles.find((s) => s.id === props.styleId) ?? null;
-      const brief = [extra?.brief, style ? styleBrief(style) : ''].filter(Boolean).join('\n\n') || undefined;
+      const brief = [extra?.brief, style ? styleBrief(style) : '', musicCues(extra?.base ?? before)].filter(Boolean).join('\n\n') || undefined;
       const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context });
       // A scene built from a base (a voice-over) gets the style's exact colours and fonts too.
       if (style && extra?.base) r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
       // A new scene in a style gets exactly the style's colours and fonts.
       if (style && mode === 'create') r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
+      // A scene made from a voice-over: each reveal finishes on the word it shows.
+      if (extra?.voiceClip) {
+        const vc = r.scene.audio?.find((a) => a.id === extra.voiceClip);
+        if (vc) r.scene = landOnWords(r.scene, vc);
+      }
       props.onApply(r.scene, mode);
       const found = lintScene(r.scene).length;
       push({

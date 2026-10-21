@@ -885,12 +885,13 @@ export function App() {
             ) : tab === 'inspect' && selection.audio && scene.audio?.some((a) => a.id === selection.audio) ? (
               <AudioInspector scene={scene} clip={scene.audio!.find((a) => a.id === selection.audio)!} info={audioInfo[scene.audio!.find((a) => a.id === selection.audio)!.src]}
                 onCommit={commit} onDeselect={() => setSelection({ layerId: null, clipId: null })} onSeek={seek}
+                decode={(src) => audioEngine.buffer(src)}
                 onMakeScene={(clipId) => {
                   const s = latest.current.scene;
                   const clip = s.audio?.find((a) => a.id === clipId);
                   if (!clip?.words?.length) return;
                   const beats = voiceBeats(clip);
-                  setQueued({ text: voiceRequest(clip), brief: voiceBrief(clip, beats), context: `VOICE-OVER BEATS (scene seconds)\n${beatsText(beats)}`, base: voiceBase(s, clip, beats) });
+                  setQueued({ text: voiceRequest(clip), brief: voiceBrief(clip, beats), context: `VOICE-OVER BEATS (scene seconds)\n${beatsText(beats)}`, base: voiceBase(s, clip, beats), voiceClip: clip.id });
                   openAssist(true);
                 }} />
             ) : tab === 'check' ? null : tab === 'inspect'

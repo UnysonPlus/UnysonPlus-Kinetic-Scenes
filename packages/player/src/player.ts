@@ -450,6 +450,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
           model: refs.model?.state,
           late: (fn) => { lateFns.push(fn); },
           now: () => t.time(),
+          sceneAudio: scene.audio ?? [],
+          sceneNow: () => (tl ? tl.time() : t.time()),
         });
       });
       // Lines, flow lines and diagrams draw from where things are, after every preset has drawn.

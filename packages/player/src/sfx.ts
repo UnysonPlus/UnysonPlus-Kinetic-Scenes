@@ -253,6 +253,22 @@ const SUGGESTED: Record<string, { in: string; out?: string }> = {
   'tr-whip': { in: 'whoosh', out: 'whoosh-out' },
   'tr-zoom': { in: 'whoosh', out: 'riser' },
   'tr-glitch': { in: 'glitch', out: 'glitch' },
+  'tr-streak': { in: 'whoosh', out: 'whoosh-out' },
+  'text-carry': { in: 'swish' },
+  'text-swap': { in: 'tick' },
+  'select-box': { in: 'click' },
+  'stack-in': { in: 'soft-pop', out: 'whoosh-out' },
+  glow: { in: 'shimmer' },
+  burst: { in: 'impact' },
+  draw: { in: 'swish' },
+  'follow-path': { in: 'whoosh' },
+  morph: { in: 'whoosh' },
+  'code-type': { in: 'typing' },
+  'code-edit': { in: 'typing' },
+  'code-run': { in: 'click' },
+  'code-note': { in: 'pop' },
+  'code-highlight': { in: 'tick' },
+  'dash-solid': { in: 'success' },
 };
 
 /** The suggested sound for a clip (null for presets that run quietly, such as ambient loops). */
@@ -334,24 +350,67 @@ export function sfxWav(src: string, sampleRate = 48000): Uint8Array | null {
   return new Uint8Array(buf);
 }
 
+const peakCache = new Map<string, number>();
+/**
+ * Seconds from a sound's start to its loudest moment (its hit): a landing sound is started this much
+ * early, so the hit falls on the frame rather than its attack.
+ */
+export function sfxPeak(id: string, pitch = 1): number {
+  const key = `${id}@${pitch}`;
+  const hit = peakCache.get(key);
+  if (hit !== undefined) return hit;
+  const sr = 12000;
+  const pcm = synthSfx(id, sr, pitch);
+  // The peak of a short smoothed envelope, so a single sharp sample doesn't decide it.
+  const win = Math.max(1, Math.round(sr * 0.01));
+  let best = 0, at = 0, acc = 0;
+  for (let i = 0; i < pcm.length; i++) {
+    acc += Math.abs(pcm[i]);
+    if (i >= win) acc -= Math.abs(pcm[i - win]);
+    if (acc > best) { best = acc; at = i - win / 2; }
+  }
+  const t = Math.max(0, at / sr);
+  peakCache.set(key, t);
+  return t;
+}
+
+/** Sounds whose loudest moment is the point of them: they are lined up by their peak. */
+const PEAK_SOUNDS = new Set(['impact', 'thud', 'sub-hit', 'drop', 'riser', 'reveal', 'swell', 'chime', 'success']);
+
 /**
  * Everything the scene plays: its audio tracks plus the sounds attached to clips, placed at each clip's
  * moment on the scene's clock (a group's children run on the group's clock, so they are offset by it).
+ * Two touches make it sound designed: a landing ("at": "end") and any big hit or riser start early by
+ * their attack, so the hit lands on the frame; and the same sound repeated within two seconds gets softer
+ * each time, so a run of pops or ticks stays gentle.
  */
 export function soundTrack(scene: Scene): AudioClip[] {
   const out: AudioClip[] = [...(scene.audio ?? [])];
+  const placed: Array<{ name: string; at: number }> = [];
   const walk = (list: Layer[], offset: number) => {
     for (const l of list) {
       for (const c of l.clips) {
         const s = c.sound;
         if (!s || !SFX_IDS.includes(s.name)) continue;
-        const at = offset + c.start + (s.at === 'end' ? c.duration : 0) + (s.delay ?? 0);
+        let at = offset + c.start + (s.at === 'end' ? c.duration : 0) + (s.delay ?? 0);
+        if (s.at === 'end' || PEAK_SOUNDS.has(s.name)) at -= sfxPeak(s.name, s.pitch ?? 1);
         if (at < 0 || at >= scene.duration) continue;
+        placed.push({ name: s.name, at });
         out.push({ id: `snd-${c.id}`, src: sfxSrc(s.name, s.pitch ?? 1), start: Math.round(at * 1000) / 1000, volume: s.volume, role: 'sfx' });
       }
       if (l.type === 'group') walk(l.layers, offset + (l.start ?? 0));
     }
   };
   walk(scene.layers, 0);
+  // Repeats of one sound close together: each one 25% softer than the last (down to 40%).
+  const sorted = out.map((c, i) => ({ c, i })).filter(({ c }) => c.id.startsWith('snd-')).sort((a, b) => a.c.start - b.c.start);
+  const run = new Map<string, { at: number; n: number }>();
+  for (const { c, i } of sorted) {
+    const name = parseSfxSrc(c.src)?.id ?? c.src;
+    const prev = run.get(name);
+    const n = prev && c.start - prev.at <= 2 ? prev.n + 1 : 0;
+    run.set(name, { at: c.start, n });
+    if (n > 0) out[i] = { ...c, volume: Math.round((c.volume ?? 1) * Math.max(0.4, 0.75 ** n) * 100) / 100 };
+  }
   return out;
 }

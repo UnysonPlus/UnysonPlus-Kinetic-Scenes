@@ -82,7 +82,7 @@ export function voiceBrief(clip: AudioClip, beats: Beat[]): string {
   const end = beats.length ? beats[beats.length - 1].end : clip.start;
   return `VOICE-OVER SCENE (this request): the scene is built ON a voice-over that is already on the timeline. The request's "context" lists the voice's BEATS: "start-end: "words"" in scene seconds, with the STRONG (most emphasised) words and their times, and pauses.
 - Make kinetic typography that follows the voice. For each beat show its KEY words, usually 1-5 (the words that carry the meaning, not the whole sentence: this is not captions). Merge short beats that belong together; skip filler.
-- TIMING IS THE VOICE: a beat's words start entering 0.05-0.15 s before they are said and are fully readable while they are said. Never show words before they are spoken. Each beat's text leaves (or is replaced) as the next beat starts, so at most two text layers are on screen at once.
+- TIMING IS THE VOICE, AND THE PICTURE LEADS: a reveal FINISHES on its word (the entrance starts its own length before the word, so the words have landed as they are heard: the viewer sees, then hears). On a punchline (a STRONG word) land it 0.05-0.1 s before the word. Never show a beat's words more than about half a second before they are said. Each beat's text leaves (or is replaced) as the next beat starts, so at most two text layers are on screen at once.
 - STRONG words: give them the biggest type or the accent colour, and land a hit exactly on their time (a slam, pop, scale or recolour landing at the word's time, with a clip "sound" such as impact, pop or thud at "at": "end" or start so the sound falls on the word).
 - A pause of 0.6 s or more is a change of idea: use a transition there (a wipe, a soft-wipe, a whoosh exit) or a held frame. The biggest idea gets the biggest moment; a riser can lead into it.
 - Delivery: ${(sp.delivery ?? ['conversational']).join(', ')}, ${sp.wpm ? `${sp.wpm} words a minute` : 'unknown pace'}. Make the motion ${mood}.
@@ -107,4 +107,43 @@ export function voiceBase(scene: Scene, clip: AudioClip, beats: Beat[]): Scene {
     markers: undefined,
     playback: { ...scene.playback, loop: false },
   };
+}
+
+const norm = (w: string) => w.toLowerCase().replace(/[^a-z0-9']/g, '');
+
+/**
+ * The picture leads the voice: each text layer's entrance is moved (at most 0.45 s) so it finishes on the
+ * word it shows, or a touch before it when the word is said with emphasis. Applied to scenes made from a
+ * voice-over, after the AI has built them, so the timing is exact whatever the AI estimated.
+ */
+export function landOnWords(scene: Scene, clip: AudioClip): Scene {
+  const words = clipWords(clip).filter((w) => !FILLER.test(w.w));
+  if (!words.length) return scene;
+  const used = new Set<number>();
+  const walk = (list: Scene['layers'], offset: number): Scene['layers'] => list.map((l) => {
+    if (l.type === 'group') return { ...l, layers: walk(l.layers, offset + (l.start ?? 0)) };
+    if (l.type !== 'text') return l;
+    const first = norm(l.text.split(/\s+/)[0] ?? '');
+    const entrance = [...l.clips].filter((c) => c.params?.direction !== 'out').sort((a, b) => a.start - b.start)[0];
+    if (!first || !entrance) return l;
+    const start = offset + entrance.start;
+    const end = start + entrance.duration;
+    // The spoken word this text begins with, nearest to where the AI put the entrance.
+    let pick = -1;
+    words.forEach((w, i) => {
+      if (used.has(i) || norm(w.w) !== first || w.at < start - 0.8 || w.at > end + 1.2) return;
+      if (pick < 0 || Math.abs(w.at - end) < Math.abs(words[pick].at - end)) pick = i;
+    });
+    if (pick < 0) return l;
+    used.add(pick);
+    const w = words[pick];
+    const lead = (w.s ?? 0) >= 0.75 ? 0.07 : 0;
+    const shift = (w.at - lead) - end;
+    if (Math.abs(shift) < 0.02 || Math.abs(shift) > 0.45) return l;
+    const nextStart = Math.max(0, Math.round((entrance.start + shift) * 1000) / 1000);
+    // Keep the layer there for its own entrance.
+    const layerStart = l.start !== undefined && offset + l.start > offset + nextStart ? nextStart : l.start;
+    return { ...l, start: layerStart, clips: l.clips.map((c) => (c.id === entrance.id ? { ...c, start: nextStart } : c)) };
+  });
+  return { ...scene, layers: walk(scene.layers, 0) };
 }

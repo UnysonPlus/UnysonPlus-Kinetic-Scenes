@@ -306,3 +306,48 @@ export function streakOverlay(stageEl: HTMLElement | null, key: string, c: strin
     bar.style.transform = v > 0 ? `translateX(${(travel * 30).toFixed(2)}%) scaleY(${(0.6 + v * 1.4).toFixed(3)})` : '';
   };
 }
+
+/** Music-reactive: a loudness or bass curve (precomputed in the Studio) gently drives a glow, scale or brightness. */
+export const REACT_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
+  react(ctx) {
+    const p = ctx.params;
+    const source = p.source === 'bass' ? 'bass' : 'loud';
+    const effect = pick(p, 'effect', ['glow', 'scale', 'brightness', 'opacity'] as const, 'glow');
+    const amount = Math.max(0, Math.min(1, num(p, 'amount', 0.6)));
+    const c = color(p, 'color', '#2ad38b');
+    const clipId = typeof p.audio === 'string' ? p.audio : '';
+    const music = ctx.sceneAudio.find((a) => a.id === clipId && a.envelope) ?? ctx.sceneAudio.find((a) => a.role === 'music' && a.envelope) ?? ctx.sceneAudio.find((a) => a.envelope);
+    const end = ctx.at + ctx.duration;
+    const isText = ctx.layer.type === 'text';
+    const clear = () => {
+      if (effect === 'glow') { if (isText) ctx.el.style.textShadow = ''; else ctx.el.style.filter = ''; }
+      else if (effect === 'scale') ctx.el.style.scale = '';
+      else if (effect === 'brightness') ctx.el.style.filter = '';
+      else ctx.el.style.opacity = '';
+    };
+    ctx.late(() => {
+      const now = ctx.now();
+      if (!music?.envelope || now < ctx.at || now > end) { clear(); return; }
+      const env = music.envelope;
+      const curve = env[source];
+      // The curve at a scene moment (file time), averaged over a short window so it breathes, never strobes.
+      const at = (t: number) => {
+        const f = (t - music.start + (music.offset ?? 0)) * env.fps;
+        const i = Math.floor(f), k = f - i;
+        const a = curve[Math.max(0, Math.min(curve.length - 1, i))] ?? 0, b = curve[Math.max(0, Math.min(curve.length - 1, i + 1))] ?? 0;
+        return a + (b - a) * k;
+      };
+      const s = ctx.sceneNow();
+      const v = (at(s - 0.08) + at(s) * 2 + at(s + 0.04)) / 4;
+      // Eased in and out at the clip's edges, so it never switches on with a jump.
+      const edge = Math.min(1, (now - ctx.at) / 0.3, (end - now) / 0.3);
+      const k = Math.max(0, Math.min(1, v * amount * edge));
+      if (effect === 'glow') {
+        if (isText) ctx.el.style.textShadow = `0 0 ${(0.4 + k * 1.6).toFixed(2)}cqw ${alpha(c, k)}, 0 0 ${(1 + k * 3).toFixed(2)}cqw ${alpha(c, k * 0.6)}`;
+        else ctx.el.style.filter = `drop-shadow(0 0 ${(0.4 + k * 2).toFixed(2)}cqw ${alpha(c, k)})`;
+      } else if (effect === 'scale') ctx.el.style.scale = (1 + k * 0.06).toFixed(4);
+      else if (effect === 'brightness') ctx.el.style.filter = `brightness(${(1 + k * 0.35).toFixed(3)})`;
+      else ctx.el.style.opacity = (1 - amount * 0.6 * (1 - v) * edge).toFixed(3);
+    });
+  },
+};

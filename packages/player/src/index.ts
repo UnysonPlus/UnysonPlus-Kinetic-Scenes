@@ -9,9 +9,10 @@ export { defaultEaseFor } from './presets/catalog';
 export { lintScene, readingTime, type LintIssue } from './lint';
 export { SCROLL_DEFAULTS } from './scroll';
 export { setAssetBase, REST_3D, type State3D } from './model3d';
-export { SceneAudio } from './audio';
+export { SceneAudio, voiceSpans } from './audio';
+export { expandRepeats, expandRepeat } from './repeat';
 export { sceneTranscript, transcriptHtml, TRANSCRIPT_CLASS, type TranscriptItem } from './transcript';
-export { SFX_CATALOG, SFX_IDS, SFX_CATEGORY_LABELS, sfxMeta, suggestedSound, soundTrack, synthSfx, sfxWav, sfxSrc, parseSfxSrc, type SfxMeta, type SfxCategory } from './sfx';
+export { SFX_CATALOG, SFX_IDS, SFX_CATEGORY_LABELS, sfxMeta, suggestedSound, soundTrack, synthSfx, sfxWav, sfxSrc, parseSfxSrc, sfxPeak, type SfxMeta, type SfxCategory } from './sfx';
 export { allLayers, groupDuration, groupOffset, groupPath } from './groups';
 
 export const PLAYER_VERSION = __PLAYER_VERSION__;

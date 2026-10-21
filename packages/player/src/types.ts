@@ -84,6 +84,10 @@ export interface AudioClip {
   words?: SpokenWord[];
   /** How the recording is delivered, from the same analysis. */
   speech?: SpeechInfo;
+  /** Music: its tempo and beats (times from the start of the FILE), each with a strength 0 to 1. */
+  beats?: { bpm: number; times: number[]; strengths: number[] };
+  /** Music: loudness and bass, 0 to 1, sampled `fps` times a second from the start of the FILE (for React to music). */
+  envelope?: { fps: number; loud: number[]; bass: number[] };
 }
 
 export interface SpokenWord {

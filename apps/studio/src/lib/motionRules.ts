@@ -85,6 +85,10 @@ CODE (explainers and tutorials)
 - Write real, correct code and real output; never pseudo-code. Keep files short enough to read (under about 18 lines on screen); a terminal is a code layer with "frame": "terminal" whose lines start with "$ ".
 - Pace typing at about 12-18 characters a second for code being explained, faster (30+) for boilerplate. Highlight or note the line the voice-over is talking about, as it talks about it, and remove the mark when it moves on.
 
+MUSIC
+- When the request lists MUSIC cues (tempo and STRONG moments), land the big reveals (the headline, an act's arrival, the logo, the call to action) so they FINISH on a strong moment, and smaller entrances on beats; text that must be read at a fast tempo lands on every other beat. Do not lock everything to the grid: a few hits per scene.
+- "react" makes one or two things breathe with the music ("source": "loud" or "bass", "effect": "glow", "scale", "brightness" or "opacity", "amount" 0-1) over a span; it needs a music clip whose beats were found. Never equaliser bars or strobing.
+
 SOUND (built-in sound effects)
 - A clip may carry "sound": { "name": <a sound id below>, "at"?: "start" | "end", "delay"?: s, "volume"?: 0-2, "pitch"?: 0.5-2 }. It plays with the clip and moves with it. "at": "end" lands it on the clip's last frame (a slam, a drop).
 - Add sounds when the request asks for sound, music, a video, an ad or a presentation; otherwise leave them out unless the scene already has some.

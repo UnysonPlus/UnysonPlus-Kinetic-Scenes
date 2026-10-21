@@ -21,6 +21,29 @@ type Ctx = AudioContext;
 const SAMPLE_RATE = 48000;
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+/**
+ * When a voice is speaking, on the scene's clock: from its words (pauses over 0.6 s split it), or the whole
+ * clip when it has no words. Music is lowered over these.
+ */
+export function voiceSpans(clips: AudioClip[]): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  for (const c of clips) {
+    if (c.role !== 'voice') continue;
+    const off = c.offset ?? 0;
+    if (c.words?.length) {
+      let cur: [number, number] | null = null;
+      for (const w of c.words) {
+        if (w.t < off || (c.duration !== undefined && w.t - off > c.duration)) continue;
+        const a = c.start + (w.t - off), b = a + w.d;
+        if (cur && a - cur[1] <= 0.6) cur[1] = b;
+        else { if (cur) spans.push(cur); cur = [a, b]; }
+      }
+      if (cur) spans.push(cur);
+    } else if (c.duration !== undefined) spans.push([c.start, c.start + c.duration]);
+  }
+  return spans;
+}
+
 export class SceneAudio {
   private ctx: Ctx | null = null;
   private master: GainNode | null = null;
@@ -219,12 +242,31 @@ export class SceneAudio {
       return v;
     };
     const g = gain.gain;
-    g.setValueAtTime(level(from), ctxAt(from));
-    if (fi > 0 && from < start + fi) g.linearRampToValueAtTime(vol, ctxAt(start + fi));
-    if (fo > 0) {
-      const foStart = Math.max(from, end - fo);
-      if (foStart > from) g.setValueAtTime(level(foStart), ctxAt(foStart));
-      g.linearRampToValueAtTime(0, ctxAt(end));
+    // Music sits under a voice-over: lowered to 35% while words are spoken (with short ramps).
+    const duck = clip.role === 'music' ? voiceSpans(this.clips) : [];
+    const duckAt = (t: number) => {
+      let k = 1;
+      for (const [a, b] of duck) {
+        if (t >= a - 0.2 && t <= b + 0.3) {
+          const inn = t < a ? (a - t) / 0.2 : 0;
+          const out = t > b ? (t - b) / 0.3 : 0;
+          k = Math.min(k, 0.35 + 0.65 * Math.max(inn, out));
+        }
+      }
+      return k;
+    };
+    if (duck.length) {
+      // Sampled every 50 ms: a smooth enough curve for a mix, and simple to keep in step with seeking.
+      g.setValueAtTime(level(from) * duckAt(from), ctxAt(from));
+      for (let t = from + 0.05; t < end; t += 0.05) g.linearRampToValueAtTime(level(t) * duckAt(t), ctxAt(t));
+    } else {
+      g.setValueAtTime(level(from), ctxAt(from));
+      if (fi > 0 && from < start + fi) g.linearRampToValueAtTime(vol, ctxAt(start + fi));
+      if (fo > 0) {
+        const foStart = Math.max(from, end - fo);
+        if (foStart > from) g.setValueAtTime(level(foStart), ctxAt(foStart));
+        g.linearRampToValueAtTime(0, ctxAt(end));
+      }
     }
     src.start(Math.max(ctx.currentTime, ctxAt(from)), trimIn + (from - start), end - from);
     this.live.push({ src, gain });

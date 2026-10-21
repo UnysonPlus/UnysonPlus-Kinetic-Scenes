@@ -101,6 +101,7 @@ John` } },
     { id: 'rt', type: 'text', text: 'Row {{t}}', style: { fontSize: 1 }, box: { x: 10, y: 60 }, clips: [{ id: 'rti', preset: 'fade', start: 0.4, duration: 0.3 }] } ] }, clips: [] });
   layers.push({ id: 'ma', type: 'shape', shape: 'rect', fill: '#3b82f6', radius: 1, box: { x: 30, y: 75, w: 5, h: 5 }, clips: [{ id: 'mm', preset: 'morph', start: 1, duration: 0.8, params: { to: 'mb' } }] });
   layers.push({ id: 'mb', type: 'shape', shape: 'ellipse', fill: '#f59e0b', box: { x: 40, y: 85, w: 8, h: 6 }, clips: [] });
+  layers.push({ id: 'rx', type: 'text', text: 'React', style: { fontSize: 1.5 }, box: { x: 80, y: 95 }, clips: [{ id: 'rxg', preset: 'react', start: 0.5, duration: 2, params: { effect: 'glow' } }, { id: 'rxs', preset: 'react', start: 2.6, duration: 1, params: { effect: 'scale', source: 'bass' } }] });
   layers.push({ id: 'cap', type: 'captions', style: { fontSize: 1.5 }, box: { x: 60, y: 95 }, clips: [] });
   // A layer pinned to the stage (placed in the stage-wide pin space, outside the camera).
   layers.push({ id: 'pin', type: 'text', text: 'Pinned', pin: 'stage', style: { fontSize: 2 }, box: { x: 100, y: 100, anchor: 'bottom-right' }, clips: [{ id: 'pf', preset: 'fade', start: 0.35, duration: 0.6 }] });
@@ -109,7 +110,9 @@ John` } },
   ] });
   const scene = { format: 'unysonplus-scene', version: 1, duration: Math.ceil(t + 2), stage: { breakpoints: [{ id: 'd', minWidth: 0, aspect: [16, 9] }], heightMode: 'ratio' }, playback: { trigger: 'manual', loop: false }, layers,
     // A voice-over's words, for the captions.
-    audio: [{ id: 'vo', src: 'sfx:pop', start: 0.2, role: 'voice', words: 'One two three. Four five six seven eight nine.'.split(' ').map((w, i) => ({ w, t: 0.1 + i * 0.3, d: 0.25 })) }],
+    audio: [{ id: 'vo', src: 'sfx:pop', start: 0.2, role: 'voice', words: 'One two three. Four five six seven eight nine.'.split(' ').map((w, i) => ({ w, t: 0.1 + i * 0.3, d: 0.25 })) },
+      // Music with a loudness curve, for React to music.
+      { id: 'mu', src: 'sfx:shimmer', start: 0, role: 'music', envelope: { fps: 20, loud: Array.from({ length: 400 }, (_, i) => Math.round((0.5 + 0.5 * Math.sin(i / 3)) * 100) / 100), bass: Array.from({ length: 400 }, (_, i) => (i % 10) / 10) } }],
     // A camera, so its moves are checked for seeking too.
     camera: { keys: [{ id: 'k1', t: 0.5, zoom: 1, x: 0, tiltX: 0 }, { id: 'k2', t: 2, zoom: 1.3, x: 10, ease: 'softInOut' }, { id: 'k3', t: 4, zoom: 1, x: 0, tiltX: 15, roll: 4 }] } };
 
