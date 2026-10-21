@@ -216,6 +216,14 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     if (!camEl) return;
     const on = cameraOn && hasCamera && !isRest(cam);
     camEl.style.transform = on ? cameraTransform(cam) : '';
+    // Parallax: layers with a depth move (and grow) more or less than the scene as the camera pans and zooms.
+    for (const r of flatRefs(layers)) {
+      const d = r.layer.depth;
+      if (!d || r.pinned) continue;
+      if (!on) { r.outer.style.translate = ''; r.outer.style.scale = ''; continue; }
+      r.outer.style.translate = `${(-cam.x * d).toFixed(3)}cqw ${(-cam.y * d).toFixed(3)}cqh`;
+      r.outer.style.scale = (1 + (cam.zoom - 1) * d).toFixed(4);
+    }
     if (on && (cam.tiltX || cam.tiltY)) canvasEl.style.perspective = `${Math.round((canvasEl.clientWidth || 1000) * 1.6)}px`;
     else canvasEl.style.perspective = '';
   }

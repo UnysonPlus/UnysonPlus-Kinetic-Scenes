@@ -280,6 +280,12 @@ interface LayerBase {
    * else. Pinned layers sit above the others and stay still when the camera moves (like a channel logo).
    */
   pin?: 'stage';
+  /**
+   * Depth for camera parallax, -1 (far) to 1 (near); 0 or unset moves with the scene. When the camera pans
+   * or zooms, a near layer moves and grows more than the rest and a far one less, so a picture split into
+   * layers (Split into layers) becomes a 2.5D shot.
+   */
+  depth?: number;
   /** Per-breakpoint changes, keyed by breakpoint id. Layout only: clips are shared by every breakpoint. */
   overrides?: Record<string, LayerOverride>;
   clips: Clip[];

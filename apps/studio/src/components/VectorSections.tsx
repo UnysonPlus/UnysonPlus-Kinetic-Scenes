@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import type { CaptionsLayer, CodeLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
+import { splitImageLayer, splitPicture, splitStatus, type SplitStatus } from '../lib/split';
 
 /** Ready-made line shapes (coordinates are % of the layer's box). */
 export const LINE_SHAPES: Array<{ value: string; label: string; d: string }> = [
@@ -182,6 +183,52 @@ export function CaptionsSection(props: { scene: Scene; layer: CaptionsLayer; set
       <NumberField label="Weight" value={style.fontWeight ?? 800} step={100} min={100} max={900} onCommit={(v) => set({ style: { ...style, fontWeight: v } })} />
       <ColorField label="Box behind" value={layer.background} placeholder="None" onCommit={(v) => set({ background: v || undefined })} />
       <CheckField label="Capitals" checked={!!layer.uppercase} onChange={(v) => set({ uppercase: v || undefined })} />
+    </Section>
+  );
+}
+
+/** Split into layers, for an image layer (through the AI Dev Kit). */
+export function SplitImageSection(props: { scene: Scene; layer: Layer; onCommit: (scene: Scene) => void }) {
+  const { scene, layer, onCommit } = props;
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [count, setCount] = useState(4);
+  const [status, setStatus] = useState<SplitStatus | null | undefined>(undefined);
+  if (layer.type !== 'image') return null;
+  const check = () => { splitStatus().then(setStatus); };
+  const run = async () => {
+    setBusy(true);
+    setNote(status?.engine === 'local' && !status.localModel ? 'Downloading the cut-out model (5 MB, once)…' : null);
+    try {
+      const r = await splitPicture(layer.src, count);
+      onCommit(splitImageLayer(scene, layer.id, r.layers));
+      setNote(null);
+    } catch (e) {
+      setNote(`Could not split it: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Section title="Split into layers">
+      <p className="field-hint wide">
+        Turns the picture into stacked transparent layers in exactly the same place (background, subject, objects), so it can be revealed piece by
+        piece, and each layer gets a depth: with a camera move, a flat photo becomes a 2.5D shot.
+      </p>
+      {status === undefined && <div className="insp-start"><button type="button" className="btn small" onClick={check}>Check the AI Dev Kit</button></div>}
+      {status === null && <p className="field-hint wide">The AI Dev Kit is not running on this computer (or is too old to split pictures).</p>}
+      {status && (
+        <>
+          <p className="field-hint wide">
+            {status.fal
+              ? 'Using your fal.ai key: an AI splits it into several layers (fal.ai charges your account, about $0.05).'
+              : 'On this computer: the subject is cut out and the background filled in behind it (two layers). Add a fal.ai key to the kit (FAL_KEY) for an AI split into more layers.'}
+          </p>
+          {status.fal && <NumberField label="Layers" value={count} step={1} min={2} max={10} onCommit={(v) => v && setCount(Math.round(v))} />}
+          <div className="insp-start"><button type="button" className="btn small" disabled={busy || !layer.src} onClick={run}>{busy ? 'Splitting…' : 'Split into layers'}</button></div>
+        </>
+      )}
+      {note && <p className="field-hint wide" role="status">{note}</p>}
     </Section>
   );
 }

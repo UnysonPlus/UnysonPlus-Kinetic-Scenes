@@ -320,6 +320,7 @@ export function validateScene(input: unknown): ValidationResult {
           if (sized && !isNum(layer.box.h) && !isNum(layer.box.ratio)) fail(`${lp}.box`, 'needs h or ratio (all layers but text and captions)');
         }
       }
+      if (layer.depth !== undefined && (!isNum(layer.depth) || layer.depth < -1 || layer.depth > 1)) fail(`${lp}.depth`, 'must be -1 (far) to 1 (near)');
       if (layer.start !== undefined && (!isNum(layer.start) || layer.start < 0)) fail(`${lp}.start`, 'must be 0 or more seconds');
       if (layer.end !== undefined && (!isNum(layer.end) || layer.end <= (layer.start ?? 0))) fail(`${lp}.end`, 'must come after start');
       if (layer.pin !== undefined) {

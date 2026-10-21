@@ -15,7 +15,7 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
-import { CaptionsSection, CodeSection, DiagramSection, FlowSection, PathSection, RepeatSection } from './VectorSections';
+import { CaptionsSection, CodeSection, DiagramSection, FlowSection, PathSection, RepeatSection, SplitImageSection } from './VectorSections';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
@@ -570,6 +570,9 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
           <SelectField label="Fit" value={layer.fit ?? 'cover'} options={[{ value: 'cover', label: 'Fill the box' }, { value: 'contain', label: 'Fit inside' }]} onChange={(v) => props({ fit: v })} />
           <NumberField label="Corner radius" value={layer.radius ?? 0} step={0.1} min={0} unit="su" onCommit={(v) => props({ radius: v })} />
         </Section>
+      )}
+      {layer.type === 'image' && (
+        <SplitImageSection scene={scene} layer={layer} onCommit={onCommit} />
       )}
 
       {layer.type !== 'flow' && layer.type !== 'repeat' && <Section title="Position and size">

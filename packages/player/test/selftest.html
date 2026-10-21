@@ -102,6 +102,9 @@ John` } },
   layers.push({ id: 'ma', type: 'shape', shape: 'rect', fill: '#3b82f6', radius: 1, box: { x: 30, y: 75, w: 5, h: 5 }, clips: [{ id: 'mm', preset: 'morph', start: 1, duration: 0.8, params: { to: 'mb' } }] });
   layers.push({ id: 'mb', type: 'shape', shape: 'ellipse', fill: '#f59e0b', box: { x: 40, y: 85, w: 8, h: 6 }, clips: [] });
   layers.push({ id: 'rx', type: 'text', text: 'React', style: { fontSize: 1.5 }, box: { x: 80, y: 95 }, clips: [{ id: 'rxg', preset: 'react', start: 0.5, duration: 2, params: { effect: 'glow' } }, { id: 'rxs', preset: 'react', start: 2.6, duration: 1, params: { effect: 'scale', source: 'bass' } }] });
+  // Parallax: a near and a far layer move differently with the camera.
+  layers.push({ id: 'near', type: 'shape', shape: 'rect', fill: '#a5f', depth: 0.5, box: { x: 90, y: 60, w: 3, h: 3 }, clips: [] });
+  layers.push({ id: 'far', type: 'shape', shape: 'rect', fill: '#5af', depth: -0.4, box: { x: 94, y: 60, w: 3, h: 3 }, clips: [] });
   layers.push({ id: 'cap', type: 'captions', style: { fontSize: 1.5 }, box: { x: 60, y: 95 }, clips: [] });
   // A layer pinned to the stage (placed in the stage-wide pin space, outside the camera).
   layers.push({ id: 'pin', type: 'text', text: 'Pinned', pin: 'stage', style: { fontSize: 2 }, box: { x: 100, y: 100, anchor: 'bottom-right' }, clips: [{ id: 'pf', preset: 'fade', start: 0.35, duration: 0.6 }] });
