@@ -173,9 +173,12 @@ export async function askForScene(opts: {
   brief?: string;
   /** Data for the request (a voice-over's timed words); the brief says how to use it. */
   context?: string;
+  /** Files the AI may place by name (a website's screenshots as "shot:1"), filled in afterwards. */
+  assets?: Map<string, string>;
 }): Promise<AiResult> {
   const keep = codeClips(opts.scene);
   const { scene: sent, assets } = forAi(opts.scene);
+  for (const [k, v] of opts.assets ?? []) assets.set(k, v);
   const first = await call({ mode: opts.mode, prompt: opts.prompt, scene: sent, selection: opts.selection, context: opts.context }, opts.signal, opts.brief);
   // Validate with the real files back in (placeholders aren't valid addresses).
   let v = validateScene(restoreAssets(first.scene as Scene, assets, opts.scene, opts.mode !== 'create'));
@@ -185,4 +188,44 @@ export async function askForScene(opts: {
   v = validateScene(restoreAssets(second.scene as Scene, assets, opts.scene, opts.mode !== 'create'));
   if (v.ok) return { scene: guardCode(v.scene, keep), explanation: second.explanation || first.explanation, model: second.model, repaired: true };
   throw new Error(`The AI's scene still had problems after a second try:\n- ${v.errors.slice(0, 6).join('\n- ')}`);
+}
+
+/* ------------------------------------------------------------------ the AI director (the kit's studio-director.mjs) */
+
+async function post<T>(path: string, body: Record<string, unknown>, signal: AbortSignal): Promise<T> {
+  if (!base) await kitStatus();
+  if (!base) throw new Error('The AI Dev Kit is not running on this computer.');
+  const r = await fetch(`${base}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 404) throw new Error('Your AI Dev Kit is too old for this. Close it and start it again: it updates itself.');
+  if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
+  return j as T;
+}
+
+export interface Plan { title: string; plan: string; segments?: Array<{ narration: string; visual: string }> }
+
+/** A storyboard (or an explainer's script) to agree before anything is built. */
+export function askForPlan(opts: { prompt: string; kind: 'storyboard' | 'explainer' | 'tutorial'; scene: Scene; context?: string; brief?: string; signal: AbortSignal }): Promise<Plan> {
+  return post<Plan>('/studio/plan', {
+    prompt: opts.prompt, kind: opts.kind, context: opts.context, catalog: catalogForAi(),
+    rules: opts.brief ? `${opts.brief}\n\n${MOTION_RULES}` : MOTION_RULES,
+    stage: { breakpoints: opts.scene.stage.breakpoints, heightMode: opts.scene.stage.heightMode },
+  }, opts.signal);
+}
+
+/** Look, criticise, fix: the kit renders key frames and the AI reviews them; a corrected scene comes back validated. */
+export async function askForReview(opts: { scene: Scene; prompt: string; playerBase: string; signal: AbortSignal }): Promise<{ scene?: Scene; note: string; looked: boolean; frames: number }> {
+  const { scene: sent, assets } = forAi(opts.scene);
+  const r = await post<{ ok: boolean; notes?: string; scene?: Scene; explanation?: string; looked: boolean; frames: number[] }>('/studio/review', {
+    scene: sent, prompt: opts.prompt, playerBase: opts.playerBase, catalog: catalogForAi(), rules: MOTION_RULES,
+  }, opts.signal);
+  if (r.ok || !r.scene) return { note: r.notes || 'No changes needed.', looked: r.looked, frames: r.frames?.length ?? 0 };
+  const v = validateScene(restoreAssets(r.scene, assets, opts.scene, true));
+  if (!v.ok) return { note: 'The review suggested changes that did not validate, so the scene was kept as it was.', looked: r.looked, frames: r.frames?.length ?? 0 };
+  return { scene: guardCode(v.scene, codeClips(opts.scene)), note: r.explanation || '', looked: r.looked, frames: r.frames?.length ?? 0 };
+}
+
+/** A website (or a project folder)'s real words, colours, fonts and screenshots, for a quick scene. */
+export function askForQuick(opts: { url?: string; folder?: string; signal: AbortSignal }): Promise<{ brief: string; context: string; shots: string[] }> {
+  return post('/studio/quick', { url: opts.url, folder: opts.folder }, opts.signal);
 }

@@ -5,7 +5,8 @@ import { landOnWords } from '../lib/voiceScene';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { lintScene } from '@unysonplus/scene-player/lint';
-import { askForScene, type KitStatus } from '../lib/ai';
+import { askForPlan, askForQuick, askForReview, askForScene, type KitStatus, type Plan } from '../lib/ai';
+import { PLAYER_BASE } from '../lib/documents';
 import { applyStyle, styleBrief, type SceneStyle } from '../lib/styles';
 
 const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
@@ -37,7 +38,24 @@ export type QueuedRequest = string | {
   voiceClip?: string;
   /** The scene the AI starts from (instead of the current one). */
   base?: Scene;
+  /** A plan the person approved: build it without planning again. */
+  approved?: boolean;
+  /** Files the AI may place by name ("shot:1"), filled in afterwards. */
+  assets?: Map<string, string>;
 };
+
+type Kind = 'storyboard' | 'explainer' | 'tutorial';
+
+/** How an approved explainer or tutorial script becomes a scene when there is no voice-over yet. */
+const EXPLAINER_BRIEF = `EXPLAINER (this request): the approved plan in "context" lists SEGMENTS, each with its narration and what the screen shows.
+- Build one act per segment (a top-level group named after it), in order, with a marker at each segment's start ("id": "seg-1", "seg-2", ...).
+- Time each segment by its narration at about 150 words a minute plus 0.4 s; the picture lands just BEFORE the words that describe it.
+- Show only each segment's KEY phrase as kinetic type, never the whole narration; the visual does the explaining (a cursor clicking, a focus, a state change, code typed or changed).
+- A hook in the first two seconds; the call to action last, looping its last part.`;
+
+const TUTORIAL_BRIEF = `CODING TUTORIAL (this request): the approved plan in "context" lists SEGMENTS. Use a "code" layer for the code: "code-type" to type it, "code-edit" to change it to each next version (give the whole new version), "code-highlight" and "code-note" for what each segment explains, and "code-run" with the REAL output. The code must be correct. Time each segment by its narration at about 150 words a minute, with a marker per segment ("id": "seg-1", ...).`;
+
+const planAsText = (p: Plan) => [p.plan, ...(p.segments?.length ? ['', '**Segments**', ...p.segments.map((s, i) => `${i + 1}. ${s.narration}\n   Screen: ${s.visual}`)] : [])].join('\n');
 
 export interface ChatMessage {
   id: number;
@@ -50,6 +68,8 @@ export interface ChatMessage {
   after?: Scene;
   /** AI turns: how many Check scene items the result has. */
   issues?: number;
+  /** AI turns that are a plan waiting to be built. */
+  plan?: boolean;
   model?: string;
 }
 
@@ -57,6 +77,8 @@ export interface ChatMessage {
 export function aiName(s: KitStatus): string {
   if (s.state !== 'ready') return '';
   if (s.backend === 'claude-code') return 'Claude, your Claude subscription';
+  if (s.backend === 'codex') return 'ChatGPT, your ChatGPT subscription';
+  if (s.backend === 'cursor') return 'Cursor, your Cursor subscription';
   if (s.backend === 'api') return 'Claude, through your API key';
   if (s.backend === 'ollama') return `${s.model || 'a local model'}, running on this computer`;
   return s.model || 'your AI';
@@ -100,6 +122,14 @@ export function AiAssist(props: {
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const nextId = useRef(1);
+  // The AI director: plan before building, and look at the result before showing it.
+  const [planFirst, setPlanFirst] = useState(true);
+  const [lookFix, setLookFix] = useState(true);
+  const [kind, setKind] = useState<Kind>('storyboard');
+  const [pending, setPending] = useState<{ prompt: string; extra: Exclude<QueuedRequest, string> | null } | null>(null);
+  const [planText, setPlanText] = useState('');
+  const [phase, setPhase] = useState('');
+  const [quickUrl, setQuickUrl] = useState('');
 
   // Follow the selection: picking layers aims the next request at them.
   useEffect(() => {
@@ -133,8 +163,23 @@ export function AiAssist(props: {
     try {
       const mode = useScope === 'new' ? 'create' : 'edit';
       const style = props.styles.find((s) => s.id === props.styleId) ?? null;
+      // Plan first: a new scene starts as a storyboard (or a script) the person agrees before it is built.
+      if (mode === 'create' && planFirst && !extra?.approved && !extra?.base) {
+        setPhase('Planning');
+        const revising = pending !== null;
+        const plan = await askForPlan({
+          prompt: revising ? `${pending!.prompt}\n\nChanges to the plan: ${ask}` : ask, kind, scene: before, signal: ctl.signal,
+          context: [extra?.context, revising ? `THE PLAN SO FAR\n${planText}` : ''].filter(Boolean).join('\n\n') || undefined,
+          brief: style ? styleBrief(style) : undefined,
+        });
+        setPending({ prompt: revising ? pending!.prompt : ask, extra: revising ? pending!.extra : extra });
+        setPlanText(planAsText(plan));
+        push({ role: 'ai', text: `The plan${plan.title ? `: ${plan.title}` : ''}. Change it below, or tell me what to change, then build it.`, plan: true });
+        return;
+      }
+      setPhase(mode === 'create' ? 'Building' : 'Working');
       const brief = [extra?.brief, style ? styleBrief(style) : '', musicCues(extra?.base ?? before)].filter(Boolean).join('\n\n') || undefined;
-      const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context });
+      const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets: extra?.assets });
       // A scene built from a base (a voice-over) gets the style's exact colours and fonts too.
       if (style && extra?.base) r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
       // A new scene in a style gets exactly the style's colours and fonts.
@@ -155,13 +200,64 @@ export function AiAssist(props: {
         text: `${r.explanation || (mode === 'create' ? 'Here is a new scene.' : 'Done.')}${r.repaired ? ' (The first answer needed fixing; this is the corrected one.)' : ''}`,
         before, after: r.scene, issues: found, model: r.model,
       });
+      // Look, criticise, fix: the kit renders the key frames and the AI reviews its own work.
+      if (lookFix) {
+        setPhase('Looking at the frames');
+        try {
+          const rv = await askForReview({ scene: r.scene, prompt: ask, playerBase: `${PLAYER_BASE}${__PLAYER_VERSION__}/`, signal: ctl.signal });
+          if (rv.scene) {
+            props.onApply(rv.scene, 'edit');
+            push({ role: 'ai', text: `${rv.looked ? `I looked at ${rv.frames} frames.` : 'I checked the report (this AI cannot look at pictures).'} ${rv.note}`, before: r.scene, after: rv.scene, issues: lintScene(rv.scene).length, model: r.model });
+          } else push({ role: 'ai', text: `${rv.looked ? `I looked at ${rv.frames} frames: ` : ''}${rv.note}` });
+        } catch (e) {
+          if ((e as Error).name === 'AbortError') throw e;
+          push({ role: 'error', text: `Looking at the frames did not work: ${(e as Error).message} The scene above is kept.` });
+        }
+      }
     } catch (e) {
       if ((e as Error).name === 'AbortError') push({ role: 'error', text: 'Stopped. The scene was not changed.' });
       else push({ role: 'error', text: (e as Error).message });
     } finally {
       setBusy(false);
+      setPhase('');
       abort.current = null;
     }
+  };
+
+  /** Builds the agreed plan. */
+  const buildPlan = () => {
+    if (!pending) return;
+    const p = pending;
+    setPending(null);
+    const extraBrief = kind === 'explainer' ? EXPLAINER_BRIEF : kind === 'tutorial' ? TUTORIAL_BRIEF : '';
+    send(p.prompt, 'new', {
+      ...(p.extra ?? {}), text: p.prompt, approved: true,
+      brief: [p.extra?.brief, extraBrief].filter(Boolean).join('\n\n') || undefined,
+      context: [p.extra?.context, `THE APPROVED PLAN (build exactly this)\n${planText}`].filter(Boolean).join('\n\n'),
+    });
+  };
+
+  /** A quick scene from a website: its real words, colours, fonts and screenshots. */
+  const fromWebsite = async () => {
+    const url = quickUrl.trim();
+    if (!url || busy || status.state !== 'ready') return;
+    setBusy(true);
+    setPhase('Reading the website');
+    const ctl = new AbortController();
+    abort.current = ctl;
+    let q: { brief: string; context: string; shots: string[] } | null = null;
+    try {
+      q = await askForQuick({ url, signal: ctl.signal });
+    } catch (e) {
+      push({ role: 'error', text: (e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message });
+    } finally {
+      setBusy(false);
+      setPhase('');
+      abort.current = null;
+    }
+    if (!q) return;
+    const assets = new Map(q.shots.map((src, i) => [`shot:${i + 1}`, src]));
+    send(`A scene that shows ${url} in use, ending with its call to action.`, 'new', { text: url, brief: q.brief, context: q.context, assets });
   };
 
   // "Fix with AI" from Check scene.
@@ -219,6 +315,16 @@ export function AiAssist(props: {
                 <div className="assist-ideas">
                   {ideas.map((i) => <button key={i} type="button" className="assist-idea" disabled={!ready || busy} onClick={() => (scope === 'new' ? setPrompt(i) : send(i))}>{i}</button>)}
                 </div>
+                {scope === 'new' && (
+                  <div className="assist-quick">
+                    <label htmlFor="assist-url">Or start from a website</label>
+                    <div className="assist-quick-row">
+                      <input id="assist-url" type="url" placeholder="https://your-product.com" value={quickUrl} disabled={busy} onChange={(e) => setQuickUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); fromWebsite(); } }} />
+                      <button type="button" className="btn small" disabled={!ready || busy || !/^https?:\/\//.test(quickUrl.trim())} onClick={fromWebsite}>Make a scene</button>
+                    </div>
+                    <p className="assist-faint">The AI Dev Kit reads its real words, colours, fonts and screenshots; nothing is invented.</p>
+                  </div>
+                )}
               </div>
             )}
             {messages.map((m) => (
@@ -238,9 +344,20 @@ export function AiAssist(props: {
                 )}
               </div>
             ))}
+            {pending && !busy && (
+              <div className="assist-msg is-ai assist-plan">
+                <label htmlFor="assist-plan" className="sr-only">The plan</label>
+                <textarea id="assist-plan" rows={12} value={planText} onChange={(e) => setPlanText(e.target.value)} />
+                <div className="assist-msg-actions">
+                  <button type="button" className="btn primary small" disabled={!ready} onClick={buildPlan}>Build it</button>
+                  <button type="button" className="link-btn" onClick={() => setPending(null)}>Start over</button>
+                  <span className="assist-faint">Or type what to change below.</span>
+                </div>
+              </div>
+            )}
             {busy && (
               <div className="assist-msg is-ai is-working">
-                <p><span className="assist-pulse" aria-hidden="true" /> Working… {elapsed}s <span className="assist-faint">(usually one to three minutes)</span></p>
+                <p><span className="assist-pulse" aria-hidden="true" /> {phase || 'Working'}… {elapsed}s <span className="assist-faint">(usually one to three minutes)</span></p>
                 <button type="button" className="link-btn" onClick={() => abort.current?.abort()}>Stop</button>
               </div>
             )}
@@ -264,6 +381,20 @@ export function AiAssist(props: {
                 <option value="">None (the AI decides)</option>
                 {props.styles.map((s) => <option key={s.id} value={s.id}>{s.name}{s.custom ? ' (yours)' : ''}</option>)}
               </select>
+            </div>
+            <div className="assist-director">
+              {scope === 'new' && (
+                <>
+                  <label htmlFor="assist-kind">Make</label>
+                  <select id="assist-kind" value={kind} disabled={busy} onChange={(e) => setKind(e.target.value as Kind)}>
+                    <option value="storyboard">A scene</option>
+                    <option value="explainer">An explainer (script first)</option>
+                    <option value="tutorial">A coding tutorial</option>
+                  </select>
+                  <label className="assist-check"><input type="checkbox" checked={planFirst || kind !== 'storyboard'} disabled={busy || kind !== 'storyboard'} onChange={(e) => setPlanFirst(e.target.checked)} /> Plan first</label>
+                </>
+              )}
+              <label className="assist-check" title="After building, the AI Dev Kit renders the key frames and the AI reviews and fixes what it sees"><input type="checkbox" checked={lookFix} disabled={busy} onChange={(e) => setLookFix(e.target.checked)} /> Look and fix</label>
             </div>
             <label htmlFor="assist-input" className="sr-only">Your request</label>
             <textarea
