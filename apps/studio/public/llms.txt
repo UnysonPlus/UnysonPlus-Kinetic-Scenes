@@ -1,0 +1,12 @@
+# Unyson+ Kinetic Scenes
+
+> Timeline motion graphics for the web, exported as plain HTML. Scenes are JSON data built from presets.
+
+## Skill
+
+- [SKILL.md](https://kinetic-scenes.unysonplus.com/skill/SKILL.md)
+- [reference/scene-format.md](https://kinetic-scenes.unysonplus.com/skill/reference/scene-format.md)
+- [reference/presets.md](https://kinetic-scenes.unysonplus.com/skill/reference/presets.md)
+- [reference/motion-rules.md](https://kinetic-scenes.unysonplus.com/skill/reference/motion-rules.md)
+- [reference/styles.md](https://kinetic-scenes.unysonplus.com/skill/reference/styles.md)
+- [reference/sounds.md](https://kinetic-scenes.unysonplus.com/skill/reference/sounds.md)

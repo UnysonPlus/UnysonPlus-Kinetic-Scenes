@@ -1,3 +1,4 @@
+import { registerWebMcp } from './lib/webmcp';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { validateScene } from '@unysonplus/scene-player/validate';
 import type { HeightMode, Layer, Scene } from '@unysonplus/scene-player/types';
@@ -223,6 +224,17 @@ export function App() {
   const play = useCallback(() => post({ type: 'play' }), [post]);
   const pause = useCallback(() => post({ type: 'pause' }), [post]);
   const seek = useCallback((t: number) => post({ type: 'seek', time: t }), [post]);
+  // An AI in the browser (WebMCP, where the browser offers it) can work on the scene in front of the person.
+  useEffect(() => {
+    const r = registerWebMcp({
+      scene: () => latest.current.scene,
+      commit: (next) => commit(next),
+      seek: (t) => seek(t),
+      select: (id) => setSelection(id ? { layerId: id, clipId: null } : { layerId: null, clipId: null }),
+    });
+    return r.dispose;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---- actions ----
   type LeafType = Exclude<Layer['type'], 'group'>;

@@ -1,4 +1,5 @@
 import { applySteps } from '../lib/tour';
+import { suggestPoster } from '../lib/poster';
 import { musicCues } from '../lib/beats';
 import { landOnWords } from '../lib/voiceScene';
 import { useEffect, useRef, useState } from 'react';
@@ -138,6 +139,8 @@ export function AiAssist(props: {
       if (style && extra?.base) r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
       // A new scene in a style gets exactly the style's colours and fonts.
       if (style && mode === 'create') r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
+      // A new scene gets the best still frame, whatever moment the AI guessed.
+      if (mode === 'create') r.scene = { ...r.scene, playback: { ...r.scene.playback, posterTime: suggestPoster(r.scene) } };
       // A walkthrough the AI wrote as steps becomes clips and markers.
       if (r.scene.steps?.length) r.scene = applySteps(r.scene).scene;
       // A scene made from a voice-over: each reveal finishes on the word it shows.

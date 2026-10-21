@@ -17,6 +17,7 @@ import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
 import { CaptionsSection, CodeSection, CursorSection, CutOutSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, SplitImageSection, StepsSection } from './VectorSections';
 import { focusCamera } from '../lib/tour';
+import { suggestPoster } from '../lib/poster';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
@@ -175,7 +176,10 @@ function SceneInspector({ scene, onCommit, time }: Props) {
           unit="s" step={0.1} min={0} max={scene.duration} optional
           onCommit={(v) => setPlayback({ posterTime: v })}
         />
-        <p className="field-hint wide">The still frame is what visitors who turn off animation see.</p>
+        <div className="insp-start">
+          <button type="button" className="btn small" onClick={() => setPlayback({ posterTime: suggestPoster(scene) })} title="The most complete settled moment: every word in place, nothing mid-move">Suggest the best moment</button>
+        </div>
+        <p className="field-hint wide">The still frame is what visitors who turn off animation see, and a video's thumbnail.</p>
       </Section>
 
       <Section title="Stage">

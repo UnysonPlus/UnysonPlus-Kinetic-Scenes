@@ -335,6 +335,34 @@ export function lintScene(input: Scene): LintIssue[] {
   }
 
   // Everything entering the same way reads as a template.
+  // Craft: entrances that drag. A reveal over about 0.8 s reads as slow (counting, typing, drawing and
+  // camera-like moves are meant to take time, so they are left out).
+  const SLOW_OK = new Set(['text-typewriter', 'text-count', 'text-scramble', 'keyframes', 'scroll', 'progress', 'follow-path', 'draw', 'code', 'morph', 'march', 'react']);
+  const slow = all.filter((e) => !copyOfList(e.layer.id)).flatMap((e) => e.layer.clips
+    .filter((c) => dirOf(c) === 'in' && !SLOW_OK.has(c.preset) && ['text', 'reveal'].includes(presetMeta[c.preset]?.category ?? '') && c.duration > 1.1)
+    .map((c) => ({ l: e.layer, c })));
+  if (slow.length) {
+    issues.push({
+      id: 'craft:slow', severity: 'info', layerId: slow[0].l.id, clipId: slow[0].c.id,
+      message: `${slow.length === 1 ? `${nameOf(slow[0].l)} enters` : `${slow.length} layers enter`} over more than a second. Entrances under about 0.8 s feel deliberate; long ones read as slow.`,
+      fix: { label: 'Make them 0.8 s', apply: (s) => slow.reduce((acc, { l, c }) => mapLayer(acc, l.id, (x) => ({ ...x, clips: x.clips.map((k) => (k.id === c.id ? { ...k, duration: 0.8 } : k)) })), s) },
+    });
+  }
+  // Craft: too many kinds of transition make a scene feel like a template sampler.
+  const kinds = new Set(all.flatMap((e) => e.layer.clips.filter((c) => presetMeta[c.preset]?.category === 'transition').map((c) => c.preset)));
+  if (kinds.size > 3) issues.push({ id: 'craft:transitions', severity: 'info', message: `${kinds.size} different transitions. Two or three styles, used consistently, make a scene feel designed.` });
+  // Craft: two acts in a row that arrive the same way with the same layout read as a repeat.
+  const acts = scene.layers.filter((l) => l.type === 'group').sort((a, b) => (a.start ?? 0) - (b.start ?? 0)) as Array<Extract<Layer, { type: 'group' }>>;
+  const shape = (g: Extract<Layer, { type: 'group' }>) => {
+    const entry = [...g.clips, ...g.layers.flatMap((c) => c.clips)].filter((c) => dirOf(c) === 'in').sort((a, b) => a.start - b.start)[0]?.preset ?? '';
+    return `${entry}|${g.layers.map((c) => c.type).sort().join(',')}`;
+  };
+  for (let i = 1; i < acts.length; i++) {
+    if (shape(acts[i]) === shape(acts[i - 1]) && acts[i].layers.length > 1) {
+      issues.push({ id: `craft:same-act:${acts[i].id}`, severity: 'info', layerId: acts[i].id, message: `${nameOf(acts[i])} arrives the same way, with the same layout, as the act before it. Change its entrance or its layout so each act feels new.` });
+    }
+  }
+
   // A list's copies enter alike on purpose (staggered), so they are left out.
   const entrances = all.filter((e) => !copyOfList(e.layer.id)).map((e) => e.layer.clips.filter((c) => dirOf(c) === 'in').sort((a, b) => a.start - b.start)[0]).filter(Boolean) as Clip[];
   const counts = new Map<string, number>();

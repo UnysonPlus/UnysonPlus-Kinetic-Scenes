@@ -1,6 +1,6 @@
 {
   "name": "unysonplus-kinetic-scenes",
-  "version": "0.0.52",
+  "version": "0.0.53",
   "private": true,
   "description": "Unyson+ Kinetic Scenes: timeline motion graphics for the web, exported as plain HTML.",
   "workspaces": [
@@ -10,7 +10,8 @@
   "scripts": {
     "build:player": "npm run build -w packages/player && node scripts/archive-player.mjs",
     "dev": "npm run build:player && npm run dev -w apps/studio",
-    "build": "npm run build:player && npm run build -w apps/studio",
+    "build": "npm run build:player && node scripts/build-skill.mjs && npm run build -w apps/studio",
+    "build:skill": "node scripts/build-skill.mjs",
     "preview": "npm run preview -w apps/studio",
     "typecheck": "npm run typecheck -w packages/player && npm run typecheck -w apps/studio",
     "selftest": "node scripts/selftest.mjs"
