@@ -863,3 +863,24 @@ h1, h2, p { margin: 0; }
   .menubar-wide { display: none; }
   .menubar-narrow { display: block; position: relative; }
 }
+
+/* Timeline on narrow screens: the add buttons scroll sideways instead of stretching the page; on a phone the name
+   column narrows and the timeline grows so more of it shows. */
+@media (max-width: 1000px) {
+  .tl-bar { min-width: 0; }
+  .tl-add { flex: 1; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); }
+  .tl-add::-webkit-scrollbar { display: none; }
+  .tl-add > * { flex: none; }
+}
+@media (max-width: 560px) {
+  .timeline { height: 320px; }
+  .tl-corner, .tl-head { width: 120px; }
+  .tl-bar { gap: 8px; padding: 6px 8px; }
+}
+@media (max-width: 1000px) {
+  /* The stacked layout has no height to share out: the stage gets a fixed share of the screen (otherwise its height
+     follows the scaled preview, which scales to its height, and the two chase each other every frame). */
+  .preview-wrap { flex: none; }
+  .preview-wrap > .preview-area { flex: none; height: 56vh; min-height: 300px; }
+}

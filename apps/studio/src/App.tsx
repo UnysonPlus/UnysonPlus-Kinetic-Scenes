@@ -128,7 +128,8 @@ export function App() {
   const history = useHistory<Scene>(loadInitial);
   const scene = history.present;
   const [selection, setSelection] = useState<Selection>({ layerId: null, clipId: null });
-  const [deviceId, setDeviceId] = useState<Device['id']>('desktop');
+  // A phone starts on the Mobile layout: a 1920 px desktop window scaled to a phone's width is too small to work on.
+  const [deviceId, setDeviceId] = useState<Device['id']>(() => (typeof matchMedia === 'function' && matchMedia('(max-width: 560px)').matches ? 'mobile' : 'desktop'));
   const [safe, setSafe] = useState(false);
   /** Camera view: see the camera's moves in the preview (off to edit the flat layout). */
   const [cameraView, setCameraView] = useState(true);
@@ -261,7 +262,12 @@ export function App() {
 
   const play = useCallback(() => post({ type: 'play' }), [post]);
   const pause = useCallback(() => post({ type: 'pause' }), [post]);
-  const seek = useCallback((t: number) => post({ type: 'seek', time: t }), [post]);
+  // The playhead moves at once: the stage reports its time too, but a browser pauses a stage that is scrolled off screen
+  // (a phone scrolled down to the timeline), and the playhead would otherwise wait for it.
+  const seek = useCallback((t: number) => {
+    post({ type: 'seek', time: t });
+    setState((st) => ({ ...st, time: Math.max(0, Math.min(st.duration || t, t)), playing: false }));
+  }, [post]);
   // An AI in the browser (WebMCP, where the browser offers it) can work on the scene in front of the person.
   useEffect(() => {
     const r = registerWebMcp({

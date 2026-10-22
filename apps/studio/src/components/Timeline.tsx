@@ -13,7 +13,20 @@ import type { Clip } from '@unysonplus/scene-player/types';
 import { selectedIds, selectLayers, type Selection } from './Inspector';
 import { setLayerProps } from '../lib/sceneOps';
 
-const NAME_W = 172;
+/** The layer-name column's width: narrower on a phone (keep in step with .tl-head / .tl-corner in styles.css). */
+const NAME_WIDE = 172;
+const NAME_NARROW = 120;
+const PHONE = '(max-width: 560px)';
+function useNameWidth() {
+  const [w, setW] = useState(() => (typeof matchMedia === 'function' && matchMedia(PHONE).matches ? NAME_NARROW : NAME_WIDE));
+  useEffect(() => {
+    const mq = matchMedia(PHONE);
+    const on = () => setW(mq.matches ? NAME_NARROW : NAME_WIDE);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return w;
+}
 const ROW_H = 30;
 
 interface Props {
@@ -72,6 +85,7 @@ function tickStep(pps: number) {
 const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', video: '▶', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚' };
 
 export function Timeline(props: Props) {
+  const NAME_W = useNameWidth();
   const { scene, selection, scope } = props;
   // Inside a group everything is on the group's clock: 0 is the group's start in the scene.
   const offset = scope ? groupOffset(scene, scope) : 0;
@@ -100,7 +114,7 @@ export function Timeline(props: Props) {
     const ro = new ResizeObserver(() => setLaneW(Math.max(200, el.clientWidth - NAME_W - 24)));
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [NAME_W]);
 
   // The clock runs to the end of the scene; inside a group that is what is left of it after the
   // group starts (the group's own length is marked on the ruler).
