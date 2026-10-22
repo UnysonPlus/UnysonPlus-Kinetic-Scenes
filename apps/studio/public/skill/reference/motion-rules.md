@@ -1,6 +1,6 @@
 # Motion rules
 
-The rules the Studio's own AI follows (Studio 0.0.66).
+The rules the Studio's own AI follows (Studio 0.0.67).
 
 ```text
 TIMING

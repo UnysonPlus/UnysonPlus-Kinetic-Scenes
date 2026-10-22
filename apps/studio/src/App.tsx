@@ -6,6 +6,7 @@ import demo from './scenes/demo.json';
 import { previewHtml } from './lib/documents';
 import { ExportDialog } from './components/ExportDialog';
 import { AddonsDialog } from './components/AddonsDialog';
+import { MenuBar, type Menu } from './components/MenuBar';
 import { AiAssist, type ChatMessage } from './components/AiAssist';
 import { CheckPanel } from './components/CheckPanel';
 import { FullscreenPlayer } from './components/FullscreenPlayer';
@@ -49,7 +50,7 @@ import type { AlignMode, AlignTo } from './components/AlignPanel';
 import { Library } from './components/Library';
 import { Timeline } from './components/Timeline';
 import {
-  DesktopIcon, DownloadIcon, FullscreenIcon, LaptopIcon, Logo, NewIcon, OpenIcon, PhoneIcon, RedoIcon, SaveIcon, TabletIcon, UndoIcon,
+  DesktopIcon, DownloadIcon, FullscreenIcon, LaptopIcon, Logo, PhoneIcon, RedoIcon, TabletIcon, UndoIcon,
 } from './components/icons';
 
 const DRAFT_KEY = 'upw-studio-draft-v1';
@@ -665,6 +666,111 @@ export function App() {
     openAssist(true);
   }, [openAssist, layoutCheck.issues]);
 
+  // ---- the menu bar ----
+  const [libraryAsk, setLibraryAsk] = useState<{ kind: 'presets' | 'pieces' | 'sounds' | 'styles'; n: number } | undefined>();
+  const [aiSettingsAsk, setAiSettingsAsk] = useState(0);
+  /** Shows the scene's settings (nothing selected, Inspector) and scrolls to one of its sections. */
+  const showSceneSection = (title?: string) => {
+    setSelection({ layerId: null, clipId: null });
+    setScope(null);
+    setTab('inspect');
+    if (!title) return;
+    setTimeout(() => {
+      const h = [...document.querySelectorAll<HTMLElement>('.insp-section h3')].find((x) => x.textContent === title);
+      h?.closest('.insp-section')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }, 80);
+  };
+  const showLayerSection = (title: string) => {
+    setTab('inspect');
+    setTimeout(() => {
+      const h = [...document.querySelectorAll<HTMLElement>('.insp-section h3')].find((x) => x.textContent === title);
+      h?.closest('.insp-section')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }, 80);
+  };
+  const key = (k: string, mod = false, shift = false) => handleKey({ key: k, code: k.length === 1 ? `Key${k.toUpperCase()}` : k, mod, shift, alt: false });
+  const selLayer = selection.layerId ? findLayer(scene, selection.layerId) : undefined;
+  const selAudio = selection.audio ? (scene.audio ?? []).find((a) => a.id === selection.audio) : undefined;
+  const hasSel = selectedIds(selection).length > 0;
+  const mod = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+';
+  const DOCS = 'https://docs.unysonplus.com/kinetic-scenes';
+  const link = (u: string) => () => window.open(u, '_blank', 'noopener');
+  const menus: Menu[] = [
+    { label: 'File', items: [
+      { label: 'New', onSelect: startNew, hint: 'An empty scene (same screen sizes and fonts). Undo brings back the current one.' },
+      { label: 'Open…', onSelect: () => openRef.current?.click() },
+      { label: 'Save', shortcut: `${mod}S`, onSelect: saveProject },
+      'sep',
+      { label: 'Load the demo', onSelect: () => { commit(DEMO); setSelection({ layerId: null, clipId: null }); setNotice('Loaded the demo. Undo brings back your scene.'); } },
+      'sep',
+      { label: 'Export…', onSelect: () => setExporting(true) },
+    ] },
+    { label: 'Edit', items: [
+      { label: 'Undo', shortcut: `${mod}Z`, onSelect: history.undo, disabled: !history.canUndo },
+      { label: 'Redo', shortcut: `${mod}Shift+Z`, onSelect: history.redo, disabled: !history.canRedo },
+      'sep',
+      { label: 'Duplicate', shortcut: `${mod}D`, onSelect: () => key('d', true), disabled: !selection.layerId },
+      { label: 'Delete', shortcut: 'Del', onSelect: () => key('Delete'), disabled: !hasSel && !selection.audio && !selection.camera },
+      { label: 'Rename', shortcut: 'F2', onSelect: () => key('F2'), disabled: !selection.layerId },
+      'sep',
+      { label: 'Select all', shortcut: `${mod}A`, onSelect: () => key('a', true) },
+      { label: 'Group', shortcut: `${mod}G`, onSelect: () => key('g', true), disabled: selectedIds(selection).length < 2 },
+      { label: 'Ungroup', shortcut: `${mod}Shift+G`, onSelect: () => key('g', true, true), disabled: selLayer?.type !== 'group' },
+    ] },
+    { label: 'View', items: [
+      ...(video ? [] : DEVICES.map((d) => ({ label: d.label, checked: deviceId === d.id, onSelect: () => setDeviceId(d.id) }))),
+      ...(video ? [] : ['sep' as const, ...HEIGHT_MODES.map((h) => ({ label: `Height: ${h.label}`, hint: h.hint, checked: scene.stage.heightMode === h.value, onSelect: () => commit({ ...scene, stage: { ...scene.stage, heightMode: h.value } }) }))]),
+      'sep',
+      { label: video && video.platform && video.platform !== 'none' ? 'App guides' : 'Safe area', checked: safe, onSelect: () => setSafe(!safe) },
+      ...(scene.camera?.keys.length ? [{ label: 'Camera view', checked: cameraView, onSelect: () => setCameraView(!cameraView) }] : []),
+      'sep',
+      { label: 'Full screen', shortcut: 'F', onSelect: () => { pause(); setFullscreen(true); } },
+    ] },
+    { label: 'Insert', items: [
+      { label: 'Text', onSelect: () => onAddLayer('text') },
+      { label: 'Shape', onSelect: () => onAddLayer('shape') },
+      { label: 'Image', onSelect: () => onAddLayer('image') },
+      { label: 'Footage', onSelect: () => onAddLayer('video') },
+      { label: '3D object', onSelect: () => onAddLayer('model') },
+      'sep',
+      { label: 'Line', onSelect: () => onAddLayer('path') },
+      { label: 'Code', onSelect: () => onAddLayer('code') },
+      { label: 'Diagram', onSelect: () => onAddLayer('diagram') },
+      { label: 'Cursor', onSelect: () => onAddLayer('cursor') },
+      { label: 'List', onSelect: () => onAddLayer('repeat') },
+      { label: 'Captions', onSelect: () => onAddLayer('captions'), disabled: !!scope },
+      { label: 'Flow', onSelect: () => onAddLayer('flow') },
+      'sep',
+      { label: 'Audio…', onSelect: () => audioRef.current?.click() },
+      { label: 'Marker', shortcut: 'M', onSelect: () => key('m'), disabled: !!scope },
+      { label: 'A piece…', onSelect: () => setLibraryAsk({ kind: 'pieces', n: Date.now() }), hint: 'Ready-made pieces: comment box, chat, checklist, loadout…' },
+    ] },
+    { label: 'Scene', items: [
+      { label: 'Scene settings', onSelect: () => showSceneSection(), hint: 'Length, playback, stage, layouts and fonts' },
+      { label: 'Styles and brand kit', onSelect: () => setLibraryAsk({ kind: 'styles', n: Date.now() }) },
+      'sep',
+      { label: 'Check scene', onSelect: () => setTab('check') },
+      { label: 'Check the layout', onSelect: () => { setTab('check'); checkLayout(); } },
+    ] },
+    { label: 'AI', items: [
+      { label: 'AI assist', onSelect: () => openAssist(true) },
+      { label: 'AI settings (style, voice, look and fix)', onSelect: () => { openAssist(true); setAiSettingsAsk(Date.now()); } },
+      'sep',
+      { label: 'Voice-over from a script', onSelect: () => showSceneSection('Voice-over from a script') },
+    ] },
+    { label: 'Tools', items: [
+      { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox and other tools the AI Dev Kit can use on this computer' },
+      'sep',
+      { label: 'Separate voice and music', disabled: !(selLayer?.type === 'video' || (selAudio && !selAudio.src.startsWith('sfx:'))),
+        hint: 'Select footage or an audio clip first', onSelect: () => showLayerSection(selLayer?.type === 'video' ? 'Footage tools' : 'Voice and music') },
+      { label: 'Transcribe a voice-over', disabled: !(selAudio && !selAudio.src.startsWith('sfx:')), hint: 'Select an audio clip first', onSelect: () => showLayerSection('Words') },
+    ] },
+    { label: 'Help', items: [
+      { label: 'The manual', onSelect: link(DOCS) },
+      { label: 'Keyboard shortcuts', onSelect: link(`${DOCS}/studio#keyboard-shortcuts`) },
+      { label: 'What is new', onSelect: link(`${DOCS}/roadmap`) },
+    ] },
+  ];
+
   return (
     <div className="app">
       <div className="head">
@@ -684,15 +790,12 @@ export function App() {
             </div>
           </div>
         </div>
+        <MenuBar menus={menus} />
         <div className="top-actions">
           <div className="btn-group" role="group" aria-label="History">
             <button type="button" className="icon-btn" onClick={history.undo} disabled={!history.canUndo} aria-label="Undo" title="Undo (Ctrl+Z)"><UndoIcon /></button>
             <button type="button" className="icon-btn" onClick={history.redo} disabled={!history.canRedo} aria-label="Redo" title="Redo (Ctrl+Shift+Z)"><RedoIcon /></button>
           </div>
-          <button type="button" className="btn" onClick={startNew} title="Start an empty scene (same screen sizes and fonts). Undo brings back the current one."><NewIcon /> New</button>
-          <button type="button" className="btn" onClick={() => openRef.current?.click()} title="Open a saved .scene.json file"><OpenIcon /> Open</button>
-          <button type="button" className="btn" onClick={saveProject} title="Save the project as a .scene.json file (Ctrl+S)"><SaveIcon /> Save</button>
-          <button type="button" className="btn" onClick={() => setAddonsOpen(true)} title="Extra tools the AI Dev Kit can use on this computer: Voicebox and more">Add-ons</button>
           <button type="button" className="btn primary" onClick={() => setExporting(true)}><DownloadIcon /> Export</button>
           <input ref={openRef} type="file" accept=".json,application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) openProject(f); e.target.value = ''; }} />
           <input ref={audioRef} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" hidden onChange={(e) => {
@@ -769,7 +872,7 @@ export function App() {
       </div>
 
       <main className="workspace">
-        <Library layerType={selectedLayer?.type ?? null} count={selectedIds(selection).length} onApply={applyPreset}
+        <Library layerType={selectedLayer?.type ?? null} count={selectedIds(selection).length} onApply={applyPreset} show={libraryAsk}
           pieces={<PiecesLibrary onInsert={(piece) => {
             const r = insertPiece(latest.current.scene, piece, Math.round(latest.current.state.time * 100) / 100, latest.current.scope);
             commit(r.scene);
@@ -940,6 +1043,7 @@ export function App() {
               styles={allStyles}
               styleId={allStyles.some((s) => s.id === aiStyle) ? aiStyle : null}
               onStyleChange={setAiStyle}
+              settingsRequest={aiSettingsAsk}
             />
           </div>
 

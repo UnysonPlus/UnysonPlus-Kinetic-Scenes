@@ -128,6 +128,8 @@ export function AiAssist(props: {
   styles: SceneStyle[];
   styleId: string | null;
   onStyleChange: (id: string | null) => void;
+  /** Open the settings (the menu bar's AI settings; changes each time it asks). */
+  settingsRequest?: number;
 }) {
   const { status, scene, messages } = props;
   const empty = scene.layers.length === 0;
@@ -146,6 +148,7 @@ export function AiAssist(props: {
   const [lookFix, setLookFix] = useState(true);
   // Settings (connection, style, voice, look and fix) live behind the gear, so the chat keeps its room.
   const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => { if (props.settingsRequest) setSettingsOpen(true); }, [props.settingsRequest]);
   const [kind, setKind] = useState<Kind>('storyboard');
   const [pending, setPending] = useState<{ prompt: string; extra: Exclude<QueuedRequest, string> | null } | null>(null);
   const [planText, setPlanText] = useState('');

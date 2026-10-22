@@ -113,8 +113,11 @@ export function Library(props: {
   styles: ReactNode;
   /** The Pieces tab's content. */
   pieces?: ReactNode;
+  /** Show this tab (the menu bar asks; n changes each time it asks). */
+  show?: { kind: 'presets' | 'pieces' | 'sounds' | 'styles'; n: number };
 }) {
   const [kind, setKind] = useState<'presets' | 'pieces' | 'sounds' | 'styles'>('presets');
+  useEffect(() => { if (props.show) setKind(props.show.kind); }, [props.show]);
   const [query, setQuery] = useState('');
   const [hot, setHot] = useState<string | null>(null);
   const groups = useMemo(() => {
