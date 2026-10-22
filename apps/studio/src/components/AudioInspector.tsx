@@ -40,6 +40,7 @@ export function AudioInspector(props: {
           {fileLen !== undefined ? `${fileLen.toFixed(2)} s file` : 'Reading the file…'}
           {builtIn ? ' · built-in sound' : uploaded ? ` · uploaded (${kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`}, stored in the scene)` : ' · from an address'}
         </p>
+        {clip.voice && <p className="insp-help">Voice: <strong>{clip.voice}</strong></p>}
       </div>
 
       <Section title="Timing">

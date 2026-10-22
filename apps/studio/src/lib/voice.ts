@@ -66,12 +66,12 @@ export async function speak(lines: string[], opts: { voice?: string; pace?: numb
 }
 
 /** The scene with the voice-over added as its voice track (from the start), its words and delivery included. */
-export function withVoice(scene: Scene, v: VoiceResult, name = 'Voice-over'): { scene: Scene; id: string } {
+export function withVoice(scene: Scene, v: VoiceResult, name = 'Voice-over', voice?: string): { scene: Scene; id: string } {
   const list = scene.audio ?? [];
   let n = list.length + 1;
   while (list.some((a) => a.id === `a${n}`)) n++;
   const id = `a${n}`;
-  const clip: AudioClip = { id, name, src: v.src, start: 0, role: 'voice', words: v.words, speech: v.speech };
+  const clip: AudioClip = { id, name, src: v.src, start: 0, role: 'voice', words: v.words, speech: v.speech, ...(voice ? { voice } : {}) };
   return { scene: { ...scene, duration: Math.max(scene.duration, Math.ceil((v.duration + 0.8) * 10) / 10), audio: [...list, clip] }, id };
 }
 

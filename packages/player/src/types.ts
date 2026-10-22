@@ -86,6 +86,9 @@ export interface TranscriptSettings {
 export interface AudioClip {
   id: string;
   name?: string;
+  /** The voice that spoke it, when it was made from a script ("Voicebox: Jon", "Clear (American English)"). Shown in the
+   * editor; playback ignores it. */
+  voice?: string;
   /**
    * An audio file: a data: URL (uploaded) or an https address (must allow loading from other sites).
    * Or a built-in sound: "sfx:<name>", optionally with a pitch, "sfx:pop@1.2".

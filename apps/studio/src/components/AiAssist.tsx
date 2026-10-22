@@ -3,7 +3,7 @@ import { suggestPoster } from '../lib/poster';
 import { musicCues } from '../lib/beats';
 import { beatsText, landOnWords, voiceBase, voiceBeats, voiceBrief } from '../lib/voiceScene';
 import { installVoice, narrationOf, speak, voiceStatus, withVoice } from '../lib/voice';
-import { preferredVoice } from '../lib/addons';
+import { useVoices } from '../lib/voices';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { lintScene } from '@unysonplus/scene-player/lint';
@@ -135,6 +135,7 @@ export function AiAssist(props: {
   const [scope, setScope] = useState<Scope>(empty ? 'new' : sel ? 'selection' : 'scene');
   const [prompt, setPrompt] = useState('');
   const [busy, setBusy] = useState(false);
+  const voices = useVoices();
   const [elapsed, setElapsed] = useState(0);
   const abort = useRef<AbortController | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -275,14 +276,14 @@ export function AiAssist(props: {
       const st = await voiceStatus();
       if (!st) throw new Error('Your AI Dev Kit is too old for voice-overs. Close it and start it again: it updates itself.');
       if (!st.transcription) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
-      // The voice chosen last under Voice-over from a script (a Voicebox voice when Voicebox is open).
-      const pick = preferredVoice();
-      const own = pick?.startsWith('voicebox:') && st.voicebox?.connected && st.voicebox.profiles.some((p) => `voicebox:${p.id}` === pick) ? pick : undefined;
-      if (!own && (!st.program || !Object.values(st.voices).some((v) => v.installed))) await installVoice('en_US-lessac-medium', (step) => setPhase(`Installing the voice: ${step}`));
-      const v = await speak(lines, { voice: own ?? (pick && !pick.startsWith('voicebox:') ? pick : undefined), signal: ctl.signal, onStep: (step) => setPhase(step) });
-      const added = withVoice({ ...scene, layers: [] }, v);
+      // The voice shown in the Voice menu (shared with Voice-over from a script).
+      if (voices.isVoicebox && !st.voicebox?.connected) throw new Error(`${voices.label} needs Voicebox open. Open it, or pick another voice.`);
+      if (!voices.isVoicebox && (!st.program || !st.voices[voices.voice]?.installed)) await installVoice(voices.voice, (step) => setPhase(`Installing the voice: ${step}`));
+      setPhase(`Speaking in ${voices.label}`);
+      const v = await speak(lines, { voice: voices.voice, signal: ctl.signal, onStep: (step) => setPhase(step) });
+      const added = withVoice({ ...scene, layers: [] }, v, 'Voice-over', voices.label);
       built = { base: added.scene, clipId: added.id };
-      push({ role: 'ai', text: `Made a ${Math.round(v.duration)} second voice-over from the script (${v.words.length} words, each timed). Building the scene on it now.` });
+      push({ role: 'ai', text: `Made a ${Math.round(v.duration)} second voice-over from the script in ${voices.label} (${v.words.length} words, each timed). Building the scene on it now.` });
     } catch (e) {
       push({ role: 'error', text: (e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message });
     } finally {
@@ -492,6 +493,12 @@ export function AiAssist(props: {
               <select id="assist-style" value={props.styleId ?? ''} disabled={busy} onChange={(e) => props.onStyleChange(e.target.value || null)}>
                 <option value="">None (the AI decides)</option>
                 {props.styles.map((s) => <option key={s.id} value={s.id}>{s.name}{s.custom ? ' (yours)' : ''}</option>)}
+              </select>
+            </div>
+            <div className="assist-style">
+              <label htmlFor="assist-voice">Voice</label>
+              <select id="assist-voice" value={voices.voice} disabled={busy} onChange={(e) => voices.setVoice(e.target.value)} title="The voice Build with a voice-over speaks in">
+                {voices.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
             <div className="assist-director">
