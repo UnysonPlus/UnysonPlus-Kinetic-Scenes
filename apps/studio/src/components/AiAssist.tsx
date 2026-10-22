@@ -144,6 +144,8 @@ export function AiAssist(props: {
   // The AI director: plan before building, and look at the result before showing it.
   const [planFirst, setPlanFirst] = useState(true);
   const [lookFix, setLookFix] = useState(true);
+  // Settings (connection, style, voice, look and fix) live behind the gear, so the chat keeps its room.
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [kind, setKind] = useState<Kind>('storyboard');
   const [pending, setPending] = useState<{ prompt: string; extra: Exclude<QueuedRequest, string> | null } | null>(null);
   const [planText, setPlanText] = useState('');
@@ -387,13 +389,38 @@ export function AiAssist(props: {
           <header className="assist-head">
             <strong><span className="assist-spark" aria-hidden="true">✦</span> AI assist</strong>
             <span className="assist-beta">Beta</span>
+            {ready && <span className="assist-dot" title={`Connected: ${aiName(status)}`} aria-label="Connected" />}
             {messages.length > 0 && !busy && <button type="button" className="link-btn" onClick={() => props.onMessages(() => [])}>New chat</button>}
+            <button type="button" className={`assist-gear${settingsOpen ? ' on' : ''}`} aria-expanded={settingsOpen} aria-controls="assist-settings"
+              aria-label="AI assist settings" title="Settings: style, voice, look and fix" onClick={() => setSettingsOpen((o) => !o)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+            </button>
             <button type="button" className="assist-close" aria-label="Close AI assist" onClick={() => props.onOpenChange(false)}>×</button>
           </header>
 
-          <div className={`assist-conn is-${status.state}`} role="status">
+          {settingsOpen && (
+            <div className="assist-settings" id="assist-settings">
+              {ready && <p className="assist-settings-conn"><span className="assist-dot" aria-hidden="true" /> <span><strong>Connected:</strong> {aiName(status)}, through the AI Dev Kit {status.version}.</span></p>}
+              <div className="assist-style">
+                <label htmlFor="assist-style">Style</label>
+                <select id="assist-style" value={props.styleId ?? ''} disabled={busy} onChange={(e) => props.onStyleChange(e.target.value || null)}>
+                  <option value="">None (the AI decides)</option>
+                  {props.styles.map((st) => <option key={st.id} value={st.id}>{st.name}{st.custom ? ' (yours)' : ''}</option>)}
+                </select>
+              </div>
+              <div className="assist-style">
+                <label htmlFor="assist-voice">Voice</label>
+                <select id="assist-voice" value={voices.voice} disabled={busy} onChange={(e) => voices.setVoice(e.target.value)} title="The voice Build with a voice-over speaks in">
+                  {voices.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <label className="assist-check" title="After building, the AI Dev Kit renders the key frames and the AI reviews and fixes what it sees"><input type="checkbox" checked={lookFix} disabled={busy} onChange={(e) => setLookFix(e.target.checked)} /> Look and fix (the AI checks the frames it made)</label>
+              <button type="button" className="btn small" onClick={() => setSettingsOpen(false)}>Done</button>
+            </div>
+          )}
+
+          {!ready && <div className={`assist-conn is-${status.state}`} role="status">
             {status.state === 'checking' && <span>Looking for the AI Dev Kit on this computer…</span>}
-            {status.state === 'ready' && <span><strong>Connected:</strong> {aiName(status)}, through the AI Dev Kit {status.version}.</span>}
             {status.state === 'off' && <span>The AI Dev Kit is running, but no AI is set up in it. Open its dashboard (localhost:4600) and connect one in Settings.</span>}
             {status.state === 'outdated' && <span>Your AI Dev Kit needs an update for the Studio. Close it and start it again (start.bat or start.command): it updates itself.</span>}
             {status.state === 'missing' && (
@@ -409,8 +436,8 @@ export function AiAssist(props: {
                 <strong> apps on this device</strong> (local network access), then check again.
               </span>
             )}
-            {status.state !== 'checking' && status.state !== 'ready' && <button type="button" className="btn small" onClick={props.onRecheck}>Check again</button>}
-          </div>
+            {status.state !== 'checking' && <button type="button" className="btn small" onClick={props.onRecheck}>Check again</button>}
+          </div>}
 
           <div className="assist-log" ref={logRef} aria-live="polite">
             {messages.length === 0 && (
@@ -488,19 +515,13 @@ export function AiAssist(props: {
                 );
               })}
             </div>
-            <div className="assist-style">
-              <label htmlFor="assist-style">Style</label>
-              <select id="assist-style" value={props.styleId ?? ''} disabled={busy} onChange={(e) => props.onStyleChange(e.target.value || null)}>
-                <option value="">None (the AI decides)</option>
-                {props.styles.map((s) => <option key={s.id} value={s.id}>{s.name}{s.custom ? ' (yours)' : ''}</option>)}
-              </select>
-            </div>
-            <div className="assist-style">
-              <label htmlFor="assist-voice">Voice</label>
-              <select id="assist-voice" value={voices.voice} disabled={busy} onChange={(e) => voices.setVoice(e.target.value)} title="The voice Build with a voice-over speaks in">
-                {voices.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
+            {!settingsOpen && (
+              <button type="button" className="assist-summary" onClick={() => setSettingsOpen(true)} title="Change the style, voice or look and fix">
+                Style: <strong>{props.styles.find((x) => x.id === props.styleId)?.name ?? 'None'}</strong>
+                <span aria-hidden="true"> · </span>Voice: <strong>{voices.label}</strong>
+                {lookFix && <><span aria-hidden="true"> · </span>Look and fix</>}
+              </button>
+            )}
             <div className="assist-director">
               {scope === 'new' && (
                 <>
@@ -513,7 +534,6 @@ export function AiAssist(props: {
                   <label className="assist-check"><input type="checkbox" checked={planFirst || kind !== 'storyboard'} disabled={busy || kind !== 'storyboard'} onChange={(e) => setPlanFirst(e.target.checked)} /> Plan first</label>
                 </>
               )}
-              <label className="assist-check" title="After building, the AI Dev Kit renders the key frames and the AI reviews and fixes what it sees"><input type="checkbox" checked={lookFix} disabled={busy} onChange={(e) => setLookFix(e.target.checked)} /> Look and fix</label>
             </div>
             <label htmlFor="assist-input" className="sr-only">Your request</label>
             <textarea

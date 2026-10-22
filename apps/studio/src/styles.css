@@ -825,3 +825,15 @@ h1, h2, p { margin: 0; }
 .addon-detail { font-size: 12.5px; opacity: .7; }
 .addon-input { flex: 1; min-width: 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #263040); background: transparent; color: inherit; }
 .addon-link { font-size: 13px; }
+
+/* AI assist: settings behind the gear */
+.assist-gear { margin-left: auto; display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
+.assist-gear svg { width: 17px; height: 17px; }
+.assist-gear:hover, .assist-gear.on { background: rgba(255,255,255,.08); color: inherit; }
+.assist-dot { width: 8px; height: 8px; border-radius: 50%; background: #2ad38b; flex: none; display: inline-block; }
+.assist-settings { flex: none; display: grid; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); background: rgba(255,255,255,.025); font-size: 12px; }
+.assist-settings .btn { justify-self: end; }
+.assist-settings-conn { margin: 0; display: flex; gap: 8px; align-items: baseline; color: var(--muted); line-height: 1.45; }
+.assist-summary { all: unset; cursor: pointer; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.assist-summary strong { font-weight: 600; color: var(--text, #e6e8eb); }
+.assist-summary:hover, .assist-summary:focus-visible { text-decoration: underline; }
