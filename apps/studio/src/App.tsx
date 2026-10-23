@@ -782,10 +782,11 @@ export function App() {
       <div className="head">
       <header className="topbar">
         <div className="brand">
-          <Logo />
+          {/* New tabs: the Studio is itself at kinetic-scenes.unysonplus.com, so reloading it here would drop the undo history. */}
+          <a className="brand-link" href="https://www.unysonplus.com/" target="_blank" rel="noopener" title="Unyson+ (opens in a new tab)" aria-label="Unyson+ (opens in a new tab)"><Logo /></a>
           <div>
             <h1>
-              Kinetic Scenes
+              <a className="brand-link" href="https://kinetic-scenes.unysonplus.com/" target="_blank" rel="noopener" title="Kinetic Scenes (opens in a new tab)">Kinetic Scenes</a>
               <button type="button" className="stage-tag" {...{ popovertarget: 'stage-info' }} aria-describedby="stage-info">Beta</button>
             </h1>
             <p className="brand-sub">Unyson+ · {__STUDIO_VERSION__}</p>

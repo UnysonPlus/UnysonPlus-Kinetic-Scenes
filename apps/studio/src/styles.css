@@ -884,3 +884,8 @@ h1, h2, p { margin: 0; }
   .preview-wrap { flex: none; }
   .preview-wrap > .preview-area { flex: none; height: 56vh; min-height: 300px; }
 }
+
+/* The logo and the name link out (Unyson+, the Studio's own address) without looking like links. */
+.brand-link { color: inherit; text-decoration: none; display: inline-flex; border-radius: 6px; }
+.brand-link:hover { opacity: .85; }
+.brand-link:focus-visible { outline: 2px solid var(--accent, #2ad38b); outline-offset: 2px; }
