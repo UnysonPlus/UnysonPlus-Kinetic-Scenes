@@ -1,4 +1,4 @@
-import { kitBase } from './ai';
+import { kitBase, kitHas, kitStatus } from './ai';
 
 /**
  * Add-ons, through the AI Dev Kit: connectors to apps the person has installed (Voicebox; Blender coming), found
@@ -73,6 +73,9 @@ export async function makeMusic(opts: { prompt: string; seconds: number; bpm?: n
 async function addonAction(id: string, action: 'find' | 'browse', body: object = {}) {
   const b = await kitBase();
   if (!b) throw new Error('Start the AI Dev Kit on this computer first.');
+  // An older kit takes these for "set the location" and would clear it, so ask only a kit that knows them.
+  if (!kitHas('addon-browse')) await kitStatus();
+  if (!kitHas('addon-browse')) throw new Error('Your AI Dev Kit is older than this button. Close it and start it again (start.bat or start.command): it updates itself.');
   const r = await fetch(`${b}/studio/addons/${id}/${action}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
   if (r.status === 404 || (!r.ok && /set|nothing/i.test(j.error || ''))) throw new Error('Your AI Dev Kit is too old for this. Close it and start it again: it updates itself.');

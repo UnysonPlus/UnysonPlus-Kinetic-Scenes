@@ -14,6 +14,8 @@ const BASES = ['http://localhost:8787', 'http://127.0.0.1:8787'];
 let base: string | null = null;
 /** What the running kit can do beyond the basics (an older kit reports none). */
 let features = new Set<string>();
+/** Whether the running kit has a feature (found by kitStatus). */
+export const kitHas = (f: string) => features.has(f);
 
 export type KitStatus =
   | { state: 'checking' }
