@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { listAddons, setAddonLocation, type Addon, type AddonField } from '../lib/addons';
+import { browseAddon, findAddon, listAddons, setAddonLocation, type Addon, type AddonField } from '../lib/addons';
 import { GetKit } from './GetKit';
 
 const STATE: Record<Addon['state'], string> = {
-  connected: 'Connected', ready: 'Ready', 'no-api': 'Needs its API', 'not-found': 'Not found',
+  connected: 'Running', ready: 'Ready', 'no-api': 'Needs its API', 'not-found': 'Not found',
   installed: 'Installed', 'not-installed': 'Not installed', soon: 'Coming soon',
 };
 
@@ -20,6 +20,7 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [value, setValue] = useState('');
+  const [note, setNote] = useState<Record<string, string>>({});
 
   const refresh = useCallback(async () => {
     setBusy(true);
@@ -44,6 +45,22 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
     try { await setAddonLocation(id, v, field); setEditing(null); await refresh(); } catch (e) { setError((e as Error).message); setBusy(false); }
   };
 
+  const act = async (a: Addon, run: () => Promise<string | null>, found: (p: string) => string, missing: string | null) => {
+    setBusy(true);
+    setError(null);
+    setNote((n) => ({ ...n, [a.id]: '' }));
+    try {
+      const p = await run();
+      if (p) setNote((n) => ({ ...n, [a.id]: found(p) }));
+      else if (missing) setNote((n) => ({ ...n, [a.id]: missing }));
+      setEditing(null);
+      await refresh();
+    } catch (e) { setError((e as Error).message); setBusy(false); }
+  };
+  const find = (a: Addon) => act(a, () => findAddon(a.id), (p) => `Found it: ${p}`,
+    `Not found in the usual places (the program folders and the top two levels of each drive). Use Browse to point to it${a.link ? ', or get it first' : ''}.`);
+  const browse = (a: Addon, field: 'location' | 'app') => act(a, () => browseAddon(a.id, field), (p) => `Set to ${p}`, null);
+
   const fieldRow = (a: Addon, field: 'location' | 'app', f: AddonField) => {
     const key = `${a.id}:${field}`;
     const label = f.kind === 'url' ? 'Address' : field === 'app' ? 'Program' : 'Location';
@@ -52,7 +69,8 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
         <div className="addon-field" key={key}>
           <span className="addon-field-label">{label}</span>
           <code className="addon-field-value">{f.value || 'not set'}</code>
-          <button type="button" className="btn small ghost" disabled={busy} onClick={() => { setEditing(key); setValue(f.value); }}>{f.value ? 'Change' : 'Set'}</button>
+          {f.kind === 'path' && <button type="button" className="btn small ghost" disabled={busy} onClick={() => browse(a, field)} title="Opens your computer's file or folder picker">Browse…</button>}
+          <button type="button" className="btn small ghost" disabled={busy} onClick={() => { setEditing(key); setValue(f.value); }}>{f.kind === 'path' ? 'Type it' : f.value ? 'Change' : 'Set'}</button>
         </div>
       );
     }
@@ -106,10 +124,14 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
               )}
               {a.kind === 'connector' && a.state !== 'soon' && (
                 <>
+                  {note[a.id] && <p className="addon-detail" role="status">{note[a.id]}</p>}
                   {a.location && fieldRow(a, 'location', a.location)}
                   {a.app && fieldRow(a, 'app', a.app)}
                   <div className="export-row">
-                    <button type="button" className="btn small" disabled={busy} onClick={refresh}>{a.state === 'connected' ? 'Check again' : 'Find it'}</button>
+                    {a.location?.kind === 'path' || a.app
+                      ? <button type="button" className="btn small" disabled={busy} onClick={() => find(a)} title="Looks in the program folders and the top two levels of each drive">Find it</button>
+                      : null}
+                    <button type="button" className={`btn small${a.location?.kind === 'path' || a.app ? ' ghost' : ''}`} disabled={busy} onClick={refresh}>Check again</button>
                     {a.link && a.state !== 'connected' && <a className="addon-link" href={a.link} target="_blank" rel="noopener noreferrer">Get {a.name}</a>}
                   </div>
                 </>

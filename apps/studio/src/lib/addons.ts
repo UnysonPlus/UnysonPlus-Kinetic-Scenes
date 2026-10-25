@@ -69,3 +69,17 @@ export async function makeMusic(opts: { prompt: string; seconds: number; bpm?: n
     onStep?.(p.step);
   }
 }
+
+async function addonAction(id: string, action: 'find' | 'browse', body: object = {}) {
+  const b = await kitBase();
+  if (!b) throw new Error('Start the AI Dev Kit on this computer first.');
+  const r = await fetch(`${b}/studio/addons/${id}/${action}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 404 || (!r.ok && /set|nothing/i.test(j.error || ''))) throw new Error('Your AI Dev Kit is too old for this. Close it and start it again: it updates itself.');
+  if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
+  return j;
+}
+/** Looks for a connector's app in the usual install places; saves it when found. */
+export const findAddon = async (id: string): Promise<string | null> => (await addonAction(id, 'find')).found ?? null;
+/** Opens this computer's own file or folder picker (through the kit); saves the choice. Null when cancelled. */
+export const browseAddon = async (id: string, field: 'location' | 'app'): Promise<string | null> => (await addonAction(id, 'browse', { field })).chosen ?? null;
