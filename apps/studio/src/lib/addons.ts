@@ -10,13 +10,17 @@ export interface Addon {
   id: string;
   kind: 'connector' | 'download';
   name: string;
-  state: 'connected' | 'not-found' | 'installed' | 'not-installed' | 'soon';
+  state: 'connected' | 'ready' | 'no-api' | 'not-found' | 'installed' | 'not-installed' | 'soon';
   what: string;
   detail: string;
-  location?: { kind: 'url' | 'path'; value: string; default: string };
+  location?: AddonField;
+  app?: AddonField;
   profiles?: Array<{ id: string; name: string; language: string; engine: string | null }>;
   link?: string;
 }
+
+/** Where a connector is: an address on this computer, or a folder or program the kit may start. */
+export interface AddonField { kind: 'url' | 'path'; value: string; default?: string; placeholder?: string; hint?: string }
 
 export async function listAddons(): Promise<Addon[] | null> {
   const b = await kitBase();
@@ -28,11 +32,11 @@ export async function listAddons(): Promise<Addon[] | null> {
   return j.addons as Addon[];
 }
 
-/** Sets where a connector is ("" goes back to looking in the usual place). */
-export async function setAddonLocation(id: string, location: string): Promise<void> {
+/** Sets where a connector is ("" goes back to looking in the usual place). `field` "app" sets its program instead. */
+export async function setAddonLocation(id: string, location: string, field: 'location' | 'app' = 'location'): Promise<void> {
   const b = await kitBase();
   if (!b) throw new Error('Start the AI Dev Kit on this computer first.');
-  const r = await fetch(`${b}/studio/addons/${id}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location }) });
+  const r = await fetch(`${b}/studio/addons/${id}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location, field }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
 }
@@ -44,4 +48,24 @@ export function preferredVoice(): string | undefined {
 }
 export function rememberVoice(v: string) {
   try { localStorage.setItem(VOICE_KEY, v); } catch { /* private window: fine */ }
+}
+
+/**
+ * Background music from the ACE-Step add-on: an instrumental made on this computer in the style, tempo and length
+ * asked for. The kit starts ACE-Step when it is not running (the first time takes a minute or so).
+ */
+export async function makeMusic(opts: { prompt: string; seconds: number; bpm?: number }, onStep?: (s: string) => void): Promise<{ src: string; bpm: number | null; seconds: number }> {
+  const b = await kitBase();
+  if (!b) throw new Error('Music runs through the AI Dev Kit. Start it on this computer first.');
+  const r = await fetch(`${b}/studio/music`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(opts) });
+  if (r.status === 404) throw new Error('Your AI Dev Kit is too old for music. Close it and start it again: it updates itself.');
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
+  for (;;) {
+    await new Promise((ok) => setTimeout(ok, 1500));
+    const p = await (await fetch(`${b}/studio/music/${j.id}`)).json();
+    if (p.state === 'failed') throw new Error(p.error || 'The music could not be made.');
+    if (p.state === 'done') return p.result;
+    onStep?.(p.step);
+  }
 }

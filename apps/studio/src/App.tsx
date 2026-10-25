@@ -6,6 +6,7 @@ import demo from './scenes/demo.json';
 import { previewHtml } from './lib/documents';
 import { ExportDialog } from './components/ExportDialog';
 import { AddonsDialog } from './components/AddonsDialog';
+import { MusicDialog } from './components/MusicDialog';
 import { MenuBar, type Menu } from './components/MenuBar';
 import { AiAssist, type ChatMessage } from './components/AiAssist';
 import { CheckPanel } from './components/CheckPanel';
@@ -164,6 +165,7 @@ export function App() {
   const [scale, setScale] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [addonsOpen, setAddonsOpen] = useState(false);
+  const [musicOpen, setMusicOpen] = useState(false);
   const [alignTo, setAlignTo] = useState<AlignTo>('selection');
   /** The group being edited (double-click to enter, Escape to leave); null = the whole scene. */
   const [scope, setScope] = useState<string | null>(null);
@@ -747,6 +749,7 @@ export function App() {
       { label: 'Flow', onSelect: () => onAddLayer('flow') },
       'sep',
       { label: 'Audio…', onSelect: () => audioRef.current?.click() },
+      { label: 'Music…', onSelect: () => setMusicOpen(true), hint: 'Make an instrumental with the ACE-Step add-on' },
       { label: 'Marker', shortcut: 'M', onSelect: () => key('m'), disabled: !!scope },
       { label: 'A piece…', onSelect: () => setLibraryAsk({ kind: 'pieces', n: Date.now() }), hint: 'Ready-made pieces: comment box, chat, checklist, loadout…' },
     ] },
@@ -762,9 +765,11 @@ export function App() {
       { label: 'AI settings (style, voice, look and fix)', onSelect: () => { openAssist(true); setAiSettingsAsk(Date.now()); } },
       'sep',
       { label: 'Voice-over from a script', onSelect: () => showSceneSection('Voice-over from a script') },
+      { label: 'Make music…', onSelect: () => setMusicOpen(true) },
     ] },
     { label: 'Tools', items: [
-      { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox and other tools the AI Dev Kit can use on this computer' },
+      { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox, ACE-Step music and other tools the AI Dev Kit can use on this computer' },
+      { label: 'Make music…', onSelect: () => setMusicOpen(true) },
       'sep',
       { label: 'Separate voice and music', disabled: !(selLayer?.type === 'video' || (selAudio && !selAudio.src.startsWith('sfx:'))),
         hint: 'Select footage or an audio clip first', onSelect: () => showLayerSection(selLayer?.type === 'video' ? 'Footage tools' : 'Voice and music') },
@@ -1033,6 +1038,7 @@ export function App() {
           <div className="preview-wrap">
             <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} zones={zones} checker={seeThrough} />
             <AiAssist
+              onMakeMusic={() => setMusicOpen(true)}
               open={assistOpen}
               onOpenChange={openAssist}
               status={kit}
@@ -1135,6 +1141,8 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <MusicDialog open={musicOpen} onClose={() => setMusicOpen(false)} scene={scene} onCommit={commit}
+        decode={(src) => audioEngine.buffer(src)} onAddons={() => setAddonsOpen(true)} />
       {notice && <div className="toast" role="status">{notice}</div>}
       {fullscreen && <FullscreenPlayer scene={scene} startAt={0} onClose={() => setFullscreen(false)} />}
     </div>

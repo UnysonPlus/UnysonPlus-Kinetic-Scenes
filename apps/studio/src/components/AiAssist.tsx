@@ -12,9 +12,8 @@ import { applyStyle, styleBrief, type SceneStyle } from '../lib/styles';
 import { allLayers } from '@unysonplus/scene-player/groups';
 import { useFootageSound } from '../lib/footageKit';
 import { transcribe, transcribeStatus } from '../lib/transcribe';
+import { GetKit } from './GetKit';
 
-const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
-const KIT_REPO = 'https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit';
 
 const START_IDEAS = [
   'A bold launch hero for a new running shoe: dark background, neon green accent, the headline "Run lighter." and a short supporting line.',
@@ -130,6 +129,8 @@ export function AiAssist(props: {
   onStyleChange: (id: string | null) => void;
   /** Open the settings (the menu bar's AI settings; changes each time it asks). */
   settingsRequest?: number;
+  /** Open Make music (the ACE-Step add-on). */
+  onMakeMusic?: () => void;
 }) {
   const { status, scene, messages } = props;
   const empty = scene.layers.length === 0;
@@ -417,6 +418,12 @@ export function AiAssist(props: {
                   {voices.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
+              {props.onMakeMusic && (
+                <div className="assist-style">
+                  <span className="assist-label">Music</span>
+                  <button type="button" className="btn small ghost" disabled={busy} onClick={props.onMakeMusic} title="An instrumental from the ACE-Step add-on, added as a Music track">Make music…</button>
+                </div>
+              )}
               <label className="assist-check" title="After building, the AI Dev Kit renders the key frames and the AI reviews and fixes what it sees"><input type="checkbox" checked={lookFix} disabled={busy} onChange={(e) => setLookFix(e.target.checked)} /> Look and fix (the AI checks the frames it made)</label>
               <button type="button" className="btn small" onClick={() => setSettingsOpen(false)}>Done</button>
             </div>
@@ -427,11 +434,7 @@ export function AiAssist(props: {
             {status.state === 'off' && <span>The AI Dev Kit is running, but no AI is set up in it. Open its dashboard (localhost:4600) and connect one in Settings.</span>}
             {status.state === 'outdated' && <span>Your AI Dev Kit needs an update for the Studio. Close it and start it again (start.bat or start.command): it updates itself.</span>}
             {status.state === 'missing' && (
-              <span>
-                AI assist runs through the <a href={KIT_REPO} target="_blank" rel="noopener noreferrer"><strong>AI Dev Kit</strong></a> on your computer, with your own AI.{' '}
-                <a href={GUIDE} target="_blank" rel="noopener noreferrer">Set it up</a>, start it (start.bat or start.command), then
-                check again. If the browser asks to let this site reach apps on your device, choose <strong>Allow</strong>.
-              </span>
+              <GetKit lead="AI assist runs through the AI Dev Kit with your own AI" />
             )}
             {status.state === 'blocked' && (
               <span>

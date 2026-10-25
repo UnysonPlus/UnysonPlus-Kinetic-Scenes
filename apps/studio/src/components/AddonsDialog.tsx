@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { listAddons, setAddonLocation, type Addon } from '../lib/addons';
+import { listAddons, setAddonLocation, type Addon, type AddonField } from '../lib/addons';
+import { GetKit } from './GetKit';
 
 const STATE: Record<Addon['state'], string> = {
-  connected: 'Connected', 'not-found': 'Not found', installed: 'Installed', 'not-installed': 'Not installed', soon: 'Coming soon',
+  connected: 'Connected', ready: 'Ready', 'no-api': 'Needs its API', 'not-found': 'Not found',
+  installed: 'Installed', 'not-installed': 'Not installed', soon: 'Coming soon',
 };
 
 /**
- * Add-ons: what the AI Dev Kit can use on this computer. Connectors (Voicebox) are found automatically; if one is
- * somewhere unusual, its location is set here once. Downloads install where they are used (the first time).
+ * Add-ons: what the AI Dev Kit can use on this computer. Connectors (Voicebox, ACE-Step) are found automatically or
+ * at a location given once here: an address, or a folder or program the kit may start when it is needed. Downloads
+ * install where they are used (the first time).
  */
 export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [addons, setAddons] = useState<Addon[] | null>(null);
+  const [noKit, setNoKit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -22,8 +26,8 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
     setError(null);
     try {
       const list = await listAddons();
-      if (!list) { setAddons(null); setError('Start the AI Dev Kit on this computer to use add-ons.'); }
-      else setAddons(list);
+      setNoKit(!list);
+      setAddons(list);
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   }, []);
 
@@ -34,10 +38,37 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
     if (!props.open && d.open) d.close();
   }, [props.open, refresh]);
 
-  const save = async (id: string, location: string) => {
+  const save = async (id: string, field: 'location' | 'app', v: string) => {
     setBusy(true);
     setError(null);
-    try { await setAddonLocation(id, location); setEditing(null); await refresh(); } catch (e) { setError((e as Error).message); setBusy(false); }
+    try { await setAddonLocation(id, v, field); setEditing(null); await refresh(); } catch (e) { setError((e as Error).message); setBusy(false); }
+  };
+
+  const fieldRow = (a: Addon, field: 'location' | 'app', f: AddonField) => {
+    const key = `${a.id}:${field}`;
+    const label = f.kind === 'url' ? 'Address' : field === 'app' ? 'Program' : 'Location';
+    if (editing !== key) {
+      return (
+        <div className="addon-field" key={key}>
+          <span className="addon-field-label">{label}</span>
+          <code className="addon-field-value">{f.value || 'not set'}</code>
+          <button type="button" className="btn small ghost" disabled={busy} onClick={() => { setEditing(key); setValue(f.value); }}>{f.value ? 'Change' : 'Set'}</button>
+        </div>
+      );
+    }
+    return (
+      <div className="addon-edit" key={key}>
+        <div className="export-row">
+          <input className="addon-input" aria-label={`${a.name} ${label.toLowerCase()}`} value={value} autoFocus
+            onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void save(a.id, field, value); }}
+            placeholder={f.placeholder || f.default || ''} />
+          <button type="button" className="btn small primary" disabled={busy || !value.trim()} onClick={() => save(a.id, field, value)}>Save</button>
+          {f.value && <button type="button" className="btn small ghost" disabled={busy} onClick={() => save(a.id, field, '')}>{f.default ? 'Reset' : 'Clear'}</button>}
+          <button type="button" className="btn small ghost" disabled={busy} onClick={() => setEditing(null)}>Cancel</button>
+        </div>
+        {f.hint && <p className="addon-detail">{f.hint}</p>}
+      </div>
+    );
   };
 
   return (
@@ -49,16 +80,18 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
           <button type="button" className="icon-link" aria-label="Close" onClick={props.onClose}>×</button>
         </header>
         <p className="addons-intro">
-          Extra tools the AI Dev Kit can use on this computer. Apps you install yourself are found automatically;
-          the others download the first time you use them. Nothing is uploaded anywhere.
+          Extra tools the AI Dev Kit can use on this computer. Apps you install yourself are found automatically, or
+          tell the kit where they are once and it starts them when needed; the others download the first time you use
+          them. Nothing is uploaded anywhere.
         </p>
+        {noKit && <GetKit onCheck={refresh} busy={busy} />}
         {error && <p className="export-warn" role="alert">{error}</p>}
         <ul className="addons-list">
           {(addons ?? []).map((a) => (
             <li key={a.id} className={`addon is-${a.state}`}>
               <div className="addon-head">
                 <strong>{a.name}</strong>
-                <span className={`addon-state is-${a.state}`}>{STATE[a.state]}</span>
+                <span className={`addon-state is-${a.state}`}>{STATE[a.state] ?? a.state}</span>
               </div>
               <p>{a.what}</p>
               <p className="addon-detail">{a.detail}</p>
@@ -68,26 +101,23 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
               {a.id === 'voicebox' && (
                 <p className="addon-detail">Only use a voice you have the right to use: your own, or someone's with their permission.</p>
               )}
-              {a.kind === 'connector' && a.state !== 'soon' && (
-                <div className="export-row">
-                  <button type="button" className="btn small" disabled={busy} onClick={refresh}>{a.state === 'connected' ? 'Check again' : 'Find it again'}</button>
-                  {a.location && editing !== a.id && (
-                    <button type="button" className="btn small ghost" disabled={busy} onClick={() => { setEditing(a.id); setValue(a.location!.value); }}>Set its address</button>
-                  )}
-                  {a.link && a.state !== 'connected' && <a className="addon-link" href={a.link} target="_blank" rel="noopener noreferrer">Get {a.name}</a>}
-                </div>
+              {a.id === 'ace-step' && (a.state === 'connected' || a.state === 'ready') && (
+                <p className="addon-detail">Make music from Insert, Music, or ask AI assist for a soundtrack.</p>
               )}
-              {editing === a.id && a.location && (
-                <div className="export-row">
-                  <input className="addon-input" aria-label={`${a.name} address`} value={value} onChange={(e) => setValue(e.target.value)} placeholder={a.location.default} />
-                  <button type="button" className="btn small primary" disabled={busy} onClick={() => save(a.id, value)}>Save</button>
-                  <button type="button" className="btn small ghost" disabled={busy} onClick={() => save(a.id, '')} title={`Back to ${a.location.default}`}>Reset</button>
-                </div>
+              {a.kind === 'connector' && a.state !== 'soon' && (
+                <>
+                  {a.location && fieldRow(a, 'location', a.location)}
+                  {a.app && fieldRow(a, 'app', a.app)}
+                  <div className="export-row">
+                    <button type="button" className="btn small" disabled={busy} onClick={refresh}>{a.state === 'connected' ? 'Check again' : 'Find it'}</button>
+                    {a.link && a.state !== 'connected' && <a className="addon-link" href={a.link} target="_blank" rel="noopener noreferrer">Get {a.name}</a>}
+                  </div>
+                </>
               )}
             </li>
           ))}
         </ul>
-        {busy && !addons && <p className="addon-detail">Checking…</p>}
+        {busy && !addons && !noKit && <p className="addon-detail">Checking…</p>}
       </div>
     </dialog>
   );
