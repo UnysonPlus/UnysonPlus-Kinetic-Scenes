@@ -10,7 +10,9 @@ import { lintScene } from '@unysonplus/scene-player/lint';
 import { askForPlan, askForQuick, askForReview, askForScene, type KitStatus, type Plan } from '../lib/ai';
 import { applyStyle, styleBrief, type SceneStyle } from '../lib/styles';
 import { allLayers } from '@unysonplus/scene-player/groups';
-import { useFootageSound } from '../lib/footageKit';
+import { cutOutPerson, useFootageSound } from '../lib/footageKit';
+import { setAudio } from '../lib/audio';
+import { analyseMusic } from '../lib/beats';
 import { transcribe, transcribeStatus } from '../lib/transcribe';
 import { GetKit } from './GetKit';
 
@@ -106,6 +108,35 @@ export function aiName(s: KitStatus): string {
  * a change to the scene (one undo step, plus "Go back" on the message), checked by Check scene, so
  * the work continues by hand or with another request.
  */
+
+/** A request about the background (effects behind the person, a new backdrop) rather than the footage itself. */
+const BACKGROUND_ASK = /\b(background|backdrop|behind (her|him|them|the person|me)|replace the (wall|room|sky)|special effects)\b/i;
+
+/** Puts a layer last (on top) in whichever list holds it. */
+function toTop(scene: Scene, id: string): Scene {
+  const walk = (list: Scene['layers']): Scene['layers'] => {
+    const i = list.findIndex((l) => l.id === id);
+    if (i >= 0) return [...list.slice(0, i), ...list.slice(i + 1), list[i]];
+    return list.map((l) => (l.type === 'group' ? { ...l, layers: walk(l.layers) } : l));
+  };
+  return { ...scene, layers: walk(scene.layers) };
+}
+
+/** The tempo, beats and loudness of a sound (a data: URL), worked out in the browser. */
+async function beatsOf(src: string) {
+  const ctx = new OfflineAudioContext(1, 1, 44100);
+  const buf = await ctx.decodeAudioData(await (await fetch(src)).arrayBuffer());
+  return analyseMusic(buf);
+}
+
+const backgroundBrief = (footage: string, person: string, duration: number, music: boolean) => `BACKGROUND EFFECTS, THE PERSON IS CUT OUT
+Layer "${footage}" is the original footage. Layer "${person}" is the same footage with only the person (see-through everywhere else), above it.
+- Put every background effect BETWEEN them in the layer list: after "${footage}", before "${person}". "${person}" stays the last layer, so the person is in front and sharp. Do not change either video layer, except a subtle Glow rim on "${person}" (size about 0.6, strength about 0.7) to lift them off the new background.
+- Replace the background, do not just colour-grade the footage: first a full-frame shape (box x 50, y 50, w 100, h 100) with a rich gradient fill and opacity 0.85 to 0.95, which hides the old background while anything the cut-out missed still shows faintly; Gradient flow on it for the whole scene.
+- Then build depth on top of that backdrop: soft rays (a large shape whose fill is a repeating-conic-gradient of a light colour at about 0.1 alpha and transparent, turned slowly with Drift rotate), a soft radial glow behind the person, one or two Particles fields on transparent full-frame shapes (different colours and directions, twinkle on), and a ring or halo behind the head.
+- Every effect runs the whole scene, from 0 to ${duration} s; pick colours that suit the person, the clothes and the objects in the footage.${music ? `
+- The music's beats are known: let one or two things React to the bass, and put a Burst (rings or sparks, reach 40 to 60) on the strongest beats, behind the person.` : ''}`;
+
 export function AiAssist(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -202,12 +233,44 @@ export function AiAssist(props: {
         push({ role: 'ai', text: `The plan${plan.title ? `: ${plan.title}` : ''}. Change it below, or tell me what to change, then build it.`, plan: true });
         return;
       }
+      // Background effects on footage: cut the person out first (and find the song's beats), so the effects can go
+      // between the footage and the person instead of over everything.
+      let base = extra?.base ?? before;
+      let bgBrief = '', person: string | null = null, wholeScene = false;
+      if (mode === 'edit' && BACKGROUND_ASK.test(ask)) {
+        const vids = allLayers(base.layers).filter((l) => l.type === 'video');
+        const footage = vids.find((l) => !/-person(-\d+)?$/.test(l.id));
+        if (footage) {
+          person = vids.find((l) => l.id.startsWith(`${footage.id}-person`))?.id ?? null;
+          if (!person) {
+            setPhase('Cutting out the person');
+            const c = await cutOutPerson(base, footage.id, 'fine', (st) => setPhase(`Cutting out the person: ${st}`), ctl.signal);
+            base = c.scene; person = c.id;
+          }
+          let music = !!base.audio?.some((a) => a.role === 'music' && a.beats);
+          if (!base.audio?.length && (footage as { sound?: number }).sound !== 0) {
+            try {
+              setPhase('Finding the beats');
+              const fs = await useFootageSound(base, footage.id);
+              const clip = fs.scene.audio!.find((a) => a.id === fs.id)!;
+              const m = await beatsOf(clip.src);
+              base = setAudio(fs.scene, fs.id, { role: 'music', name: `${footage.name ?? footage.id} (song)`, beats: m.beats, envelope: m.envelope });
+              music = true;
+            } catch { /* no sound to use: effects without the beat */ }
+          }
+          bgBrief = backgroundBrief(footage.id, person, base.duration, music);
+          wholeScene = true;
+          props.onApply(base, 'edit');
+        }
+      }
       setPhase(mode === 'create' ? 'Building' : 'Working');
-      const brief = [extra?.brief, style ? styleBrief(style) : '', musicCues(extra?.base ?? before)].filter(Boolean).join('\n\n') || undefined;
+      const brief = [extra?.brief, bgBrief, style ? styleBrief(style) : '', musicCues(base)].filter(Boolean).join('\n\n') || undefined;
       // A brand kit's logo can be placed by name ("brand:logo"); the Studio fills it in.
       const assets = new Map(extra?.assets ?? []);
       if (style?.logo) assets.set('brand:logo', style.logo);
-      const r = await askForScene({ mode, prompt: ask, scene: extra?.base ?? before, selection: useScope === 'selection' ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets, additions: extra?.additions });
+      const r = await askForScene({ mode, prompt: ask, scene: base, selection: useScope === 'selection' && !wholeScene ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets, additions: extra?.additions });
+      // The cut-out person stays in front of every effect, whatever order the AI returned; the sound stays as it was.
+      if (person) r.scene = { ...toTop(r.scene, person), audio: base.audio };
       // A scene built from a base (a voice-over) gets the style's exact colours and fonts too.
       if (style && extra?.base) r.scene = applyStyle(r.scene, style, { look: true, motion: false, sound: false });
       // A new scene in a style gets exactly the style's colours and fonts.
