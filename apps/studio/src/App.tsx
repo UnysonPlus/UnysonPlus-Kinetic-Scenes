@@ -38,6 +38,7 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { VIDEO_FORMATS, zonesFor } from '@unysonplus/scene-player/video';
 import type { VideoFormat } from '@unysonplus/scene-player/types';
 import { footageIds, getFootage, probeVideo, putFootage } from './lib/footage';
+import { isRecording, screencastScene } from './lib/screencast';
 import { insertPiece } from './lib/pieces';
 import { logoLayer } from './lib/brand';
 import { sortFormats } from './lib/videoMode';
@@ -181,6 +182,7 @@ export function App() {
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const openRef = useRef<HTMLInputElement>(null);
+  const screencastRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
   const sentScene = useRef<Scene>(scene);
   const firstReady = useRef(true);
@@ -706,6 +708,7 @@ export function App() {
     { label: 'File', items: [
       { label: 'New', onSelect: startNew, hint: 'An empty scene (same screen sizes and fonts). Undo brings back the current one.' },
       { label: 'Open…', onSelect: () => openRef.current?.click() },
+      { label: 'New from a screencast…', onSelect: () => screencastRef.current?.click(), hint: 'Pick a recording\'s video.mp4 and actions.json (AI Dev Kit: studio-cli record): a scene that zooms to each step' },
       { label: 'Save', shortcut: `${mod}S`, onSelect: saveProject },
       'sep',
       { label: 'Load the demo', onSelect: () => { commit(DEMO); setSelection({ layerId: null, clipId: null }); setNotice('Loaded the demo. Undo brings back your scene.'); } },
@@ -810,6 +813,22 @@ export function App() {
           </div>
           <button type="button" className="btn primary" onClick={() => setExporting(true)}><DownloadIcon /> Export</button>
           <input ref={openRef} type="file" accept=".json,application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) openProject(f); e.target.value = ''; }} />
+          <input ref={screencastRef} type="file" accept="video/*,.json,application/json" multiple hidden onChange={async (e) => {
+            // A recording from the AI Dev Kit: its video and its actions.json, picked together.
+            const files = [...(e.target.files ?? [])];
+            e.target.value = '';
+            const video = files.find((f) => f.type.startsWith('video/'));
+            const json = files.find((f) => /\.json$/i.test(f.name));
+            if (!video || !json) { setNotice('Pick both files of the recording: video.mp4 and actions.json.'); return; }
+            let rec: unknown;
+            try { rec = JSON.parse(await json.text()); } catch { setNotice(`${json.name} could not be read.`); return; }
+            if (!isRecording(rec)) { setNotice(`${json.name} is not a recording's actions file.`); return; }
+            const src = await putFootage(video);
+            const vertical = !(latest.current.scene.video?.formats?.[0] === '16x9');
+            commit(screencastScene(rec, src, { vertical, title: video.name.replace(/\.[^.]+$/, '') }));
+            setSelection({ layerId: null, clipId: null });
+            setNotice(`A ${vertical ? '9:16' : '16:9'} scene from the screencast: the camera zooms to each step (adjust its keys on the Camera row). Undo brings back your scene.`);
+          }} />
           <input ref={audioRef} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" hidden onChange={(e) => {
             const file = e.target.files?.[0];
             e.target.value = '';
