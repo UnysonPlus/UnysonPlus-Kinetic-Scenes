@@ -87,7 +87,18 @@ export async function toFolder(id: string, scene: Scene): Promise<Scene> {
   });
 }
 
-export const listProjects = () => call<{ root: string; projects: ProjectInfo[] }>('');
+export interface WorkspaceRoot { root: string; byEnv: boolean; isDefault: boolean; defaultRoot: string }
+export const listProjects = () => call<WorkspaceRoot & { projects: ProjectInfo[] }>('');
+
+/** Changes the workspace folder: opens this computer's folder picker (`choose`) or goes back to Documents (`reset`). */
+export async function setWorkspaceRoot(body: { choose?: boolean; reset?: boolean }): Promise<WorkspaceRoot & { chosen: boolean }> {
+  const b = await kitBase();
+  if (!b) throw new Error('The AI Dev Kit is not running on this computer.');
+  const r = await fetch(`${b}/studio/workspace-root`, post(body));
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `The kit answered ${r.status}.`);
+  return j;
+}
 
 export async function createProject(name: string, scene: Scene): Promise<OpenProject> {
   const created = await call<OpenProject>('', post({ name }));

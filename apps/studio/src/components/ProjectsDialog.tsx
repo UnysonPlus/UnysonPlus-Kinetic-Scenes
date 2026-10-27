@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { listProjects, revealProject, workspaceAvailable, type ProjectInfo } from '../lib/workspace';
+import { listProjects, revealProject, setWorkspaceRoot, workspaceAvailable, type ProjectInfo, type WorkspaceRoot } from '../lib/workspace';
 import { kitStatus } from '../lib/ai';
 import { GetKit, KIT_REPO } from './GetKit';
 
@@ -44,7 +44,7 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
   onOpen: (id: string) => void; onCreate: (name: string) => Promise<void>; onCloseProject: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<'checking' | 'missing' | 'ready'>('checking');
-  const [root, setRoot] = useState('');
+  const [root, setRoot] = useState<WorkspaceRoot | null>(null);
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -55,7 +55,7 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
     setError(null);
     await kitStatus();
     if (!(await workspaceAvailable())) { setState('missing'); return; }
-    try { const r = await listProjects(); setRoot(r.root); setProjects(r.projects); setState('ready'); } catch (e) { setError((e as Error).message); setState('missing'); }
+    try { const r = await listProjects(); setRoot(r); setProjects(r.projects); setState('ready'); } catch (e) { setError((e as Error).message); setState('missing'); }
   };
 
   useEffect(() => {
@@ -65,6 +65,17 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
     if (!props.open && d.open) d.close();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.open]);
+
+  /** Picks another workspace folder (the computer's own folder window opens; it may be behind the browser). */
+  const changeRoot = async (reset = false) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await setWorkspaceRoot(reset ? { reset: true } : { choose: true });
+      if (r.chosen) await load();
+    } catch (e) { setError((e as Error).message); }
+    setBusy(false);
+  };
 
   const create = async () => {
     setBusy(true);
@@ -99,16 +110,18 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
                 {projects.map((p) => (
                   <li key={p.id} className={p.id === props.current ? 'is-current' : ''}>
                     <button type="button" className="project-open" disabled={busy || p.id === props.current} onClick={() => { props.onOpen(p.id); props.onClose(); }}>
-                      <span className="project-name">{p.title || p.id}</span>
-                      <span className="addon-detail">{p.id === props.current ? 'Open now' : `${Math.round(p.duration)} s · ${ago(p.updated)}`}</span>
+                      <span className="project-name">{p.id}</span>
+                      <span className="addon-detail">
+                        {p.title && p.title !== p.id ? `${p.title} · ` : ''}{p.id === props.current ? 'open now' : `${Math.round(p.duration)} s · ${ago(p.updated)}`}
+                      </span>
                     </button>
                     <button type="button" className="btn small ghost" title="Show this folder" onClick={() => revealProject(p.id).catch(() => {})}>Folder</button>
                   </li>
                 ))}
               </ul>
             ) : <p className="addon-detail">No projects yet.</p>}
-            <div className="export-row">
-              <label className="music-field project-new">New project from this scene
+            <div className="export-row project-new-row">
+              <label className="music-field project-new">New project from this scene (the name is its folder's name)
                 <input className="lib-search" value={name} placeholder="Project name" disabled={busy} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') create(); }} />
               </label>
               <button type="button" className="btn primary" disabled={busy} onClick={create}>{busy ? 'Creating…' : 'Create'}</button>
@@ -117,7 +130,22 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
               <button type="button" className="btn small ghost" onClick={() => revealProject().catch(() => {})}>Open the workspace folder</button>
               {props.current && <button type="button" className="btn small ghost" onClick={() => { props.onCloseProject(); props.onClose(); }}>Close the project</button>}
             </div>
-            <p className="addon-detail">Workspace: <code>{root}</code></p>
+            <div className="project-root">
+              <div>
+                <span className="addon-detail">Projects are kept in</span>
+                <code>{root?.root}</code>
+              </div>
+              {root?.byEnv
+                ? <p className="addon-detail">Set by KINETIC_WORKSPACE when the AI Dev Kit starts.</p>
+                : (
+                  <div className="export-row">
+                    <button type="button" className="btn small ghost" disabled={busy} onClick={() => changeRoot()}
+                      title="Opens your computer's folder window (it may open behind the browser)">{busy ? 'Choosing…' : 'Change…'}</button>
+                    {!root?.isDefault && <button type="button" className="btn small ghost" disabled={busy} onClick={() => changeRoot(true)}>Back to Documents</button>}
+                  </div>
+                )}
+              <p className="addon-detail">Changing it does not move projects already made: move their folders if you want them there too.</p>
+            </div>
           </>
         )}
         {error && <p className="export-warn" role="alert">{error}</p>}

@@ -914,7 +914,11 @@ h1, h2, p { margin: 0; }
 .project-open:hover:not(:disabled) { border-color: var(--accent, #00b295); }
 .project-open:disabled { cursor: default; }
 .project-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.project-new { flex: 1; }
+.project-new { flex: 1; margin: 0; }
+.project-new-row { align-items: flex-end; }
+.project-root { display: flex; flex-direction: column; gap: 6px; }
+.project-root code { display: block; word-break: break-all; font-size: 12px; margin-top: 2px; }
+.project-root p { margin: 0; }
 .project-new input { width: 100%; }
 .project-tag { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted; }
 .project-state.is-error { color: #ff7a7a; }
