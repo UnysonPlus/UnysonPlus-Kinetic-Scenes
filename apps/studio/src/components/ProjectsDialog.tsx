@@ -10,7 +10,24 @@ export const AGENTS_GUIDE = 'https://docs.unysonplus.com/kinetic-scenes/ai-agent
  * narrate, make music, look at frames and fix what it sees, working in the same project folder as the Studio.
  * AI assist stays for quick ideas and small changes with nothing to set up.
  */
-export function AgentCard(props: { compact?: boolean }) {
+export function AgentCard(props: { compact?: boolean; kitRunning?: boolean }) {
+  // With the kit already running there is nothing to download: say how to connect the agent to it.
+  if (props.kitRunning) {
+    return (
+      <div className="agent-card" role="note">
+        <strong>For the full result, connect your AI agent</strong>
+        <p>
+          Your AI Dev Kit is running. Connect your AI agent to it, such as Claude Code, and it builds whole videos in your
+          workspace: it records your screen, narrates with your own voice, adds music, checks every frame and fixes what
+          it finds. You watch each step here and export when it is ready.
+        </p>
+        {!props.compact && <p className="addon-detail">AI assist is for quick ideas and small changes.</p>}
+        <div className="export-row">
+          <a className="btn small primary" href={`${AGENTS_GUIDE}#connect-your-agent`} target="_blank" rel="noopener noreferrer">How to connect your agent</a>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="agent-card" role="note">
       <strong>Get the full result: connect your AI agent</strong>
@@ -149,7 +166,7 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
           </>
         )}
         {error && <p className="export-warn" role="alert">{error}</p>}
-        <AgentCard />
+        {state !== 'checking' && <AgentCard kitRunning={state === 'ready'} />}
       </div>
     </dialog>
   );

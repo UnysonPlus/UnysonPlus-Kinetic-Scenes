@@ -508,7 +508,7 @@ export function AiAssist(props: {
             )}
             {status.state !== 'checking' && <button type="button" className="btn small" onClick={props.onRecheck}>Check again</button>}
           </div>}
-          {messages.length === 0 && <AgentCard compact />}
+          {messages.length === 0 && status.state !== 'checking' && <AgentCard compact kitRunning={status.state === 'ready' || status.state === 'off' || status.state === 'outdated'} />}
 
           <div className="assist-log" ref={logRef} aria-live="polite">
             {messages.length === 0 && (
