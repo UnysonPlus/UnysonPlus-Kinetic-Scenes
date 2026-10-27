@@ -42,7 +42,12 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    - Panels: words have room inside a panel and never touch or cross its edge; captions sit clear of panels.
    - Balance: nothing crowds one side while the other is empty; the frame isn't cramped or cluttered.
    - Reading: nothing cut off; text big enough, up long enough and with enough contrast to read.
-4. **Hand it over** with a one-line summary of what you made and anything the person should decide.
+4. **Hand it over for preview, not as a video.** Put the scene where the person can play it in the Studio (with the
+   AI Dev Kit: a workspace project, `project_save` / `kinetic-scenes project`, and give them its link), with a
+   one-line summary of what you made and anything they should decide. **Do not render the video until they ask for
+   it.** The Studio plays the scene exactly as the render will look; a render takes minutes and is wasted if the
+   person wants changes. Stills for your own review are fine; the final video is made when they ask (or they export
+   it themselves with Export › Video).
 
 ## Checklist
 
