@@ -16,6 +16,9 @@ let base: string | null = null;
 let features = new Set<string>();
 /** Whether the running kit has a feature (found by kitStatus). */
 export const kitHas = (f: string) => features.has(f);
+/** The last AI agent that used the kit's Kinetic Scenes tools (found by kitStatus), if any. */
+let agent: { name: string; at: number } | null = null;
+export const kitAgent = () => agent;
 
 export type KitStatus =
   | { state: 'checking' }
@@ -39,6 +42,7 @@ export async function kitStatus(): Promise<KitStatus> {
       const j = await r.json();
       base = b;
       features = new Set(Array.isArray(j.features) ? j.features : []);
+      agent = j.agent && typeof j.agent.name === 'string' ? { name: j.agent.name, at: Number(j.agent.at) || 0 } : null;
       if (!j.ready) return { state: 'off', version: j.version };
       return { state: 'ready', version: j.version, model: String(j.model || ''), backend: String(j.backend || '') };
     } catch {

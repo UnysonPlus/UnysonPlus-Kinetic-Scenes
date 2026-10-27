@@ -922,3 +922,5 @@ h1, h2, p { margin: 0; }
 .project-new input { width: 100%; }
 .project-tag { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted; }
 .project-state.is-error { color: #ff7a7a; }
+.agent-connected { display: flex; gap: 8px; align-items: baseline; margin: 0; font-size: 12.5px; line-height: 1.45; opacity: .85; }
+.assist-panel .agent-connected { margin: 8px 12px 0; }

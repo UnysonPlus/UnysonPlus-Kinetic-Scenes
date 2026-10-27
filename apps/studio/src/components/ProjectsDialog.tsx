@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listProjects, revealProject, setWorkspaceRoot, workspaceAvailable, type ProjectInfo, type WorkspaceRoot } from '../lib/workspace';
-import { kitStatus } from '../lib/ai';
+import { kitAgent, kitStatus } from '../lib/ai';
 import { GetKit, KIT_REPO } from './GetKit';
 
 export const AGENTS_GUIDE = 'https://docs.unysonplus.com/kinetic-scenes/ai-agents';
@@ -10,7 +10,22 @@ export const AGENTS_GUIDE = 'https://docs.unysonplus.com/kinetic-scenes/ai-agent
  * narrate, make music, look at frames and fix what it sees, working in the same project folder as the Studio.
  * AI assist stays for quick ideas and small changes with nothing to set up.
  */
+const since = (t: number) => {
+  const m = (Date.now() - t) / 60000;
+  return m < 2 ? 'just now' : m < 60 ? `${Math.round(m)} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+};
+
 export function AgentCard(props: { compact?: boolean; kitRunning?: boolean }) {
+  // An agent has used the kit's Kinetic Scenes tools: it is connected, so say so instead of asking.
+  const agent = props.kitRunning ? kitAgent() : null;
+  if (agent) {
+    return (
+      <p className="agent-connected" role="status">
+        <span className="assist-dot" aria-hidden="true" /> <span><strong>Connected: {agent.name}</strong>, working through your AI Dev Kit
+        (last active {since(agent.at)}). Ask it for whole videos; AI assist is here for quick changes.</span>
+      </p>
+    );
+  }
   // With the kit already running there is nothing to download: say how to connect the agent to it.
   if (props.kitRunning) {
     return (
