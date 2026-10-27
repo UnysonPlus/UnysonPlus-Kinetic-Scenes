@@ -1,3 +1,4 @@
+import { AgentCard } from './ProjectsDialog';
 import { applySteps } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
 import { musicCues } from '../lib/beats';
@@ -507,6 +508,7 @@ export function AiAssist(props: {
             )}
             {status.state !== 'checking' && <button type="button" className="btn small" onClick={props.onRecheck}>Check again</button>}
           </div>}
+          {messages.length === 0 && <AgentCard compact />}
 
           <div className="assist-log" ref={logRef} aria-live="polite">
             {messages.length === 0 && (

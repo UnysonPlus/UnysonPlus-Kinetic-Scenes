@@ -30,6 +30,8 @@ import { AudioInspector } from './components/AudioInspector';
 import { useEditorConnection } from './lib/connection';
 import { formatScene } from './lib/format';
 import { useHistory } from './lib/history';
+import { createProject, readProject, saveProject as saveToFolder, watchProject, workspaceAvailable, type OpenProject } from './lib/workspace';
+import { AGENTS_GUIDE, ProjectsDialog } from './components/ProjectsDialog';
 import {
   addClip, addLayer, blankScene, boxAt, containerOf, duplicateLayer, findClip, findLayer, groupLayers, layersIn, moveBy, removeClip,
   removeLayer, roundTime, setClip, ungroupLayer, writeLayout,
@@ -56,6 +58,7 @@ import {
 } from './components/icons';
 
 const DRAFT_KEY = 'upw-studio-draft-v1';
+const PROJECT_KEY = 'upw-studio-project';
 const DEMO = validateScene(demo).scene;
 
 function loadInitial(): Scene {
@@ -258,6 +261,125 @@ export function App() {
     return () => clearTimeout(t);
   }, [scene]);
 
+  // ---- the workspace: the scene kept in a project folder on this computer (AI Dev Kit), shared with an AI agent ----
+  const [project, setProject] = useState<OpenProject | null>(null);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [projectSave, setProjectSave] = useState<'saved' | 'saving' | 'error'>('saved');
+  const projectRef = useRef(project);
+  projectRef.current = project;
+  /** The scene last read from or written to the folder (nothing to save while the scene is this one). */
+  const synced = useRef<Scene | null>(null);
+  /** Saves and outside changes are handled one after another, each from the file version the previous one left. */
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
+
+  /** Takes the folder's version of the scene (opening, or an outside change). Undo goes back. */
+  const takeFromFolder = useCallback((id: string, raw: Scene, mtime: number): boolean => {
+    const v = validateScene(raw);
+    if (!v.ok) { setNotice(`The project “${id}” can't be played: ${v.errors[0]}`); return false; }
+    synced.current = v.scene;
+    setProject({ id, mtime });
+    commit(v.scene);
+    return true;
+  }, [commit]);
+
+  const openFolderProject = useCallback(async (id: string, quiet = false) => {
+    try {
+      const r = await readProject(id);
+      if (!takeFromFolder(id, r.scene, r.mtime)) return;
+      setSelection({ layerId: null, clipId: null });
+      try { localStorage.setItem(PROJECT_KEY, id); } catch { /* private window */ }
+      setNotice(quiet ? `Project “${id}”.` : `Opened the project “${id}”. Undo brings back the scene you had.`);
+    } catch (e) {
+      setNotice(`The project “${id}” could not be opened: ${(e as Error).message}`);
+    }
+  }, [takeFromFolder]);
+
+  // Reopen the project named in the address (?project=…, the link an agent gives) or the one from last time.
+  useEffect(() => {
+    let id: string | null = new URLSearchParams(location.search).get('project');
+    if (!id) try { id = localStorage.getItem(PROJECT_KEY); } catch { /* private window */ }
+    if (!id) return;
+    const want = id;
+    workspaceAvailable().then((ok) => { if (ok) openFolderProject(want, true); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const flushProject = useCallback(() => {
+    saveChain.current = saveChain.current.then(async () => {
+      const p = projectRef.current;
+      const sc = latest.current.scene;
+      if (!p || sc === synced.current) return;
+      try {
+        const r = await saveToFolder(p.id, sc, p.mtime);
+        synced.current = sc;
+        projectRef.current = { id: p.id, mtime: r.mtime };
+        setProject(projectRef.current);
+        setProjectSave(latest.current.scene === sc ? 'saved' : 'saving');
+      } catch (e) {
+        const err = e as Error & { status?: number; current?: { scene: Scene; mtime: number } };
+        if (err.status === 409 && err.current) {
+          // Changed in the folder at the same moment (an agent): the folder wins, this edit is one Undo away.
+          takeFromFolder(p.id, err.current.scene, err.current.mtime);
+          projectRef.current = { id: p.id, mtime: err.current.mtime };
+          setProjectSave('saved');
+          setNotice('The project changed in its folder while you edited: showing that version. Undo brings back your edit.');
+        } else {
+          setProjectSave('error');
+          setNotice(`Not saved to the project folder: ${err.message}`);
+        }
+      }
+    });
+    return saveChain.current;
+  }, [takeFromFolder]);
+
+  // Save into the folder as you work.
+  useEffect(() => {
+    if (!project || scene === synced.current) return;
+    setProjectSave('saving');
+    const t = setTimeout(flushProject, 800);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene, project?.id]);
+
+  // Changes made in the folder (by an AI agent, another window) show up here at once.
+  useEffect(() => {
+    if (!project) return;
+    return watchProject(project.id, (ev) => {
+      if (ev.kind !== 'scene') return;
+      saveChain.current = saveChain.current.then(async () => {
+        const p = projectRef.current;
+        if (!p || (ev.mtime != null && Math.abs(ev.mtime - p.mtime) <= 1)) return;
+        try {
+          const r = await readProject(p.id);
+          if (takeFromFolder(p.id, r.scene, r.mtime)) {
+            projectRef.current = { id: p.id, mtime: r.mtime };
+            setNotice('Updated from the project folder. Undo goes back.');
+          }
+        } catch { /* mid-write: the next change event brings it */ }
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id]);
+
+  const newFolderProject = useCallback(async (name: string) => {
+    const sc = { ...latest.current.scene, title: name };
+    commit(sc);
+    synced.current = sc;
+    const p = await createProject(name, sc);
+    projectRef.current = p;
+    setProject(p);
+    setProjectSave('saved');
+    try { localStorage.setItem(PROJECT_KEY, p.id); } catch { /* private window */ }
+    setNotice(`Created the project “${p.id}”: it saves into its folder as you work.`);
+  }, [commit]);
+
+  const closeFolderProject = useCallback(() => {
+    setProject(null);
+    synced.current = null;
+    try { localStorage.removeItem(PROJECT_KEY); } catch { /* private window */ }
+    setNotice('Closed the project. The scene stays here, kept in this browser.');
+  }, []);
+
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(null), 3200);
@@ -359,10 +481,14 @@ export function App() {
     post({ type: 'align', mode, to: count > 1 ? alignTo : alignTo === 'selection' ? 'stage' : alignTo });
   };
 
-  const saveProject = useCallback(() => {
+  const downloadCopy = useCallback(() => {
     download(`${slug(latest.current.scene)}.scene.json`, 'application/json', formatScene(latest.current.scene));
-    setNotice('Project saved to your downloads.');
+    setNotice('A copy of the scene saved to your downloads.');
   }, []);
+  const saveProject = useCallback(() => {
+    if (!projectRef.current) { downloadCopy(); return; }
+    flushProject().then(() => setNotice(`Saved in the project “${projectRef.current?.id ?? ''}”.`));
+  }, [downloadCopy, flushProject]);
 
   const openProject = (file: File) => {
     file.text().then((text) => {
@@ -706,10 +832,13 @@ export function App() {
   const link = (u: string) => () => window.open(u, '_blank', 'noopener');
   const menus: Menu[] = [
     { label: 'File', items: [
+      { label: 'Projects…', onSelect: () => setProjectsOpen(true), hint: 'Project folders on this computer (AI Dev Kit), shared with your AI agent' },
+      'sep',
       { label: 'New', onSelect: startNew, hint: 'An empty scene (same screen sizes and fonts). Undo brings back the current one.' },
       { label: 'Open…', onSelect: () => openRef.current?.click() },
       { label: 'New from a screencast…', onSelect: () => screencastRef.current?.click(), hint: 'Pick a recording\'s video.mp4 and actions.json (AI Dev Kit: studio-cli record): a scene that zooms to each step' },
-      { label: 'Save', shortcut: `${mod}S`, onSelect: saveProject },
+      { label: 'Save', shortcut: `${mod}S`, onSelect: saveProject, hint: project ? 'Into the project folder (it also saves as you work)' : 'Downloads the scene file (open a project to keep it in a folder)' },
+      { label: 'Download a copy', onSelect: downloadCopy },
       'sep',
       { label: 'Load the demo', onSelect: () => { commit(DEMO); setSelection({ layerId: null, clipId: null }); setNotice('Loaded the demo. Undo brings back your scene.'); } },
       'sep',
@@ -780,6 +909,7 @@ export function App() {
     ] },
     { label: 'Help', items: [
       { label: 'The manual', onSelect: link(DOCS) },
+      { label: 'Connect your AI agent', onSelect: link(AGENTS_GUIDE) },
       { label: 'Keyboard shortcuts', onSelect: link(`${DOCS}/studio#keyboard-shortcuts`) },
       { label: 'What is new', onSelect: link(`${DOCS}/roadmap`) },
     ] },
@@ -797,7 +927,11 @@ export function App() {
               <a className="brand-link" href="https://kinetic-scenes.unysonplus.com/" target="_blank" rel="noopener" title="Kinetic Scenes (opens in a new tab)">Kinetic Scenes</a>
               <button type="button" className="stage-tag" {...{ popovertarget: 'stage-info' }} aria-describedby="stage-info">Beta</button>
             </h1>
-            <p className="brand-sub">Unyson+ · {__STUDIO_VERSION__}</p>
+            <p className="brand-sub">Unyson+ · {__STUDIO_VERSION__}{project && (
+              <> · <button type="button" className="project-tag" onClick={() => setProjectsOpen(true)} title="Projects">
+                {project.id}<span className={`project-state is-${projectSave}`}>{projectSave === 'saving' ? ' · saving' : projectSave === 'error' ? ' · not saved' : ' · saved'}</span>
+              </button></>
+            )}</p>
             <div id="stage-info" className="stage-info" {...{ popover: 'auto' }} role="note">
               <strong>Beta: feature-complete, still being polished</strong>
               <p>Everything on the roadmap is built. You may still meet rough edges, and the scene file format can still change between versions.</p>
@@ -1165,6 +1299,8 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <ProjectsDialog open={projectsOpen} onClose={() => setProjectsOpen(false)} current={project?.id ?? null} title={scene.title || ''}
+        onOpen={(id) => openFolderProject(id)} onCreate={newFolderProject} onCloseProject={closeFolderProject} />
       <MusicDialog open={musicOpen} onClose={() => setMusicOpen(false)} scene={scene} onCommit={commit}
         decode={(src) => audioEngine.buffer(src)} onAddons={() => setAddonsOpen(true)} />
       {notice && <div className="toast" role="status">{notice}</div>}

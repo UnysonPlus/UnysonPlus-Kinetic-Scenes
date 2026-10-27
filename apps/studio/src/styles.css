@@ -900,3 +900,21 @@ h1, h2, p { margin: 0; }
 .music-field { display: grid; gap: 4px; font-size: 12.5px; margin: 8px 0; flex: 1 1 140px; }
 .music-field textarea, .music-field input { width: 100%; box-sizing: border-box; font: inherit; margin: 0; min-height: 0; }
 .assist-label { font-size: 12.5px; }
+
+/* Workspace projects and the "connect your AI agent" card */
+.agent-card { border: 1px solid color-mix(in srgb, var(--accent, #00b295) 45%, transparent); background: color-mix(in srgb, var(--accent, #00b295) 8%, transparent);
+  border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.agent-card p { margin: 0; font-size: 13px; line-height: 1.45; }
+.assist-panel .agent-card { margin: 8px 12px 0; }
+.project-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow: auto; }
+.project-list li { display: flex; gap: 8px; align-items: center; }
+.project-list li.is-current .project-open { border-color: var(--accent, #00b295); }
+.project-open { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--line, #263040); background: transparent; color: inherit; cursor: pointer; font: inherit; min-width: 0; }
+.project-open:hover:not(:disabled) { border-color: var(--accent, #00b295); }
+.project-open:disabled { cursor: default; }
+.project-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.project-new { flex: 1; }
+.project-new input { width: 100%; }
+.project-tag { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted; }
+.project-state.is-error { color: #ff7a7a; }
