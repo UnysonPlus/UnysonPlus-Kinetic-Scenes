@@ -45,8 +45,13 @@ function mapStrings<T>(v: T, fn: (s: string) => string): T {
   return v;
 }
 
+/**
+ * Media addresses use 127.0.0.1, never "localhost": on the https site Chrome rewrites a picture, sound or video at
+ * http://localhost to https:// (where the kit does not answer), but leaves the numeric loopback address alone.
+ */
 async function fileBase(id: string) {
-  return `${await kitBase()}/studio/workspace/${enc(id)}/file/`;
+  const b = (await kitBase()) ?? 'http://127.0.0.1:8787';
+  return `${b.replace('//localhost:', '//127.0.0.1:')}/studio/workspace/${enc(id)}/file/`;
 }
 
 /** Relative project paths → addresses the Studio can play. */
@@ -82,7 +87,8 @@ export async function toFolder(id: string, scene: Scene): Promise<Scene> {
     uploaded.set(key, await upload(id, `${kind}${EXT[type] ?? ''}`, blob));
   }
   return mapStrings(scene, (s) => {
-    if (s.startsWith(base)) return s.slice(base.length).split('/').map(decodeURIComponent).join('/');
+    const own = s.startsWith(base) ? base : s.startsWith(base.replace('//127.0.0.1:', '//localhost:')) ? base.replace('//127.0.0.1:', '//localhost:') : null;
+    if (own) return s.slice(own.length).split('/').map(decodeURIComponent).join('/');
     return uploaded.get(`${id}\n${s}`) ?? s;
   });
 }

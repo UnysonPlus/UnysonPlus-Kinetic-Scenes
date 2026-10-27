@@ -1,6 +1,6 @@
 {
   "name": "unysonplus-kinetic-scenes",
-  "version": "0.0.77",
+  "version": "0.0.78",
   "private": true,
   "description": "Unyson+ Kinetic Scenes: timeline motion graphics for the web, exported as plain HTML.",
   "workspaces": [

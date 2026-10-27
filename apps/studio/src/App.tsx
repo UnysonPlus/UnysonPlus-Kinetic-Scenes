@@ -300,7 +300,11 @@ export function App() {
     if (!id) try { id = localStorage.getItem(PROJECT_KEY); } catch { /* private window */ }
     if (!id) return;
     const want = id;
-    workspaceAvailable().then((ok) => { if (ok) openFolderProject(want, true); });
+    workspaceAvailable().then((ok) => {
+      if (ok) openFolderProject(want, true);
+      // Its media plays from the kit: without it, say so rather than show a copy with nothing playing.
+      else setNotice(`The project “${want}” plays from the AI Dev Kit, which is not running. Start it (start.bat or start.command), then reload this page.`);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -382,7 +386,7 @@ export function App() {
 
   useEffect(() => {
     if (!notice) return;
-    const t = setTimeout(() => setNotice(null), 3200);
+    const t = setTimeout(() => setNotice(null), Math.max(3200, notice.length * 55)); // long notes stay long enough to read
     return () => clearTimeout(t);
   }, [notice]);
 
