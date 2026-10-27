@@ -19,7 +19,8 @@ export interface OpenProject { id: string; mtime: number }
 const MEDIA = /^(?![a-z][a-z0-9+.-]*:)(?!\/)[^\s?#]+\.(mp4|webm|mov|m4v|mp3|wav|m4a|ogg|aac|flac|png|jpe?g|webp|gif|avif|svg|glb|gltf|riv|lottie|json|vtt|srt)$/i;
 /** Embedded files above this size are moved into media/ (small icons can stay in the scene). */
 const INLINE_LIMIT = 48 * 1024;
-const VIDEO = /\.(mp4|webm|mov|m4v)$/i;
+/** Sound is fetched by the Studio itself; everything else reaches the preview as a file the Studio hands over. */
+const SOUND = /\.(mp3|wav|m4a|ogg|aac|flac)$/i;
 
 export async function workspaceAvailable(): Promise<boolean> {
   if (!(await kitBase())) return false;
@@ -58,8 +59,9 @@ async function fileBase(id: string) {
 /** Relative project paths → addresses the Studio can play. */
 export async function toStudio(id: string, scene: Scene): Promise<Scene> {
   const base = await fileBase(id);
-  // Videos travel to the preview as footage the Studio fetches (see footage.ts); pictures and sound play from the kit.
-  return mapStrings(scene, (s) => (!MEDIA.test(s) ? s : VIDEO.test(s) ? wsFootageId(id, s) : base + s.split('/').map(encodeURIComponent).join('/')));
+  // Footage, pictures, models and the like reach the preview as files the Studio fetches (see footage.ts): the
+  // preview's own requests may not have the browser's local-network permission. Sound the Studio plays itself.
+  return mapStrings(scene, (s) => (!MEDIA.test(s) ? s : SOUND.test(s) ? base + s.split('/').map(encodeURIComponent).join('/') : wsFootageId(id, s)));
 }
 
 const uploaded = new Map<string, string>(); // "local:…" or a data: address → its media path, per project

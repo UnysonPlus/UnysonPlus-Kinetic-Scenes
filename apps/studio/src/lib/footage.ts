@@ -31,7 +31,7 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
 const cache = new Map<string, Blob>();
 
 /**
- * A workspace project's video ("local:ws:<project>/<path>"): fetched from the AI Dev Kit by the Studio and handed
+ * A workspace project's file other than sound ("local:ws:<project>/<path>": footage, pictures, models): fetched from the AI Dev Kit by the Studio and handed
  * to the preview like browser footage. The preview's own video player may not reach the kit (a browser's
  * local-network permission covers the page's requests, not always a video player in the preview frame).
  */
