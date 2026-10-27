@@ -1,4 +1,5 @@
 import type { Scene } from '@unysonplus/scene-player/types';
+import { kitBase } from './ai';
 
 /**
  * Footage kept on this computer. Video files are far too big for the scene file the Studio saves as you
@@ -29,6 +30,22 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
 
 const cache = new Map<string, Blob>();
 
+/**
+ * A workspace project's video ("local:ws:<project>/<path>"): fetched from the AI Dev Kit by the Studio and handed
+ * to the preview like browser footage. The preview's own video player may not reach the kit (a browser's
+ * local-network permission covers the page's requests, not always a video player in the preview frame).
+ */
+const WS = 'local:ws:';
+export const wsFootageId = (project: string, path: string) => `${WS}${encodeURIComponent(project)}/${path}`;
+export const isWsFootage = (id: string) => id.startsWith(WS);
+/** The kit address of a workspace video (127.0.0.1: Chrome rewrites http://localhost media on an https page). */
+export async function wsFootageUrl(id: string): Promise<string | null> {
+  const b = await kitBase();
+  if (!b) return null;
+  const [project, ...path] = id.slice(WS.length).split('/');
+  return `${b.replace('//localhost:', '//127.0.0.1:')}/studio/workspace/${project}/file/${path.map(encodeURIComponent).join('/')}`;
+}
+
 /** Keeps a file; returns its "local:" address. */
 export async function putFootage(file: Blob): Promise<string> {
   const id = `local:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -39,6 +56,16 @@ export async function putFootage(file: Blob): Promise<string> {
 
 export async function getFootage(id: string): Promise<Blob | null> {
   if (cache.has(id)) return cache.get(id)!;
+  if (isWsFootage(id)) {
+    try {
+      const url = await wsFootageUrl(id);
+      const r = url ? await fetch(url) : null;
+      if (!r?.ok) return null;
+      const b = await r.blob();
+      cache.set(id, b);
+      return b;
+    } catch { return null; }
+  }
   try {
     const b = await tx<Blob | undefined>('readonly', (s) => s.get(id));
     if (b) cache.set(id, b);
@@ -69,6 +96,8 @@ export async function withFootage(scene: Scene): Promise<{ scene: Scene; missing
   const urls = new Map<string, string>();
   let missing = 0;
   for (const id of ids) {
+    // A project's video goes to the kit's renderer as the kit's own address (no need to copy it into the scene).
+    if (isWsFootage(id)) { const u = await wsFootageUrl(id); if (u) urls.set(id, u); else missing++; continue; }
     const b = await getFootage(id);
     if (b) urls.set(id, await asDataUrl(b)); else missing++;
   }

@@ -1,6 +1,6 @@
 import type { Scene } from '@unysonplus/scene-player/types';
 import { kitBase, kitHas, kitStatus } from './ai';
-import { getFootage } from './footage';
+import { getFootage, isWsFootage, wsFootageId } from './footage';
 
 /**
  * The workspace: projects as folders on the user's computer, kept by the AI Dev Kit
@@ -19,6 +19,7 @@ export interface OpenProject { id: string; mtime: number }
 const MEDIA = /^(?![a-z][a-z0-9+.-]*:)(?!\/)[^\s?#]+\.(mp4|webm|mov|m4v|mp3|wav|m4a|ogg|aac|flac|png|jpe?g|webp|gif|avif|svg|glb|gltf|riv|lottie|json|vtt|srt)$/i;
 /** Embedded files above this size are moved into media/ (small icons can stay in the scene). */
 const INLINE_LIMIT = 48 * 1024;
+const VIDEO = /\.(mp4|webm|mov|m4v)$/i;
 
 export async function workspaceAvailable(): Promise<boolean> {
   if (!(await kitBase())) return false;
@@ -57,7 +58,8 @@ async function fileBase(id: string) {
 /** Relative project paths → addresses the Studio can play. */
 export async function toStudio(id: string, scene: Scene): Promise<Scene> {
   const base = await fileBase(id);
-  return mapStrings(scene, (s) => (MEDIA.test(s) ? base + s.split('/').map(encodeURIComponent).join('/') : s));
+  // Videos travel to the preview as footage the Studio fetches (see footage.ts); pictures and sound play from the kit.
+  return mapStrings(scene, (s) => (!MEDIA.test(s) ? s : VIDEO.test(s) ? wsFootageId(id, s) : base + s.split('/').map(encodeURIComponent).join('/')));
 }
 
 const uploaded = new Map<string, string>(); // "local:…" or a data: address → its media path, per project
@@ -74,7 +76,8 @@ const EXT: Record<string, string> = { 'audio/mpeg': '.mp3', 'audio/wav': '.wav',
 export async function toFolder(id: string, scene: Scene): Promise<Scene> {
   const base = await fileBase(id);
   const todo = new Set<string>();
-  mapStrings(scene, (s) => { if (s.startsWith('local:') || (s.startsWith('data:') && s.length > INLINE_LIMIT)) todo.add(s); return s; });
+  const ws = wsFootageId(id, '');
+  mapStrings(scene, (s) => { if ((s.startsWith('local:') && !isWsFootage(s)) || (s.startsWith('data:') && s.length > INLINE_LIMIT)) todo.add(s); return s; });
   for (const s of todo) {
     const key = `${id}\n${s}`;
     if (uploaded.has(key)) continue;
@@ -87,6 +90,7 @@ export async function toFolder(id: string, scene: Scene): Promise<Scene> {
     uploaded.set(key, await upload(id, `${kind}${EXT[type] ?? ''}`, blob));
   }
   return mapStrings(scene, (s) => {
+    if (s.startsWith(ws)) return s.slice(ws.length);
     const own = s.startsWith(base) ? base : s.startsWith(base.replace('//127.0.0.1:', '//localhost:')) ? base.replace('//127.0.0.1:', '//localhost:') : null;
     if (own) return s.slice(own.length).split('/').map(decodeURIComponent).join('/');
     return uploaded.get(`${id}\n${s}`) ?? s;
