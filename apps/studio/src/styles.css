@@ -985,3 +985,11 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .assist-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin-top: 6px; }
 .assist-fields label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; opacity: .9; }
 .assist-fields input { font-size: 12px; padding: 3px 6px; }
+
+/* AI assist › Three directions first */
+.assist-dirs { display: grid; gap: 8px; margin-top: 8px; }
+.assist-dir { border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 8px; padding: 8px; display: grid; gap: 4px; }
+.assist-dir p { margin: 0; font-size: 12px; }
+.assist-dir-look { border-radius: 6px; padding: 14px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 800; }
+.assist-dir-look i { display: flex; gap: 4px; }
+.assist-dir-look b { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.3); }

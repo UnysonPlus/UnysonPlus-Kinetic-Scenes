@@ -1,3 +1,5 @@
+import { DIRECTIONS_ASK, directionBrief, parseDirections } from '../lib/directions';
+import type { Direction } from '../lib/directions';
 import { changedFields, pointContext, setField } from '../lib/pointEdit';
 import type { PointField } from '../lib/pointEdit';
 import { findLayer } from '../lib/sceneOps';
@@ -52,6 +54,8 @@ export type QueuedRequest = string | {
   base?: Scene;
   /** A plan the person approved: build it without planning again. */
   approved?: boolean;
+  /** A direction the person picked (Three directions first): plan and build in it, without proposing again. */
+  direction?: Direction;
   /** Files the AI may place by name ("shot:1"), filled in afterwards. */
   assets?: Map<string, string>;
 };
@@ -98,6 +102,9 @@ export interface ChatMessage {
   /** Point turns: the element pointed at, and the values the AI changed on it, to adjust by hand. */
   pointed?: string;
   fields?: PointField[];
+  /** Three directions to pick from, and the request they are for. */
+  directions?: Direction[];
+  directionsFor?: string;
 }
 
 /** The pointed element's name, for the Point line. */
@@ -196,6 +203,7 @@ export function AiAssist(props: {
   const nextId = useRef(1);
   // The AI director: plan before building, and look at the result before showing it.
   const [planFirst, setPlanFirst] = useState(true);
+  const [threeFirst, setThreeFirst] = useState(true);
   const [lookFix, setLookFix] = useState(true);
   /** Work in steps: an agent in the project folder (only with a project and Claude Code in the kit). */
   const [inSteps, setInSteps] = useState(true);
@@ -264,6 +272,17 @@ export function AiAssist(props: {
       }
       const mode = useScope === 'new' ? 'create' : 'edit';
       const style = props.styles.find((s) => s.id === props.styleId) ?? null;
+      // Three directions first: a new scene starts with three directions to pick from (each a palette, a font and a mood).
+      if (mode === 'create' && kind === 'storyboard' && threeFirst && !extra?.direction && !extra?.approved && !extra?.base && pending === null) {
+        setPhase('Thinking of three directions');
+        const r = await askForPlan({ prompt: ask, kind: 'storyboard', scene: before, signal: ctl.signal, context: extra?.context, brief: [DIRECTIONS_ASK, style ? styleBrief(style) : ''].filter(Boolean).join('\n\n') });
+        const dirs = parseDirections(r.plan || '');
+        if (dirs.length >= 2) {
+          push({ role: 'ai', text: 'Three directions. Pick one to plan and build, or tell me what to change.', directions: dirs, directionsFor: ask });
+          return;
+        }
+        // An answer that was not three directions: carry on as before (plan or build) rather than stop.
+      }
       // Plan first: a new scene starts as a storyboard (or a script) the person agrees before it is built.
       if (mode === 'create' && planFirst && !extra?.approved && !extra?.base) {
         setPhase('Planning');
@@ -271,7 +290,7 @@ export function AiAssist(props: {
         const plan = await askForPlan({
           prompt: revising ? `${pending!.prompt}\n\nChanges to the plan: ${ask}` : ask, kind, scene: before, signal: ctl.signal,
           context: [extra?.context, revising ? `THE PLAN SO FAR\n${planText}` : ''].filter(Boolean).join('\n\n') || undefined,
-          brief: style ? styleBrief(style) : undefined,
+          brief: [style ? styleBrief(style) : '', extra?.direction ? directionBrief(extra.direction) : ''].filter(Boolean).join('\n\n') || undefined,
         });
         setPending({ prompt: revising ? pending!.prompt : ask, extra: revising ? pending!.extra : extra });
         setPlanText(planAsText(plan));
@@ -309,7 +328,7 @@ export function AiAssist(props: {
         }
       }
       setPhase(mode === 'create' ? 'Building' : 'Working');
-      const brief = [extra?.brief, bgBrief, style ? styleBrief(style) : '', musicCues(base)].filter(Boolean).join('\n\n') || undefined;
+      const brief = [extra?.brief, bgBrief, style ? styleBrief(style) : '', extra?.direction ? directionBrief(extra.direction) : '', musicCues(base)].filter(Boolean).join('\n\n') || undefined;
       // A brand kit's logo can be placed by name ("brand:logo"); the Studio fills it in.
       const assets = new Map(extra?.assets ?? []);
       if (style?.logo) assets.set('brand:logo', style.logo);
@@ -599,6 +618,21 @@ export function AiAssist(props: {
                     {m.before && <button type="button" className="link-btn" disabled={busy} onClick={() => props.onRestore(m.before!, m.after!)}>Go back to before this</button>}
                   </div>
                 )}
+                {m.role === 'ai' && !!m.directions?.length && (
+                  <div className="assist-dirs">
+                    {m.directions.map((d) => (
+                      <div key={d.name} className="assist-dir">
+                        <div className="assist-dir-look" style={{ background: d.colours[0] ?? '#111', color: d.colours[1] ?? '#fff', fontFamily: `"${d.font}", system-ui, sans-serif` }}>
+                          <span>{d.name}</span>
+                          <i aria-hidden="true">{d.colours.slice(1).map((c) => <b key={c} style={{ background: c }} />)}</i>
+                        </div>
+                        <p><strong>{d.mood}</strong>. {d.pace}. {d.look}</p>
+                        <p className="assist-faint">Opens on: {d.opening}</p>
+                        <button type="button" className="btn small" disabled={busy || !ready} onClick={() => send(m.directionsFor ?? '', 'new', { text: m.directionsFor ?? '', direction: d })}>Build this one</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {m.role === 'ai' && m.pointed && !!m.fields?.length && (
                   <div className="assist-fields" aria-label="What changed, to adjust">
                     {m.fields.map((f) => (
@@ -672,6 +706,7 @@ export function AiAssist(props: {
                     <option value="tutorial">A coding tutorial</option>
                   </select>
                   <label className="assist-check"><input type="checkbox" checked={planFirst || kind !== 'storyboard'} disabled={busy || kind !== 'storyboard'} onChange={(e) => setPlanFirst(e.target.checked)} /> Plan first</label>
+                  {kind === 'storyboard' && <label className="assist-check" title="Three directions (mood, pace, look) to pick from before anything is planned"><input type="checkbox" checked={threeFirst} disabled={busy} onChange={(e) => setThreeFirst(e.target.checked)} /> Three directions first</label>}
                 </>
               )}
             </div>
