@@ -1,5 +1,6 @@
+import { loadLottie, lottieData, lottieFrame } from './lottieLayer';
 import { gsap } from 'gsap';
-import type { Box, Breakpoint, Clip, ModelLayer, Scene, TextStyle } from './types';
+import type { Box, Breakpoint, Clip, LottieLayer, ModelLayer, Scene, TextStyle } from './types';
 import { validateScene } from './validate';
 import { applyLayout, buildText, createLayer, createStage, flatRefs, layoutTree, measureGroup, resolveLayer, type LayerRefs } from './dom';
 import { groupDuration } from './groups';
@@ -371,6 +372,26 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     }
   }
 
+  /** Starts every Lottie layer (loading scene-lottie.js the first time); each then shows its frame on every update. */
+  function startLottie() {
+    const refs = flatRefs(layers).filter((r) => r.lottie);
+    if (!refs.length) return;
+    loadLottie(win).then((m) => Promise.all(refs.map(async (r) => {
+      if (destroyed || !r.lottie || r.lottie.anim || !r.outer.isConnected) return;
+      const layer = r.layer as LottieLayer;
+      try {
+        const data = await lottieData(layer.src);
+        r.lottie.fps = Number((data as { fr?: number }).fr) || 30;
+        r.lottie.anim = m.create(r.inner, data, { colours: layer.colours, texts: layer.texts });
+        await r.lottie.anim.ready;
+        emit('update');
+      } catch (e) { if (r.lottie) r.lottie.failed = true; console.warn('[Unyson+ scene] Lottie animation unavailable:', e); }
+    }))).catch((e) => console.warn('[Unyson+ scene] Lottie is unavailable:', e));
+  }
+  function disposeLottie() {
+    for (const r of flatRefs(layers)) { r.lottie?.anim?.dispose(); if (r.lottie) r.lottie.anim = undefined; }
+  }
+
   /** Starts the 3D runtime for this scene's 3D layers (loading scene-3d.js the first time). */
   function start3d() {
     const models = flatRefs(layers).filter((r) => r.model);
@@ -388,6 +409,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   /** Builds the stage and layer elements for the current scene. */
   function setupDom() {
     dispose3d();
+    disposeLottie();
     root.textContent = '';
     root.dataset.mode = scene.stage.heightMode;
     root.dataset.fit = scene.stage.fit ?? 'cover';
@@ -414,6 +436,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       return refs;
     });
     start3d();
+    startLottie();
     setupSound();
     // A hover's custom CSS, only where the page allows custom code (its author is trusted), scoped to its layer.
     if (options.allowCode) {
@@ -544,6 +567,11 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       }
       // The cursor goes last: it measures the layers it points at after they have drawn this frame.
       else if (layer.type === 'cursor') lateFns.push(() => drawCursor(inner, layer, t.time(), easeFnOf));
+      // Lottie: the exact frame for this moment, every update (it never plays by itself).
+      else if (layer.type === 'lottie' && refs.lottie) {
+        const lr = refs.lottie;
+        lateFns.push(() => { if (lr.anim) lr.anim.show(lottieFrame(layer, t.time(), lr.anim.frames(), lr.fps)); });
+      }
       // Captions follow the voice-over, which runs on the scene's own clock.
       else if (layer.type === 'captions') lateDraw.push(() => drawCaptions(inner, layer, scene.audio, tl ? tl.time() : 0));
 
@@ -695,6 +723,17 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         if (runtimes.length < models.length) missing.push(`${models.length - runtimes.length} 3D layer(s)`);
         await Promise.all(runtimes.map((r) => until(r.ready, limitMs, '3D model')));
         render3d();
+      }
+      // Lottie: the runtime, then every animation.
+      const lots = flatRefs(layers).filter((r) => r.lottie);
+      if (lots.length) {
+        await until(loadLottie(win).then(() => undefined), limitMs, 'Lottie engine').catch(() => undefined);
+        const started = Date.now();
+        while (lots.some((r) => !r.lottie!.anim && !r.lottie!.failed) && Date.now() - started < limitMs) await new Promise((ok) => setTimeout(ok, 50));
+        const done = lots.filter((r) => r.lottie!.anim);
+        if (done.length < lots.length) missing.push(`${lots.length - done.length} Lottie animation(s)`);
+        await Promise.all(done.map((r) => until(r.lottie!.anim!.ready, limitMs, 'Lottie animation')));
+        emit('update');
       }
       return { missing };
     },
@@ -850,6 +889,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       host.removeEventListener('focusout', onFocusOut);
       scrollLink?.destroy();
       dispose3d();
+      disposeLottie();
       sound?.dispose();
       root.removeEventListener('click', onClick);
       win.removeEventListener('keydown', onKey as EventListener);

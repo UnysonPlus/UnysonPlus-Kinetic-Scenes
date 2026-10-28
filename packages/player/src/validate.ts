@@ -250,6 +250,15 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.track !== undefined && (!Array.isArray(layer.track) || layer.track.length > 20000 || layer.track.some((p) => !isObj(p) || !isNum(p.t) || !isNum(p.x) || !isNum(p.y)))) fail(`${lp}.track`, 'must be a list of { t, x, y, w, h }');
         if (layer.fit !== undefined && layer.fit !== 'cover' && layer.fit !== 'contain') fail(`${lp}.fit`, 'must be cover or contain');
         if (layer.frame !== undefined && !FRAMES.includes(layer.frame)) fail(`${lp}.frame`, `must be one of ${FRAMES.join(', ')}`);
+      } else if (layer.type === 'lottie') {
+        if (typeof layer.src !== 'string' || !layer.src.trim()) fail(`${lp}.src`, 'is required (a .json address, a data: URL or the JSON)');
+        if (layer.speed !== undefined && (!isNum(layer.speed) || layer.speed <= 0 || layer.speed > 8)) fail(`${lp}.speed`, 'must be more than 0, up to 8');
+        if (layer.from !== undefined && (!isNum(layer.from) || layer.from < 0)) fail(`${lp}.from`, 'must be 0 or more');
+        if (layer.loop !== undefined && typeof layer.loop !== 'boolean') fail(`${lp}.loop`, 'must be true or false');
+        for (const key of ['colours', 'texts'] as const) {
+          const v = layer[key];
+          if (v !== undefined && (!isObj(v) || Object.values(v).some((x) => typeof x !== 'string'))) fail(`${lp}.${key}`, 'must map strings to strings');
+        }
       } else if (layer.type === 'model') {
         const m = layer.model;
         if (!isObj(m) || !['text', 'shape', 'svg', 'gltf'].includes(m.kind)) fail(`${lp}.model.kind`, 'must be text, shape, svg or gltf');
@@ -339,7 +348,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.theme !== undefined && !['dark', 'light'].includes(layer.theme)) fail(`${lp}.theme`, 'must be dark or light');
         if (layer.fontSize !== undefined && (!isNum(layer.fontSize) || layer.fontSize <= 0 || layer.fontSize > 20)) fail(`${lp}.fontSize`, 'must be more than 0 and at most 20 stage units');
       } else {
-        fail(`${lp}.type`, 'must be text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat or cursor');
+        fail(`${lp}.type`, 'must be text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor or lottie');
       }
 
       if (layer.type !== 'group' && layer.type !== 'flow' && layer.type !== 'repeat') {

@@ -35,6 +35,18 @@ export function hasModel(scene: Scene): boolean {
   return walk(scene.layers as unknown as L[]);
 }
 
+/** True when the scene (or a group in it) has a Lottie layer. */
+export function hasLottie(scene: Scene): boolean {
+  type L = { type: string; layers?: L[] };
+  const walk = (list: L[]): boolean => list.some((l) => l.type === 'lottie' || (!!l.layers && walk(l.layers)));
+  return walk(scene.layers as unknown as L[]);
+}
+
+/** The Lottie runtime's source, put inside a downloaded page that has a Lottie layer. */
+export async function lottieRuntime(): Promise<string> {
+  return (await import('@unysonplus/scene-player/dist/scene-lottie.iife.js?raw')).default;
+}
+
 /** The 3D runtime's source, loaded only when a downloaded page needs it inside (it is large). */
 export async function threeRuntime(): Promise<string> {
   return (await import('@unysonplus/scene-player/dist/scene-3d.iife.js?raw')).default;
@@ -52,7 +64,7 @@ export const playerUrl = () => `${PLAYER_BASE}${__PLAYER_VERSION__}/scene-player
  * A complete, standalone page that plays the scene, with its own copy of the player inside. Pass
  * fontCss (from embedFonts) to carry the fonts in the file too.
  */
-export function exportHtml(scene: Scene, opts: { fontCss?: string; three?: string } = {}): string {
+export function exportHtml(scene: Scene, opts: { fontCss?: string; three?: string; lottie?: string } = {}): string {
   const title = escapeHtml(scene.title || 'Animation');
   const fontStyle = opts.fontCss ? `<style>\n${opts.fontCss.replace(/<\/style/gi, '<\\/style')}</style>\n` : '';
   return `<!doctype html>
@@ -69,7 +81,7 @@ ${hostTag(scene)}
 <script type="application/json">${safeJson(scene)}</script>
 ${transcriptHtml(scene)}
 </div>
-${opts.three ? `<script>${opts.three.replace(/<\/script/gi, '<\\/script')}</script>\n` : ''}${inlinePlayer(true)}
+${opts.three ? `<script>${opts.three.replace(/<\/script/gi, '<\\/script')}</script>\n` : ''}${opts.lottie ? `<script>${opts.lottie.replace(/<\/script/gi, '<\\/script')}</script>\n` : ''}${inlinePlayer(true)}
 </body>
 </html>
 `;

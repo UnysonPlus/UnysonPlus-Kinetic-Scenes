@@ -82,7 +82,7 @@ function tickStep(pps: number) {
   return 120;
 }
 
-const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', video: '▶', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚' };
+const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', video: '▶', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚', lottie: '✦' };
 
 export function Timeline(props: Props) {
   const NAME_W = useNameWidth();

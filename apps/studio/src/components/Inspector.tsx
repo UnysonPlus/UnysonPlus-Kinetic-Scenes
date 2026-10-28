@@ -17,6 +17,7 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
+import { LottieSection } from './LottieSection';
 import { CaptionsSection, CodeSection, CursorSection, CutOutSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, ScriptVoiceSection, SplitImageSection, StepsSection } from './VectorSections';
 import { focusCamera } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
@@ -596,6 +597,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       )}
 
       {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'lottie' && <LottieSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'path' && <PathSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'cursor' && <CursorSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}

@@ -934,6 +934,7 @@ export function App() {
       { label: 'Footage', onSelect: () => onAddLayer('video') },
       { label: 'Free stock…', onSelect: () => setStockOpen(true), hint: 'Footage, photos and sounds free for commercial use (Pexels, Pixabay, NASA, Openverse); choose which sources you and your AI agent use' },
       { label: '3D object', onSelect: () => onAddLayer('model') },
+      { label: 'Lottie animation', onSelect: () => onAddLayer('lottie'), hint: 'A Lottie (After Effects) animation on the scene clock: recolour and reword it in place' },
       'sep',
       { label: 'Line', onSelect: () => onAddLayer('path') },
       { label: 'Code', onSelect: () => onAddLayer('code') },

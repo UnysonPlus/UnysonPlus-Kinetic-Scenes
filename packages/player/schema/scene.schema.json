@@ -460,7 +460,8 @@
             "text",
             "shape",
             "image",
-            "model"
+            "model",
+            "lottie"
           ]
         },
         "box": {
@@ -691,6 +692,20 @@
           "then": {
             "required": [
               "model"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "lottie"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "src"
             ]
           }
         }

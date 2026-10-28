@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
-import { embedCode, exportHtml, hasModel, threeRuntime, hasCodeClips } from '../lib/documents';
+import { embedCode, exportHtml, hasLottie, hasModel, lottieRuntime, threeRuntime, hasCodeClips } from '../lib/documents';
 import { embedFonts } from '../lib/fonts';
 import { EditorSection } from './EditorSection';
 import { VideoSection } from './VideoSection';
@@ -57,10 +57,10 @@ export function ExportDialog(props: {
       const scene = (await withFootage(props.scene)).scene;
       if (withFonts && hasFonts) {
         const packed = await embedFonts(scene);
-        html = exportHtml(packed.scene, { fontCss: packed.css, three: hasModel(props.scene) ? await threeRuntime() : undefined });
+        html = exportHtml(packed.scene, { fontCss: packed.css, three: hasModel(props.scene) ? await threeRuntime() : undefined, lottie: hasLottie(props.scene) ? await lottieRuntime() : undefined });
         note = ` Fonts embedded (${kb(packed.bytes)}).`;
       } else {
-        html = exportHtml(scene, { three: hasModel(props.scene) ? await threeRuntime() : undefined });
+        html = exportHtml(scene, { three: hasModel(props.scene) ? await threeRuntime() : undefined, lottie: hasLottie(props.scene) ? await lottieRuntime() : undefined });
       }
       const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
       const a = document.createElement('a');

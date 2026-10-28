@@ -1,3 +1,4 @@
+import { SAMPLE_LOTTIE } from './lottieSample';
 import type { Box, Clip, GroupLayer, Layer, LayerOverride, RepeatLayer, Scene, TextStyle } from '@unysonplus/scene-player/types';
 import { expandRepeat } from '@unysonplus/scene-player/repeat';
 import { presetMeta } from '@unysonplus/scene-player/catalog';
@@ -210,6 +211,8 @@ export function addLayer(scene: Scene, type: Exclude<Layer['type'], 'group'>, ex
       material: { color: '#2ad38b', finish: 'glossy' }, pose: { rx: 8, ry: -20 }, alt: '',
       box: { x: 50, y: 50, w: 36, ratio: 1.6 }, clips: [],
     };
+  } else if (type === 'lottie') {
+    layer = { id, type: 'lottie', name: 'Lottie', src: SAMPLE_LOTTIE, loop: true, alt: '', box: { x: 50, y: 50, w: 30, ratio: 1.25 }, clips: [] };
   } else if (type === 'path') {
     layer = { id, type: 'path', name: 'Line', d: 'M 0 80 C 35 80, 65 20, 100 20', stroke: '#2ad38b', strokeWidth: 0.3, arrow: 'end', box: { x: 50, y: 50, w: 30, h: 20 }, clips: [] };
   } else if (type === 'cursor') {

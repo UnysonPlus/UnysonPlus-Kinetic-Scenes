@@ -57,6 +57,7 @@ optionally `start` / `end` (seconds it is there), `opacity`, `overrides`, `link`
 | `image` | a picture | `src` (https or data URL), `alt`, `fit` (`cover`, `contain`), `radius`, `frame` (phone, browser, polaroid, film, card) |
 | `video` | footage | `src` (a video data URL or https), `offset` (seconds into the file it starts), `rate` (0.25-4), `fit`, `radius`, `frame` (phone, browser, polaroid, film, card), `reference` (shown while designing, left out of a graphics-only export), `sound` (its volume in video exports, 0-2), `track` (the face path the kit finds, for the follow preset), `alt` |
 | `model` | a 3D object | `model` { `kind`: text, shape, svg, gltf … }, `material`, `pose`, `light`, `alt` |
+| `lottie` | a Lottie (After Effects) animation, played on the scene's clock | `src` (a .json address, data URL or the JSON), `speed`, `loop` (false: play once, hold the last frame), `from` (seconds into it), `colours` { "#from": "#to" }, `texts` { old: new }, `alt` |
 | `group` | layers kept together | `layers`, `duration`; presets on the group move the whole group |
 | `path` | a line | `d` (SVG path data, 0-100 across and down its box), `stroke`, `strokeWidth`, `glow`, `dash`, `arrow` (`end`, `start`, `both`), `fill` |
 | `flow` | glowing curves joining two layers | `from`, `to` (layer ids), `count`, `spread`, `pinch`, `wave`, `colors`, `width`, `glow`, `pulses`, `pulseSpeed`, `fromSide`, `toSide` |

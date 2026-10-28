@@ -1,3 +1,4 @@
+import type { LottieInstance } from './lottieLayer';
 import type { Anchor, Box, Layer, LayerLink, LayerOverride, Scene, TextStyle } from './types';
 import { REST_3D, type Runtime3D, type State3D } from './model3d';
 import { buildDiagram, buildFlow, buildPath } from './vector';
@@ -21,6 +22,8 @@ export interface LayerRefs {
   frame?: { l: number; t: number; w: number; h: number };
   /** 3D layers: the state presets animate, and the runtime that draws it (once scene-3d.js has loaded). */
   model?: { state: State3D; runtime?: Runtime3D };
+  /** Lottie layers: the animation (once scene-lottie.js has loaded) and its frame rate. */
+  lottie?: { anim?: LottieInstance; fps: number; failed?: boolean };
   /** In the pin space (pinned to the stage, or inside a pinned group): positions are % of the stage, sizes frame units. */
   pinned?: boolean;
   /** Footage: the video element (or the picture, for a still used as footage). */
@@ -144,6 +147,10 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
       inner.appendChild(svg);
     } else if (layer.stroke) inner.style.border = `${layer.strokeWidth ?? 0.2}cqw solid ${layer.stroke}`;
     inner.setAttribute('aria-hidden', 'true');
+  } else if (layer.type === 'lottie') {
+    inner.classList.add('upw-lottie');
+    if (layer.alt) { inner.setAttribute('role', 'img'); inner.setAttribute('aria-label', layer.alt); } else inner.setAttribute('aria-hidden', 'true');
+    refs.lottie = { fps: 30 };
   } else if (layer.type === 'model') {
     inner.classList.add('upw-3d');
     if (layer.alt) {

@@ -23,6 +23,11 @@ const files = [
     from: 'scene-3d.iife.js', to: 'scene-3d.js',
     banner: `/*! Unyson+ scene player ${version}, 3D runtime | three.js (MIT, © three.js authors) | 3D text font: Inter (SIL OFL 1.1, © The Inter Project Authors) */\n`,
   },
+  {
+    from: 'scene-lottie.iife.js', to: 'scene-lottie.js',
+    banner: `/*! Unyson+ scene player ${version}, Lottie runtime | lottie-web (MIT, (c) Bodymovin / Airbnb) */
+`,
+  },
 ];
 
 let published = 0;

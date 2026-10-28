@@ -443,6 +443,29 @@ export interface ModelLayer extends LayerBase {
   alt?: string;
 }
 
+/**
+ * A Lottie animation (an After Effects animation exported as JSON, from LottieFiles and the like), played on the
+ * scene's clock: it shows the exact frame for the scene's time, so it seeks, loops and renders to video. Its colours
+ * and texts can be changed in place.
+ */
+export interface LottieLayer extends LayerBase {
+  type: 'lottie';
+  /** The animation: a .json address, a data: URL or the JSON itself. */
+  src: string;
+  /** Playing speed (1 = as made). */
+  speed?: number;
+  /** Loop for as long as the layer is on (default), or play once and hold the last frame. */
+  loop?: boolean;
+  /** Seconds into the animation where it starts. */
+  from?: number;
+  /** Colours to swap, "#from" → "#to" (the animation's own colours, as lottieInfo lists them). */
+  colours?: Record<string, string>;
+  /** Texts to change, the animation's text → the new text. */
+  texts?: Record<string, string>;
+  /** Describes the animation for screen readers ("" if it is decorative). */
+  alt?: string;
+}
+
 export interface ModelSource {
   kind: 'text' | 'shape' | 'svg' | 'gltf';
   /** kind text: the words to extrude (a line break starts a new line). */
@@ -680,7 +703,7 @@ export interface CursorLayer extends LayerBase {
   ringColor?: string;
 }
 
-export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer;
+export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer | LottieLayer;
 
 export interface Clip {
   id: string;
