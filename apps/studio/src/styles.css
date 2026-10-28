@@ -1017,3 +1017,22 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .first-run-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
 .first-run-close { margin-left: auto; background: none; border: 0; color: var(--faint); font-size: 12px; cursor: pointer; text-decoration: underline; }
 .first-run-focus { outline: 2px solid var(--accent, #2ad38b) !important; outline-offset: 3px; border-radius: 8px; transition: outline-color .2s; }
+
+/* 3D layer › Camera path */
+.campath { display: flex; gap: 8px; flex-wrap: wrap; }
+.campath-view { margin: 0; display: grid; gap: 2px; font-size: 11px; opacity: .9; }
+.campath-view svg { background: rgba(127,127,127,.08); border-radius: 6px; }
+.campath-rest { fill: none; stroke: rgba(127,127,127,.35); stroke-dasharray: 3 3; }
+.campath-object { fill: rgba(127,127,127,.45); }
+.campath-line { fill: none; stroke: #2AD38B; stroke-width: 1.6; stroke-linejoin: round; }
+.campath-tick { fill: #2AD38B; }
+.campath-start { fill: #E9FFF6; stroke: #00B295; stroke-width: 1.5; }
+.campath-end { fill: #00B295; }
+.campath-fov { fill: rgba(42, 211, 139, .18); stroke: rgba(42, 211, 139, .6); stroke-width: .8; }
+.campath-now { fill: #f59e0b; stroke: #fff; stroke-width: 1.2; }
+
+/* Add-ons › Check this computer */
+.computer-check { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+.computer-check h3 { font-size: 13px; font-weight: 650; margin: 0 0 4px; }
+.computer-report { margin: 10px 0 0; padding: 10px 12px; max-height: 260px; overflow: auto; font: 11px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; background: var(--panel-2, rgba(255,255,255,.04)); border: 1px solid var(--border-soft); border-radius: 8px; }
+

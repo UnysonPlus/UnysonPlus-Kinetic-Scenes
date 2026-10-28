@@ -86,3 +86,14 @@ async function addonAction(id: string, action: 'find' | 'browse', body: object =
 export const findAddon = async (id: string): Promise<string | null> => (await addonAction(id, 'find')).found ?? null;
 /** Opens this computer's own file or folder picker (through the kit); saves the choice. Null when cancelled. */
 export const browseAddon = async (id: string, field: 'location' | 'app'): Promise<string | null> => (await addonAction(id, 'browse', { field })).chosen ?? null;
+
+/** Check this computer: the kit's report on what this computer has for Kinetic Scenes, as text for a bug report. */
+export async function checkComputer(): Promise<string | null> {
+  const b = await kitBase();
+  if (!b) return null;
+  const r = await fetch(`${b}/studio/doctor`);
+  if (r.status === 404) throw new Error('Your AI Dev Kit is too old for this check. Close it and start it again: it updates itself.');
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
+  return String(j.text || '');
+}

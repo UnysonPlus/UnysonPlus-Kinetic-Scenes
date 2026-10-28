@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { browseAddon, findAddon, listAddons, setAddonLocation, type Addon, type AddonField } from '../lib/addons';
+import { browseAddon, checkComputer, findAddon, listAddons, setAddonLocation, type Addon, type AddonField } from '../lib/addons';
 import { GetKit } from './GetKit';
 
 const STATE: Record<Addon['state'], string> = {
@@ -140,7 +140,35 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
           ))}
         </ul>
         {busy && !addons && !noKit && <p className="addon-detail">Checking…</p>}
+        {!noKit && <ComputerCheck />}
       </div>
     </dialog>
+  );
+}
+
+/** Check this computer: the kit lists what this computer has for Kinetic Scenes, ready to copy into a bug report. */
+function ComputerCheck() {
+  const [report, setReport] = useState<string | null>(null);
+  const [state, setState] = useState<'idle' | 'checking' | 'copied' | 'error'>('idle');
+  const [error, setError] = useState('');
+  const run = async () => {
+    setState('checking'); setError('');
+    try { setReport(await checkComputer()); setState('idle'); } catch (e) { setError((e as Error).message); setState('error'); }
+  };
+  const copy = async () => {
+    if (!report) return;
+    try { await navigator.clipboard.writeText(report); setState('copied'); } catch { setError('Copying was blocked: select the text and copy it.'); setState('error'); }
+  };
+  return (
+    <section className="computer-check" aria-labelledby="computer-check-title">
+      <h3 id="computer-check-title">Check this computer</h3>
+      <p className="addon-detail">Lists what this computer has for Kinetic Scenes (the kit, ffmpeg, the rendering browser, the graphics card, AI, Blender and each add-on), ready to paste into a bug report.</p>
+      <div className="export-row">
+        <button type="button" className="btn small" disabled={state === 'checking'} onClick={run}>{state === 'checking' ? 'Checking…' : report ? 'Check again' : 'Check this computer'}</button>
+        {report && <button type="button" className="btn small ghost" onClick={copy}>{state === 'copied' ? 'Copied' : 'Copy the report'}</button>}
+      </div>
+      {error && <p className="export-warn" role="alert">{error}</p>}
+      {report && <pre className="computer-report" tabIndex={0} aria-label="The computer check report">{report}</pre>}
+    </section>
   );
 }

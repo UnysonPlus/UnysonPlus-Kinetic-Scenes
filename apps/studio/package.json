@@ -1,6 +1,6 @@
 {
   "name": "@unysonplus/studio",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "releaseStage": "Beta",
   "private": true,
   "type": "module",
