@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Scene, VideoFormat, VideoLayer, VideoSettings } from '@unysonplus/scene-player/types';
-import { cutOutPerson, followFace, useFootageSound } from '../lib/footageKit';
+import { cutOutPerson, cutoutMethods, followFace, useFootageSound } from '../lib/footageKit';
+import type { CutoutMethod, MethodInfo } from '../lib/footageKit';
 import { separateFootage } from '../lib/separate';
 import { footageAspect, frameAspect, reframe } from '../lib/reframe';
 import { PLATFORM_LIMITS, VIDEO_FORMATS } from '@unysonplus/scene-player/video';
@@ -94,7 +95,9 @@ export function FootageSection(props: { layer: VideoLayer; set: (p: Partial<Vide
 export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCommit: (s: Scene) => void; onSelect?: (id: string) => void }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [quality, setQuality] = useState<'fine' | 'fast'>('fine');
+  const [quality, setQuality] = useState<CutoutMethod>('fine');
+  const [methods, setMethods] = useState<Record<string, MethodInfo> | null>(null);
+  useEffect(() => { cutoutMethods().then(setMethods); }, []);
   const abort = useRef<AbortController | null>(null);
   const run = async (what: string, job: (signal: AbortSignal) => Promise<string>) => {
     setNote(null);
@@ -108,7 +111,17 @@ export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCo
   const wide = frameAspect(props.scene) < 1.3;
   return (
     <Section title="Footage tools">
-      <SelectField label="Cut-out quality" value={quality} options={[{ value: 'fine', label: 'Fine edges (hair)' }, { value: 'fast', label: 'Fast (the body only)' }]} onChange={(v) => setQuality(v as 'fine' | 'fast')} />
+      <SelectField label="Cut-out method" value={quality} options={[
+        { value: 'fine', label: 'Standard: fine edges (hair)' },
+        { value: 'fast', label: 'Fast: the body only, for drafts' },
+        { value: 'rvm', label: `Robust Video Matting: fast and steady${methods && !methods.rvm?.ready ? ' (not installed)' : ''}` },
+      ]} onChange={(v) => setQuality(v as CutoutMethod)} />
+      <p className="field-hint wide">
+        {quality === 'rvm' ? (methods?.rvm?.note ?? 'Very fast and steady from frame to frame; downloads a 15 MB model (GPL-3.0) the first time.')
+          : quality === 'fast' ? 'A quick outline of the body: good for trying a layout, rough at the hair.'
+          : 'Fine edges, hair included: the best looking, about a second a frame without a graphics card.'}
+        {' '}Person and what they hold (click both, followed through the video) is coming later.
+      </p>
       <div className="insp-start wide">
         <button type="button" className="btn small" disabled={!!busy} onClick={() => run('Cutting out the person', async (signal) => {
           const r = await cutOutPerson(props.scene, props.layer.id, quality, (s) => setBusy(s), signal);

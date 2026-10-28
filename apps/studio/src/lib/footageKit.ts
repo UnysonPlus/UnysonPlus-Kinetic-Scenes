@@ -41,7 +41,20 @@ async function post(path: string, body: unknown, signal?: AbortSignal) {
 
 interface MatteResult { src?: string; track?: VideoLayer['track'] }
 
-async function matte(layer: VideoLayer, opts: { cutout: boolean; faces: boolean; quality?: 'fine' | 'fast'; onStep: (s: string) => void; signal?: AbortSignal }): Promise<MatteResult> {
+/** How the person is cut out: fast (a body outline), fine (fine edges, the default), rvm (Robust Video Matting). */
+export type CutoutMethod = 'fine' | 'fast' | 'rvm';
+export interface MethodInfo { ready: boolean; note: string; downloaded?: boolean }
+
+/** Which cut-out methods the kit has, and a line on each (sam2 is listed but not available yet). */
+export async function cutoutMethods(): Promise<Record<string, MethodInfo> | null> {
+  try {
+    const r = await fetch(`${await kit()}/studio/matte/methods`, { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return null;
+    return (await r.json()).methods ?? null;
+  } catch { return null; }
+}
+
+async function matte(layer: VideoLayer, opts: { cutout: boolean; faces: boolean; quality?: CutoutMethod; onStep: (s: string) => void; signal?: AbortSignal }): Promise<MatteResult> {
   const src = await footageData(layer.src);
   const b = await kit();
   const { id } = await post('/studio/matte', { src, cutout: opts.cutout, faces: opts.faces, quality: opts.quality }, opts.signal);
@@ -72,7 +85,7 @@ function containerOf(scene: Scene, id: string): string | null {
  * Cuts the person out: a see-through copy of the footage, in step with it (same timing, place and frame), at the
  * top of its group so the graphics go behind the person. Also keeps the face path on the footage.
  */
-export async function cutOutPerson(scene: Scene, layerId: string, quality: 'fine' | 'fast', onStep: (s: string) => void, signal?: AbortSignal): Promise<{ scene: Scene; id: string }> {
+export async function cutOutPerson(scene: Scene, layerId: string, quality: CutoutMethod, onStep: (s: string) => void, signal?: AbortSignal): Promise<{ scene: Scene; id: string }> {
   const layer = findLayer(scene, layerId) as VideoLayer | undefined;
   if (!layer || layer.type !== 'video') throw new Error('Select a footage layer.');
   const r = await matte(layer, { cutout: true, faces: true, quality, onStep, signal });
