@@ -5,6 +5,7 @@
 ## How it was checked
 
 - [ ] `npm run typecheck`
+- [ ] `npm test`
 - [ ] `npm run build` (it stops if the player changed without a version bump in `packages/player/package.json`)
 - [ ] `npm run selftest`, if the player changed
 - [ ] Looked at it in the Studio (and in an export, if export is affected)

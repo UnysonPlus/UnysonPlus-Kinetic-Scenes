@@ -64,9 +64,9 @@ https://docs.unysonplus.com/kinetic-scenes/stock-media
 
 ## Contributing
 
-Issues and pull requests are welcome. Issues labelled **good first issue** are small and self-contained. Before a
-pull request: `npm run typecheck` and `npm run build` (the build stops if the player changed without a version bump),
-plus `npm run selftest` if you changed the player.
+Issues are for problems you run into and ideas you have; we fix what we find ourselves. Pull requests are welcome.
+Before one: `npm run typecheck`, `npm test` and `npm run build` (the build stops if the player changed without a
+version bump), plus `npm run selftest` if you changed the player.
 
 ## What's here
 

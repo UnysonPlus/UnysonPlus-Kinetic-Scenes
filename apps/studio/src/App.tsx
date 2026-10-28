@@ -36,6 +36,7 @@ import { NotesDialog } from './components/NotesDialog';
 import { StockDialog } from './components/StockDialog';
 import { BatchDialog } from './components/BatchDialog';
 import { HighlightsDialog } from './components/HighlightsDialog';
+import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { fillScene, rowLabel } from './lib/batch';
 import type { Sheet } from './lib/batch';
 import { stockInStudio } from './lib/stock';
@@ -280,6 +281,7 @@ export function App() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState(false);
   const [highlightsOpen, setHighlightsOpen] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
   /** Bumped when the project's notes change in the folder (the agent added something). */
   const [notesChanged, setNotesChanged] = useState(0);
   const [projectSave, setProjectSave] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -874,6 +876,12 @@ export function App() {
     }
     setNotice(`Added ${name} from ${r.source}${r.credit ? `. Credit needed: ${r.credit} (in the project notes)` : ''}.`);
   };
+  const copySceneFile = () => {
+    const text = JSON.stringify(latest.current.scene, null, 2);
+    navigator.clipboard.writeText(text)
+      .then(() => setNotice(`Copied the scene file (${Math.round(text.length / 1024)} KB).${text.length > 65536 ? ' It is long because of pictures or sound kept in it: attach the saved file instead (File › Save).' : ''}`))
+      .catch(() => setNotice('The browser did not allow copying. Use File › Save and attach the file instead.'));
+  };
   const menus: Menu[] = [
     { label: 'File', items: [
       { label: 'Projects…', onSelect: () => setProjectsOpen(true), hint: 'Project folders on this computer (AI Dev Kit), shared with your AI agent' },
@@ -883,6 +891,7 @@ export function App() {
       { label: 'Open…', onSelect: () => openRef.current?.click() },
       { label: 'New from a screencast…', onSelect: () => screencastRef.current?.click(), hint: 'Pick a recording\'s video.mp4 and actions.json (AI Dev Kit: studio-cli record): a scene that zooms to each step' },
       { label: 'Save', shortcut: `${mod}S`, onSelect: saveProject, hint: project ? 'Into the project folder (it also saves as you work)' : 'Downloads the scene file (open a project to keep it in a folder)' },
+      { label: 'Copy scene file', onSelect: copySceneFile, hint: 'The scene as text, for pasting into a bug report or a message (pictures and sound kept in the scene make it long)' },
       { label: 'Download a copy', onSelect: downloadCopy },
       'sep',
       { label: 'Load the demo', onSelect: () => { commit(DEMO); setSelection({ layerId: null, clipId: null }); setNotice('Loaded the demo. Undo brings back your scene.'); } },
@@ -958,7 +967,7 @@ export function App() {
     { label: 'Help', items: [
       { label: 'The manual', onSelect: link(DOCS) },
       { label: 'Connect your AI agent', onSelect: link(AGENTS_GUIDE) },
-      { label: 'Keyboard shortcuts', onSelect: link(`${DOCS}/studio#keyboard-shortcuts`) },
+      { label: 'Keyboard shortcuts', onSelect: () => setKeysOpen(true) },
       { label: 'What is new', onSelect: link(`${DOCS}/roadmap`) },
     ] },
   ];
@@ -1356,6 +1365,7 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <ShortcutsDialog open={keysOpen} onClose={() => setKeysOpen(false)} />
       <HighlightsDialog open={highlightsOpen} onClose={() => setHighlightsOpen(false)}
         onScene={(s, note) => { commit(s); setSelection({ layerId: null, clipId: null }); setHighlightsOpen(false); setNotice(note); }} />
       <BatchDialog open={batchOpen} onClose={() => setBatchOpen(false)} scene={scene} sheet={sheet.sheet} files={sheet.files}

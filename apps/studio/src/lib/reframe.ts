@@ -112,7 +112,7 @@ export function reframe(scene: Scene, layerId: string, srcAspect: number, opt: R
     if (Math.abs(d) > zone) centre = x - Math.sign(d) * zone;
     return { t: i * step, v: Math.max(-limit, Math.min(limit, 100 * (0.5 - centre))) };
   });
-  const keys = simplify(path, 0.4).map((p) => ({ t: r2(Math.min(len, p.t)), x: r2(p.v), ease: 'sine.inOut' }));
+  const keys = simplify(path, 0.4).map((p) => ({ t: r2(Math.min(len, p.t)), x: Math.trunc(p.v * 100) / 100, ease: 'sine.inOut' })); // rounded toward the middle: never past an edge
 
   const clip: Clip = { id: `${layer.id}-reframe`, preset: 'keyframes', start, duration: r2(len), params: { frames: keys } } as Clip;
   const next = setLayerProps(scene, layer.id, {
