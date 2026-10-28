@@ -8,7 +8,7 @@ description: Make motion-graphics scenes for Unyson+ Kinetic Scenes (animated we
 Kinetic Scenes (https://kinetic-scenes.unysonplus.com/) plays **scene files**: JSON data with a stage, layers and
 clips (presets placed on a timeline). You write data, never code, so whatever you make lands in the Studio as
 ordinary layers and clips the person can keep editing. This skill is generated from the Studio's own code
-(version 0.0.84), so the presets, settings and rules here are exactly what the player understands.
+(version 0.0.85), so the presets, settings and rules here are exactly what the player understands.
 
 ## Read first
 
@@ -52,7 +52,9 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    one-line summary of what you made and anything they should decide. **Do not render the video until they ask for
    it.** The Studio plays the scene exactly as the render will look; a render takes minutes and is wasted if the
    person wants changes. Stills for your own review are fine; the final video is made when they ask (or they export
-   it themselves with Export › Video).
+   it themselves with Export › Video). When they ask, the render checks the finished video (every voice line heard,
+   black frames, loudness, clipping; `video_check`): fix what it reports and render again before handing it over.
+   For several takes of a voice line use `voice_best_take`; for recorded speech, `footage_cleanup`.
 
 ## Checklist
 

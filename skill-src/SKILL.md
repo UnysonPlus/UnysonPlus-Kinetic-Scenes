@@ -52,7 +52,9 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    one-line summary of what you made and anything they should decide. **Do not render the video until they ask for
    it.** The Studio plays the scene exactly as the render will look; a render takes minutes and is wasted if the
    person wants changes. Stills for your own review are fine; the final video is made when they ask (or they export
-   it themselves with Export › Video).
+   it themselves with Export › Video). When they ask, the render checks the finished video (every voice line heard,
+   black frames, loudness, clipping; `video_check`): fix what it reports and render again before handing it over.
+   For several takes of a voice line use `voice_best_take`; for recorded speech, `footage_cleanup`.
 
 ## Checklist
 
