@@ -36,6 +36,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
   const [transparent, setTransparent] = useState(!!video?.transparent);
   const [composite, setComposite] = useState(false);
   const [cover, setCover] = useState(!!video);
+  const [blur, setBlur] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -77,7 +78,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
         const r = inBrowser
           ? await renderInBrowser(props.scene, { width: j.width, height: j.height, fps, composite, cover: cover && i === 0 }, step, ctl.signal)
             .then((x) => ({ blob: x.blob, name: x.name, warnings: [] as string[], cover: x.cover ? { blob: x.cover, name: x.name.replace(/\.mp4$/, '-cover.png') } : undefined }))
-          : await renderVideo(props.scene, { width: j.width, height: j.height, fps, format, transparent, composite, cover: cover && i === 0 }, step, ctl.signal);
+          : await renderVideo(props.scene, { width: j.width, height: j.height, fps, format, transparent, composite, cover: cover && i === 0, blur: blur ? 8 : 0 }, step, ctl.signal);
         save(r.blob, r.name);
         if (r.cover) save(r.cover.blob, r.cover.name);
         notes.push(`${r.name} (${(r.blob.size / 1048576).toFixed(1)} MB)`);
@@ -152,6 +153,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
           <label className="check"><input type="checkbox" checked={composite} disabled={busy} onChange={(e) => setComposite(e.target.checked)} /> Include the reference footage (the full composite)</label>
         )}
         <label className="check"><input type="checkbox" checked={cover} disabled={busy} onChange={(e) => setCover(e.target.checked)} /> Cover image too (the still frame, as a PNG)</label>
+        {!inBrowser && <label className="check" title="Blends 8 moments of each frame, so fast moves look filmed rather than stepped. The render takes about twice as long or more."><input type="checkbox" checked={blur} disabled={busy} onChange={(e) => setBlur(e.target.checked)} /> Motion blur (fast moves look filmed; slower to render)</label>}
       </div>
       {busy ? (
         <div className="export-row">

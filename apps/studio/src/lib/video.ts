@@ -12,6 +12,8 @@ export interface VideoOptions {
   width: number;
   height: number;
   fps: number;
+  /** Motion blur: sub-frames blended into each frame (the AI Dev Kit renders that many times as many). */
+  blur?: number;
   /** mov = ProRes (4444 when see-through), for video editors. */
   format: 'mp4' | 'webm' | 'mov';
   /** See-through background (WebM or ProRes only). */
