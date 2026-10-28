@@ -5,6 +5,7 @@ import { SFX_CATALOG, parseSfxSrc, sfxMeta, sfxSrc } from '@unysonplus/scene-pla
 import { WordsSection } from './WordsSection';
 import { useRef, useState } from 'react';
 import { separateClip } from '../lib/separate';
+import { identifySounds, type SoundsFound } from '../lib/identify';
 import { analyseMusic, sceneBeats, snapToBeats, strongMoments } from '../lib/beats';
 
 /** The Inspector for a selected audio clip: timing, trim, volume and fades. */
@@ -58,6 +59,7 @@ export function AudioInspector(props: {
       {!builtIn && <WordsSection scene={scene} clip={clip} onCommit={props.onCommit} onSeek={props.onSeek} onMakeScene={props.onMakeScene ? () => props.onMakeScene!(clip.id) : undefined} />}
 
       {!builtIn && clip.role !== 'sfx' && <SeparateSection scene={scene} clip={clip} onCommit={props.onCommit} />}
+      {!builtIn && <SoundsSection clip={clip} onSeek={props.onSeek} />}
 
       <Section title="Level">
         <NumberField label="Volume" value={Math.round((clip.volume ?? 1) * 100)} step={5} min={0} max={200} unit="%" onCommit={(v) => set({ volume: v === undefined || v === 100 ? undefined : v / 100 })} />
@@ -158,6 +160,58 @@ function SeparateSection(props: { scene: Scene; clip: AudioClip; onCommit: (s: S
       </div>
       <p className="field-hint wide" role="status">
         {busy ? `${busy}…` : note ?? 'Splits this clip into a voice track and a music track: transcribe the voice alone, remove or replace the music, or keep both (music is lowered under the voice). Runs in the AI Dev Kit on your computer and takes about as long as the clip.'}
+      </p>
+    </Section>
+  );
+}
+
+/** Names the sounds in the clip and when each is heard (the AI Dev Kit, on this computer); a click jumps to one. */
+function SoundsSection(props: { clip: AudioClip; onSeek: (t: number) => void }) {
+  const { clip } = props;
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [found, setFound] = useState<{ src: string; r: SoundsFound } | null>(null);
+  const abort = useRef<AbortController | null>(null);
+  const go = async () => {
+    setNote(null);
+    setBusy('Listening');
+    const ctl = new AbortController();
+    abort.current = ctl;
+    try { setFound({ src: clip.src, r: await identifySounds(clip.src, (s) => setBusy(s), ctl.signal) }); }
+    catch (e) { setNote((e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message); }
+    finally { setBusy(null); abort.current = null; }
+  };
+  const r = found && found.src === clip.src ? found.r : null;
+  const trim = clip.offset ?? 0;
+  const len = clip.duration;
+  // File time to scene time; stretches outside the clip's trim are not heard in the scene.
+  const heard = (r?.segments ?? []).filter((x) => x.end > trim && (len === undefined || x.start < trim + len));
+  return (
+    <Section title="Sounds in this clip">
+      <div className="insp-start wide">
+        <button type="button" className="btn small" disabled={!!busy} onClick={go}>{r ? 'Listen again' : 'Name the sounds'}</button>
+        {busy && <button type="button" className="btn small ghost" onClick={() => abort.current?.abort()}>Stop</button>}
+      </div>
+      {r && (
+        <>
+          <p className="field-hint wide">Mostly: {r.overall.slice(0, 4).map((x) => x.label).join(', ') || 'nothing clear'}.</p>
+          <ul className="sounds-found wide">
+            {heard.map((x, i) => {
+              const at = clip.start + Math.max(0, x.start - trim);
+              return (
+                <li key={i}>
+                  <button type="button" className="sound-stretch" onClick={() => props.onSeek(at)} title="Move the playhead here">
+                    <span className="sound-time">{at.toFixed(1)} s</span> {x.label}
+                  </button>
+                </li>
+              );
+            })}
+            {!heard.length && <li className="field-hint">No clear sound in the part of the clip that plays.</li>}
+          </ul>
+        </>
+      )}
+      <p className="field-hint wide" role="status">
+        {busy ? `${busy}…` : note ?? (r ? 'Times are on the scene. Click one to move the playhead there.' : 'Lists what is heard and when (speech, music, applause, a door slam, rain…): find the moment to cut on or place an effect. Runs in the AI Dev Kit on your computer.')}
       </p>
     </Section>
   );

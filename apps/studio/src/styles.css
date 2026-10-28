@@ -1036,3 +1036,10 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .computer-check h3 { font-size: 13px; font-weight: 650; margin: 0 0 4px; }
 .computer-report { margin: 10px 0 0; padding: 10px 12px; max-height: 260px; overflow: auto; font: 11px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; background: var(--panel-2, rgba(255,255,255,.04)); border: 1px solid var(--border-soft); border-radius: 8px; }
 
+/* Audio › Sounds in this clip */
+.sounds-found { list-style: none; margin: 6px 0 0; padding: 0; max-height: 200px; overflow: auto; border: 1px solid var(--border-soft); border-radius: 8px; }
+.sounds-found li + li { border-top: 1px solid var(--border-soft); }
+.sound-stretch { display: flex; gap: 8px; width: 100%; padding: 6px 10px; background: none; border: 0; font: inherit; font-size: 12.5px; color: var(--ink); text-align: left; cursor: pointer; }
+.sound-stretch:hover, .sound-stretch:focus-visible { background: var(--surface-2); outline: none; }
+.sound-time { min-width: 46px; color: var(--muted); font-variant-numeric: tabular-nums; }
+

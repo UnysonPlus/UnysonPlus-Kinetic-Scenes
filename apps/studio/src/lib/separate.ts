@@ -18,7 +18,7 @@ async function kit(): Promise<string> {
 
 const asDataUrl = (b: Blob) => new Promise<string>((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => bad(r.error); r.readAsDataURL(b); });
 
-async function fileData(src: string): Promise<string> {
+export async function fileData(src: string): Promise<string> {
   if (src.startsWith('data:')) return src;
   if (src.startsWith('local:')) {
     const b = await getFootage(src);
