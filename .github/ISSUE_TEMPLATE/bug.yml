@@ -1,0 +1,46 @@
+name: Something is wrong
+description: The Studio, the player, an export or a video does not do what it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting it. The more exactly we can see what happened, the faster it is fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Added a 3D text layer and the Spin 3D preset
+        2. Exported a vertical video
+        3. The text is cut off at the top in the video, but not in the Studio
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - The Studio (kinetic-scenes.unysonplus.com)
+        - A web page or embed made with it (the player)
+        - Video export
+        - The AI Dev Kit or an AI agent tool
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: scene
+    attributes:
+      label: The scene
+      description: Attach the scene file (File › Save, a .scene.json) or paste a share link (Export › Share link), if you can. Leave out anything private.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and system
+      placeholder: Chrome 156 on Windows 11
+  - type: input
+    id: version
+    attributes:
+      label: Studio version
+      description: Shown under the name, top left (for example Unyson+ · 0.0.97).

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: The manual
+    url: https://docs.unysonplus.com/kinetic-scenes
+    about: How to use the Studio, the scene file, video export and the AI agent tools.
+  - name: The roadmap
+    url: https://docs.unysonplus.com/kinetic-scenes/roadmap
+    about: What is planned, in progress and done. Check here before asking for a feature.

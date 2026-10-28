@@ -1,10 +1,72 @@
 # Unyson+ Kinetic Scenes
 
-A browser studio for timeline motion graphics: kinetic type, shapes, images and (later) 3D, laid out on a
-timeline and exported as **plain HTML** for website heroes and sections, not video.
+**Motion graphics on a timeline, in the browser: animated headlines, 3D, captions and footage, for web pages and for
+videos.** Free, nothing to install to start, and it works with your AI agent.
 
-Live at **https://kinetic-scenes.unysonplus.com/**. The plan and roadmap are on the docs site:
-https://docs.unysonplus.com/kinetic-scenes
+<p align="center"><img src=".github/readme/demo.webp" alt="A Kinetic Scenes demo: kinetic type, a 3D knot and an extruded 3D logo, made in the Studio" width="720"></p>
+
+**Try it now: https://kinetic-scenes.unysonplus.com/** · The manual: https://docs.unysonplus.com/kinetic-scenes ·
+The roadmap: https://docs.unysonplus.com/kinetic-scenes/roadmap
+
+## What you can make
+
+- **Website heroes and sections** that export as **plain HTML**: one file, or an embed for any page (a WordPress Custom
+  HTML block works). They play as the page loads, as it scrolls, or click by click like slides.
+- **Videos**: MP4 or WebM in 16:9, 9:16 (Shorts, Reels, TikTok), square or 4:5, with music, a voice-over and captions
+  styled word by word. Rendered frame by frame, so every frame is exact.
+- **Footage edits**: cut a person out and put a title behind them, reframe wide footage for a tall video so it follows
+  the face, cut a long video down to a reel, edit a talking head by deleting words from its transcript.
+- **Real 3D**: extruded text and logos, shapes and glTF models, in the same timeline as everything else.
+- **One design, many videos**: fill a scene from a spreadsheet and render a video per row.
+
+It works by hand (drag presets onto a timeline; **Check scene** points out what could be better) or with AI: the
+built-in **AI assist**, or your own agent (Claude Code, Cursor, Codex) through the
+[Unyson+ AI Dev Kit](https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit), which also renders the videos and runs
+the footage tools on your computer.
+
+## Quick start
+
+To use it, just open **https://kinetic-scenes.unysonplus.com/**. To run it from this code (Node.js 20 or newer):
+
+```
+git clone https://github.com/UnysonPlus/UnysonPlus-Kinetic-Scenes.git
+cd UnysonPlus-Kinetic-Scenes
+npm start
+```
+
+`npm start` installs what is needed the first time, builds the player, serves the Studio and opens it in your browser.
+
+## FAQ
+
+**Is it free?** Yes. The Studio is free to use, and what you make with it is yours.
+
+**Do I need to install anything?** Not to design and export web scenes: the Studio runs in the browser. Video
+rendering, AI assist and the footage tools (cut-out, reframing, transcription, voice and music separation) run in the
+free AI Dev Kit on your own computer; nothing is uploaded to a server.
+
+**Can it make videos without the AI Dev Kit?** In Chrome with its HTML-in-Canvas feature switched on, the Studio
+renders an MP4 itself. Otherwise the kit renders it.
+
+**Where are my scenes saved?** In your browser as you work, as a `.scene.json` file you save, or, with the AI Dev Kit,
+in a project folder on your computer that you and your AI agent share.
+
+**Will a scene I embedded break when the player is updated?** No. Every player version is published once and never
+changes; an embed keeps the version it was made with.
+
+**Can I use my AI agent?** Yes: connect it once through the AI Dev Kit (`studio-cli connect`) and it can make,
+check and preview scenes in the same projects you open in the Studio.
+
+**Which stock footage and music can I use?** The Studio's **Insert › Free stock** searches sources whose licences
+allow commercial use and records each file's licence; the manual lists more:
+https://docs.unysonplus.com/kinetic-scenes/stock-media
+
+**I found a bug or have an idea.** Open an issue (the forms ask for what helps), or a pull request (see below).
+
+## Contributing
+
+Issues and pull requests are welcome. Issues labelled **good first issue** are small and self-contained. Before a
+pull request: `npm run typecheck` and `npm run build` (the build stops if the player changed without a version bump),
+plus `npm run selftest` if you changed the player.
 
 ## What's here
 
@@ -18,6 +80,7 @@ https://docs.unysonplus.com/kinetic-scenes
 Requires Node.js 20 or newer.
 
 ```
+npm start          # installs what is needed, then the same as npm run dev, and opens the browser
 npm install
 npm run dev        # builds the player, then serves the Studio at http://localhost:5173
 npm run build      # production build into apps/studio/dist
@@ -46,9 +109,7 @@ Height modes:
   top and bottom, which the safe area allows for.
 - `fill` is exactly one window tall.
 
-Presets (22): text `text-rise`, `text-slam`, `text-stretch`, `text-scramble`, `text-typewriter`, `text-blur`,
-`text-flip`, `text-tracking`; reveal and exit `fade`, `wipe`, `iris`, `slide`, `grow`; move and scale `pop`,
-`zoom`, `spin`, `keyframes`; emphasis `text-wave`, `pulse`, `shake`, `float`, `recolor`. Their settings are
+Presets cover text, reveals and exits, movement, emphasis, 3D, footage effects and transitions. Their settings are
 described in `packages/player/src/presets/catalog.ts`, which the Studio uses to build its forms.
 
 ## Keyboard

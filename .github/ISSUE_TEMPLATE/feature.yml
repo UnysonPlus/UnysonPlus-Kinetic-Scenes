@@ -1,0 +1,26 @@
+name: An idea
+description: Something the Studio could do, a preset, an effect, a tool.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://docs.unysonplus.com/kinetic-scenes/roadmap) first: it may already be planned.
+  - type: textarea
+    id: want
+    attributes:
+      label: What you would like to make
+      description: The video, page or effect you are after, rather than how the Studio should do it. A link to an example helps.
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: What you do now
+      description: How you get there today, if at all, and what is in the way.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Helping
+      options:
+        - label: I could help build or test this.

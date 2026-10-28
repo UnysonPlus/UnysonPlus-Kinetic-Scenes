@@ -1,0 +1,11 @@
+name: A question
+description: How do I…? Not sure whether it is a bug.
+labels: [question]
+body:
+  - type: textarea
+    id: q
+    attributes:
+      label: Your question
+      description: What you are trying to do, and where you got stuck. The manual (docs.unysonplus.com/kinetic-scenes) may already answer it.
+    validations:
+      required: true
