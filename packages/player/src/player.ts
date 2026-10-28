@@ -9,7 +9,7 @@ import { presets, presetRand, type Timeline } from './presets';
 import { seedFrom } from './random';
 import { NAMED_EASES, resolveEase } from './eases';
 import { linkToScroll, type ScrollLink } from './scroll';
-import { load3d } from './model3d';
+import { load3d, type State3D } from './model3d';
 import { SceneAudio } from './audio';
 import { soundTrack } from './sfx';
 import { TRANSCRIPT_CLASS, transcriptHtml } from './transcript';
@@ -65,6 +65,11 @@ export interface LayerLayout {
 }
 
 export interface ScenePlayer {
+  /**
+   * A 3D layer's state (its turn, scale, move and camera orbit, tilt and dolly) at each of the given scene times, read
+   * from the timeline itself; the playhead goes back where it was. For drawing the camera's path. Empty for other layers.
+   */
+  model3dPath(id: string, times: number[]): State3D[];
   readonly scene: Scene;
   readonly root: HTMLElement;
   readonly duration: number;
@@ -669,6 +674,19 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     root,
     get duration() { return scene.duration; },
     get time() { return tl ? tl.time() : 0; },
+    model3dPath(id: string, times: number[]) {
+      const r = refsOf(id);
+      if (!r?.model || !tl) return [];
+      const back = tl.time(), was = !tl.paused();
+      tl.pause();
+      // Only the numbers: the state also carries the animation library's own bookkeeping, which can't be sent on.
+      const K = ['rx', 'ry', 'rz', 's', 'px', 'py', 'orbit', 'tilt', 'dolly'] as const;
+      const out = times.map((t) => { tl!.seek(Math.max(0, Math.min(scene.duration, t)), false); const st = r.model!.state; return Object.fromEntries(K.map((k) => [k, Number(st[k]) || 0])) as unknown as State3D; });
+      tl.seek(back, false);
+      if (was) tl.play();
+      render3d();
+      return out;
+    },
     get playing() { return !!tl && !tl.paused(); },
     get waiting() { return waiting; },
     setCamera(on: boolean) { cameraOn = on; applyCamera(); },

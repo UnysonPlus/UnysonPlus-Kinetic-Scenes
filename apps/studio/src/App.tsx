@@ -250,6 +250,12 @@ export function App() {
     }
   }, [scene, ready, post]);
   useEffect(() => { if (ready) post({ type: 'camera', on: cameraView }); }, [cameraView, ready, post]);
+  // The Camera path panel asks the preview for a 3D layer's states over time (lib/cameraPath.ts).
+  useEffect(() => {
+    const ask = (e: Event) => post({ type: 'camera-path', ...(e as CustomEvent).detail });
+    window.addEventListener('upw:ask-camera-path', ask);
+    return () => window.removeEventListener('upw:ask-camera-path', ask);
+  }, [post]);
   useEffect(() => { if (ready) post({ type: 'ui', scale }); }, [scale, ready, post]);
 
   useEffect(() => { if (ready) post({ type: 'scope', id: scope }); }, [scope, ready, post]);
@@ -658,6 +664,10 @@ export function App() {
           break;
         case 'upw:layout-check':
           setLayoutCheck({ running: false, issues: Array.isArray(m.issues) ? m.issues : [], done: true });
+          break;
+        case 'upw:camera-path':
+          // Handed on to the 3D layer's Camera path panel (lib/cameraPath.ts).
+          window.dispatchEvent(new CustomEvent('upw:camera-path', { detail: m }));
           break;
         case 'upw:error':
           setFrameError(m.message ? String(m.message) : null);

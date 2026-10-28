@@ -1,6 +1,6 @@
 {
   "name": "@unysonplus/scene-player",
-  "version": "0.0.49",
+  "version": "0.0.50",
   "private": true,
   "description": "Plays Unyson+ Kinetic Scenes scene files in any web page.",
   "type": "module",

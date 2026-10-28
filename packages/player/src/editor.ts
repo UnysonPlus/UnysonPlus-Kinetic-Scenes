@@ -788,6 +788,11 @@ function start() {
         send({ type: 'upw:layout-check', issues: found, breakpoint: player.breakpoint });
       })();
     }
+    else if (m.type === 'camera-path') {
+      // A 3D layer's states over time, for the Studio to draw its camera's path.
+      const times = Array.isArray(m.times) ? (m.times as unknown[]).map(Number).filter(Number.isFinite).slice(0, 400) : [];
+      send({ type: 'upw:camera-path', id: m.id, layer: m.layer, times, states: player.model3dPath(String(m.layer), times) });
+    }
     else if (m.type === 'safe') player.setSafeArea(!!m.show);
     else if (m.type === 'camera') { player.setCamera(!!m.on); redraw(); report(); }
     else if (m.type === 'select') setSelection(Array.isArray(m.ids) ? m.ids : m.id ? [m.id] : [], false);
