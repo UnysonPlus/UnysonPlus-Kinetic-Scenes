@@ -1,4 +1,5 @@
 import type { Anchor, Breakpoint, Layer, Scene } from '@unysonplus/scene-player/types';
+import { BehindSection } from './BehindSection';
 import { SAFE_HREF } from '@unysonplus/scene-player/types';
 import { PRESET_CATALOG, defaultEaseFor, presetMeta, type PresetField } from '@unysonplus/scene-player/catalog';
 import { NAMED_EASES, NAMED_EASE_IDS } from '@unysonplus/scene-player/eases';
@@ -598,6 +599,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'cursor' && <CursorSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'repeat' && <RepeatSection layer={layer} set={(p) => props(p as Record<string, unknown>)} onUnpack={() => onCommit(repeatToGroup(scene, layer.id))} />}
+      {layer.type === 'text' && <BehindSection scene={scene} layer={layer} onCommit={onCommit} />}
       {layer.type === 'captions' && <CaptionsSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} onCommit={onCommit} />}
       {layer.type === 'code' && <CodeSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'diagram' && <DiagramSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
