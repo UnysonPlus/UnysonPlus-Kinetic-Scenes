@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { Scene, VideoFormat, VideoLayer, VideoSettings } from '@unysonplus/scene-player/types';
 import { cutOutPerson, followFace, useFootageSound } from '../lib/footageKit';
 import { separateFootage } from '../lib/separate';
+import { footageAspect, frameAspect, reframe } from '../lib/reframe';
 import { PLATFORM_LIMITS, VIDEO_FORMATS } from '@unysonplus/scene-player/video';
 import { CheckField, NumberField, Section, SelectField, TextField } from './fields';
 import { Segmented } from './Segmented';
@@ -103,6 +104,8 @@ export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCo
     try { setNote(await job(ctl.signal)); } catch (e) { setNote((e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message); } finally { setBusy(null); abort.current = null; }
   };
   const tracked = !!props.layer.track?.length;
+  // Reframing is for a frame narrower than wide footage: a tall or square scene.
+  const wide = frameAspect(props.scene) < 1.3;
   return (
     <Section title="Footage tools">
       <SelectField label="Cut-out quality" value={quality} options={[{ value: 'fine', label: 'Fine edges (hair)' }, { value: 'fast', label: 'Fast (the body only)' }]} onChange={(v) => setQuality(v as 'fine' | 'fast')} />
@@ -116,6 +119,14 @@ export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCo
           props.onCommit(await followFace(props.scene, props.layer.id, (s) => setBusy(s), signal));
           return 'Found the face in every frame. Give any layer the Follow the face preset to keep it there (a circle round the face, a label above the head).';
         })} title="Finds the face in every frame, for the Follow the face preset">{tracked ? 'Find the face again' : 'Follow the face'}</button>
+        {wide && <button type="button" className="btn small" disabled={!!busy} onClick={() => run('Reframing', async (signal) => {
+          let scene = props.scene;
+          if (!tracked) scene = await followFace(scene, props.layer.id, (s) => setBusy(s), signal);
+          setBusy('Reframing');
+          const r = reframe(scene, props.layer.id, await footageAspect(props.layer.src));
+          props.onCommit(r.scene);
+          return `Reframed: the footage fills the frame's height and follows the face with ${r.keys} keyframes (the Keyframes clip on this layer). Move or delete a key to change the framing.`;
+        })} title="Wide footage in this tall or square frame: fill the frame and keep the face in it as they move (finds the face first if needed). The crop path is ordinary keyframes you can edit">Reframe to follow the face</button>}
         <button type="button" className="btn small" disabled={!!busy} onClick={() => run('Taking the sound out', async () => {
           const r = await useFootageSound(props.scene, props.layer.id);
           props.onCommit(r.scene);
