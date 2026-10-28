@@ -1263,6 +1263,7 @@ export function App() {
             <AiAssist
               project={project?.id ?? null}
               onMakeMusic={() => setMusicOpen(true)}
+              time={state.time}
               open={assistOpen}
               onOpenChange={openAssist}
               status={kit}

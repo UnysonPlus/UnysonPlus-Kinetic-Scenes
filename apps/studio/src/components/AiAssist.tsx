@@ -1,3 +1,6 @@
+import { changedFields, pointContext, setField } from '../lib/pointEdit';
+import type { PointField } from '../lib/pointEdit';
+import { findLayer } from '../lib/sceneOps';
 import { AgentCard } from './ProjectsDialog';
 import { cancelSteps, startSteps, stepsAvailable, stepsJob } from '../lib/agent';
 import { applySteps } from '../lib/tour';
@@ -32,7 +35,7 @@ const REFINE_IDEAS = [
 ];
 const SELECTION_IDEAS = ['Make this enter more boldly', 'Make this calmer and slower', 'Stagger these one after another'];
 
-export type Scope = 'new' | 'scene' | 'selection';
+export type Scope = 'new' | 'scene' | 'selection' | 'point';
 
 /** A request handed to AI assist from elsewhere in the Studio (Check scene, a voice-over). */
 export type QueuedRequest = string | {
@@ -92,6 +95,16 @@ export interface ChatMessage {
   /** AI turns that are a plan waiting to be built. */
   plan?: boolean;
   model?: string;
+  /** Point turns: the element pointed at, and the values the AI changed on it, to adjust by hand. */
+  pointed?: string;
+  fields?: PointField[];
+}
+
+/** The pointed element's name, for the Point line. */
+function pointName(scene: Scene, id: string): string {
+  const l = findLayer(scene, id);
+  if (!l) return id;
+  return l.type === 'text' ? `"${String((l as { text?: string }).text ?? '').slice(0, 30)}"` : l.name || l.id;
 }
 
 /** Who is answering, for the connection line (naming the AI at work is part of the product). */
@@ -166,6 +179,8 @@ export function AiAssist(props: {
   onMakeMusic?: () => void;
   /** The workspace project open in the Studio: with Claude Code in the kit, requests can run in steps inside it. */
   project?: string | null;
+  /** The playhead, for Point (the moment the change is about). */
+  time?: number;
 }) {
   const { status, scene, messages } = props;
   const empty = scene.layers.length === 0;
@@ -197,7 +212,8 @@ export function AiAssist(props: {
   // Follow the selection: picking layers aims the next request at them.
   useEffect(() => {
     if (busy) return;
-    setScope((s) => (empty ? 'new' : sel ? 'selection' : s === 'selection' ? 'scene' : s === 'new' ? 'scene' : s));
+    // Point stays on while the person clicks what to change (that click is a selection).
+    setScope((s) => (empty ? 'new' : s === 'point' ? 'point' : sel ? 'selection' : s === 'selection' ? 'scene' : s === 'new' ? 'scene' : s));
   }, [sel, empty, busy]);
 
   useEffect(() => {
@@ -297,7 +313,8 @@ export function AiAssist(props: {
       // A brand kit's logo can be placed by name ("brand:logo"); the Studio fills it in.
       const assets = new Map(extra?.assets ?? []);
       if (style?.logo) assets.set('brand:logo', style.logo);
-      const r = await askForScene({ mode, prompt: ask, scene: base, selection: useScope === 'selection' && !wholeScene ? props.selection : [], signal: ctl.signal, brief, context: extra?.context, assets, additions: extra?.additions });
+      const pointed = useScope === 'point' ? props.selection[0] : '';
+      const r = await askForScene({ mode, prompt: ask, scene: base, selection: (useScope === 'selection' && !wholeScene) ? props.selection : pointed ? [pointed] : [], signal: ctl.signal, brief, context: [extra?.context, pointed ? pointContext(base, pointed, props.time ?? 0) : ''].filter(Boolean).join('\n\n') || undefined, assets, additions: extra?.additions });
       // The cut-out person stays in front of every effect, whatever order the AI returned; the sound stays as it was.
       if (person) r.scene = { ...toTop(r.scene, person), audio: base.audio };
       // A scene built from a base (a voice-over) gets the style's exact colours and fonts too.
@@ -321,6 +338,7 @@ export function AiAssist(props: {
         role: 'ai',
         text: `${r.explanation || (mode === 'create' ? 'Here is a new scene.' : 'Done.')}${r.repaired ? ' (The first answer needed fixing; this is the corrected one.)' : ''}`,
         before, after: r.scene, issues: found, model: r.model,
+        ...(pointed ? { pointed, fields: changedFields(before, r.scene, pointed) } : {}),
       });
       // Look, criticise, fix: the kit renders the key frames and the AI reviews its own work.
       if (lookFix) {
@@ -568,7 +586,7 @@ export function AiAssist(props: {
             )}
             {messages.map((m) => (
               <div key={m.id} className={`assist-msg is-${m.role}`}>
-                {m.role === 'user' && m.scope && <span className="assist-scope">{m.scope === 'new' ? 'New scene' : m.scope === 'selection' ? 'Selected layers' : 'This scene'}</span>}
+                {m.role === 'user' && m.scope && <span className="assist-scope">{m.scope === 'new' ? 'New scene' : m.scope === 'selection' ? 'Selected layers' : m.scope === 'point' ? 'Pointed at' : 'This scene'}</span>}
                 <p>{m.text}</p>
                 {m.role === 'ai' && (
                   <div className="assist-msg-actions">
@@ -579,6 +597,21 @@ export function AiAssist(props: {
                       </>
                     )}
                     {m.before && <button type="button" className="link-btn" disabled={busy} onClick={() => props.onRestore(m.before!, m.after!)}>Go back to before this</button>}
+                  </div>
+                )}
+                {m.role === 'ai' && m.pointed && !!m.fields?.length && (
+                  <div className="assist-fields" aria-label="What changed, to adjust">
+                    {m.fields.map((f) => (
+                      <label key={f.path}>
+                        <span>{f.label}</span>
+                        <input type={f.kind === 'number' ? 'number' : 'text'} step="any" defaultValue={String(f.value)} disabled={busy}
+                          onBlur={(e) => {
+                            const v = f.kind === 'number' ? Number(e.target.value) : e.target.value;
+                            if (v === f.value || (f.kind === 'number' && !Number.isFinite(v as number))) return;
+                            props.onApply(setField(scene, m.pointed!, f.path, v), 'edit');
+                          }} />
+                      </label>
+                    ))}
                   </div>
                 )}
               </div>
@@ -605,12 +638,12 @@ export function AiAssist(props: {
 
           <form className="assist-form" onSubmit={(e) => { e.preventDefault(); send(prompt); }}>
             <div className="assist-scopes" role="radiogroup" aria-label="What the request changes">
-              {(['scene', 'selection', 'new'] as Scope[]).map((s) => {
-                const disabled = (s === 'selection' && !sel) || (s === 'scene' && empty) || busy;
+              {(['scene', 'selection', 'point', 'new'] as Scope[]).map((s) => {
+                const disabled = (s === 'selection' && !sel) || ((s === 'scene' || s === 'point') && empty) || busy;
                 return (
                   <button key={s} type="button" role="radio" aria-checked={scope === s} disabled={disabled}
                     className={`assist-chip${scope === s ? ' on' : ''}`} onClick={() => setScope(s)}>
-                    {s === 'scene' ? 'This scene' : s === 'selection' ? (sel ? `Selected (${sel})` : 'Selected') : 'New scene'}
+                    {s === 'scene' ? 'This scene' : s === 'selection' ? (sel ? `Selected (${sel})` : 'Selected') : s === 'point' ? 'Point' : 'New scene'}
                   </button>
                 );
               })}
@@ -621,6 +654,13 @@ export function AiAssist(props: {
                 <span aria-hidden="true"> · </span>Voice: <strong>{voices.label}</strong>
                 {canSteps && inSteps ? <><span aria-hidden="true"> · </span>In steps</> : lookFix && <><span aria-hidden="true"> · </span>Look and fix</>}
               </button>
+            )}
+            {scope === 'point' && (
+              <p className="assist-point" role="status">
+                {sel === 1
+                  ? <>Changing <strong>{pointName(scene, props.selection[0])}</strong> at {(props.time ?? 0).toFixed(1)} s. Say what to change; only that changes.</>
+                  : 'Move to the moment, then click the thing to change in the preview (one element).'}
+              </p>
             )}
             <div className="assist-director">
               {scope === 'new' && (
