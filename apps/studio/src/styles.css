@@ -940,3 +940,7 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .cap-pack-boxed { background: #000; }
 .cap-pack-giant { text-transform: uppercase; font-size: 16px; }
 .stack-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+
+/* Edit by the words: struck words */
+.words-text .word.struck, .words-text .word.strong.struck { text-decoration: line-through; text-decoration-thickness: 2px; color: #ff7a7a; opacity: .75; }
+.words-edit { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }

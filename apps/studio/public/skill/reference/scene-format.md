@@ -82,7 +82,8 @@ end), `delay`, `volume`, `pitch` }. Presets that enter and leave take `"directio
 ## Audio, markers, camera, steps
 
 - `audio`: [{ `id`, `src` (a file, or `sfx:<name>`), `start`, `offset`, `duration`, `volume`, `fadeIn`, `fadeOut`,
-  `role` (voice, music, sfx), `words` (transcribed: { `w`, `t`, `d`, `s` }), `beats`, `envelope` }].
+  `role` (voice, music, sfx), `words` (transcribed: { `w`, `t`, `d`, `s` }), `beats`, `envelope`, `group` (parts cut
+  from one recording share it: captions that follow one part follow them all) }].
 - `markers`: [{ `id`, `t`, `label` }] for presentations and hotspots.
 - `camera.keys`: [{ `id`, `t`, `x`, `y` (pan, % of the stage), `zoom`, `roll`, `tiltX`, `tiltY`, `ease` }].
 - `steps`: [{ `id`, `label`, `hold`, `do`: [{ `layer`, `preset`, `params`, `duration`, `offset` }] }]: a walkthrough

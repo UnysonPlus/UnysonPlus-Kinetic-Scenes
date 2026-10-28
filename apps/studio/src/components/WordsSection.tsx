@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { applyWordCuts, planWordCuts, suggestRemovals } from '../lib/wordEdit';
 import type { AudioClip, Scene } from '@unysonplus/scene-player/types';
 import { Section } from './fields';
 import { setAudio } from '../lib/audio';
@@ -26,6 +27,11 @@ export function WordsSection(props: {
   const [kitError, setKitError] = useState<string | null>(null);
   const [model, setModel] = useState<ModelKey>('base');
   const [busy, setBusy] = useState<string | null>(null);
+  /** Edit by the words: struck words (indexes into clip.words) and whether long pauses go too. */
+  const [editing, setEditing] = useState(false);
+  const [struck, setStruck] = useState<Set<number>>(new Set());
+  const [pauses, setPauses] = useState(true);
+  const [editNote, setEditNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   const picked = useRef(false);
@@ -105,12 +111,46 @@ export function WordsSection(props: {
             {words.map((w) => (
               <span key={w.index}>
                 {w.p && w.p >= 0.6 && w.index > 0 ? <span className="words-pause" aria-hidden="true"> ‖ </span> : ' '}
-                <button type="button" className={`word${isStrong(w) ? ' strong' : ''}`} onClick={() => props.onSeek(Math.max(0, w.at))}
-                  title={`${w.at.toFixed(2)} s${w.s !== undefined ? ` · emphasis ${Math.round(w.s * 100)}%` : ''}`}>{w.w}</button>
+                <button type="button" className={`word${isStrong(w) ? ' strong' : ''}${editing && struck.has(w.index) ? ' struck' : ''}`}
+                  onClick={() => {
+                    if (!editing) { props.onSeek(Math.max(0, w.at)); return; }
+                    setStruck((s) => { const n = new Set(s); if (n.has(w.index)) n.delete(w.index); else n.add(w.index); return n; });
+                  }}
+                  title={editing ? (struck.has(w.index) ? 'Struck out: click to keep it' : 'Click to cut this word') : `${w.at.toFixed(2)} s${w.s !== undefined ? ` · emphasis ${Math.round(w.s * 100)}%` : ''}`}>{w.w}</button>
               </span>
             ))}
           </p>
-          <p className="field-hint">Bold words are said with the most emphasis. Click a word to jump to it; ‖ marks a pause.</p>
+          <p className="field-hint">{editing ? 'Click words to strike them out; struck words are cut from the voice and from the footage it came from.' : 'Bold words are said with the most emphasis. Click a word to jump to it; ‖ marks a pause.'}</p>
+          <div className="insp-actions wide">
+            <button type="button" className={`btn small${editing ? ' primary' : ''}`} aria-pressed={editing} onClick={() => { setEditing(!editing); setEditNote(null); }}
+              title="Cut words, ums, repeats and long pauses out of the voice-over and its footage">Edit by the words</button>
+          </div>
+          {editing && (() => {
+            const all = clip.words ?? [];
+            const cuts = planWordCuts(all, struck, pauses ? { max: 0.6, keep: 0.25 } : null);
+            const secs = cuts.reduce((s, c) => s + c.to - c.from, 0);
+            return (
+              <div className="words-edit wide">
+                <div className="insp-actions">
+                  <button type="button" className="btn small ghost" onClick={() => setStruck(suggestRemovals(all))} title="Strikes um, uh and the first of a phrase said twice in a row (a false start)">Mark ums and repeats</button>
+                  {struck.size > 0 && <button type="button" className="btn small ghost" onClick={() => setStruck(new Set())}>Keep all</button>}
+                </div>
+                <label className="assist-check"><input type="checkbox" checked={pauses} onChange={(e) => setPauses(e.target.checked)} /> Shorten pauses over 0.6 s (to 0.25 s)</label>
+                <div className="insp-actions">
+                  <button type="button" className="btn small primary" disabled={!cuts.length}
+                    onClick={() => {
+                      const r = applyWordCuts(props.scene, clip.id, cuts);
+                      props.onCommit(r.scene);
+                      setStruck(new Set());
+                      setEditNote(`Cut ${r.removed.toFixed(1)} s: the voice-over${r.parts > 1 ? ` and its footage now play in ${r.parts} parts` : ''}, and what came after moved earlier. Undo puts it back.`);
+                    }}>
+                    {cuts.length ? `Cut ${struck.size ? `${struck.size} word${struck.size === 1 ? '' : 's'}` : 'pauses'}${struck.size && pauses ? ' and pauses' : ''}: −${secs.toFixed(1)} s` : 'Nothing to cut yet'}
+                  </button>
+                </div>
+                {editNote && <p className="field-hint" role="status">{editNote}</p>}
+              </div>
+            );
+          })()}
           {props.onMakeScene && (
             <button type="button" className="btn small primary words-make" onClick={props.onMakeScene}
               title="AI assist builds kinetic type timed to these words, with motion and sounds that match the delivery (in the style chosen in AI assist). Undo brings back the current scene.">

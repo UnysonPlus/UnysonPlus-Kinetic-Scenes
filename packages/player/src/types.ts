@@ -86,6 +86,11 @@ export interface TranscriptSettings {
 export interface AudioClip {
   id: string;
   name?: string;
+  /**
+   * Clips cut from one recording (editing by the words splits a voice-over into parts) share a group: captions that
+   * follow one of them follow them all.
+   */
+  group?: string;
   /** The voice that spoke it, when it was made from a script ("Voicebox: Jon", "Clear (American English)"). Shown in the
    * editor; playback ignores it. */
   voice?: string;

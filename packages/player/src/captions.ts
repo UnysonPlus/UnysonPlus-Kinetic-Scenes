@@ -12,7 +12,7 @@ const FALLBACK_FONTS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif
 interface Word { w: string; at: number; end: number }
 interface Chunk { words: Word[]; start: number; end: number }
 
-const chunkCache = new WeakMap<CaptionsLayer, { key: AudioClip | undefined; chunks: Chunk[] }>();
+const chunkCache = new WeakMap<CaptionsLayer, { key: string; chunks: Chunk[] }>();
 
 /** The voice-over a captions layer follows: the one it names, else the first voice (or any clip with words). */
 export function captionSource(layer: CaptionsLayer, audio: AudioClip[] | undefined): AudioClip | undefined {
@@ -20,11 +20,22 @@ export function captionSource(layer: CaptionsLayer, audio: AudioClip[] | undefin
   return list.find((a) => a.id === layer.audio) ?? list.find((a) => a.role === 'voice' && a.words?.length) ?? list.find((a) => a.words?.length);
 }
 
-function chunksOf(layer: CaptionsLayer, clip: AudioClip | undefined): Chunk[] {
+/** The clips a captions layer reads: its source, and the other parts of the same recording (same group). */
+function captionClips(layer: CaptionsLayer, audio: AudioClip[] | undefined): AudioClip[] {
+  const src = captionSource(layer, audio);
+  if (!src) return [];
+  return src.group ? (audio ?? []).filter((a) => a.group === src.group).sort((x, y) => x.start - y.start) : [src];
+}
+
+const keyOf = (clips: AudioClip[]) => clips.map((c) => `${c.id}:${c.start}:${c.offset ?? 0}:${c.duration ?? ''}:${c.words?.length ?? 0}`).join('|');
+
+function chunksOf(layer: CaptionsLayer, clips: AudioClip[]): Chunk[] {
+  const key = keyOf(clips);
   const hit = chunkCache.get(layer);
-  if (hit && hit.key === clip) return hit.chunks;
+  if (hit && hit.key === key) return hit.chunks;
   const words: Word[] = [];
-  if (clip?.words) {
+  for (const clip of clips) {
+    if (!clip.words) continue;
     const off = clip.offset ?? 0;
     const limit = clip.duration ?? Infinity;
     for (const w of clip.words) {
@@ -46,7 +57,7 @@ function chunksOf(layer: CaptionsLayer, clip: AudioClip | undefined): Chunk[] {
   push();
   // Each chunk stays until the next starts (or a moment after its last word).
   chunks.forEach((c, i) => { c.end = Math.min(chunks[i + 1]?.start ?? Infinity, c.end + 0.6); });
-  chunkCache.set(layer, { key: clip, chunks });
+  chunkCache.set(layer, { key, chunks });
   return chunks;
 }
 
@@ -78,7 +89,7 @@ const CHROME = 'linear-gradient(180deg, #ffffff 0%, #e6e9ee 38%, #8d949e 50%, #d
 export function drawCaptions(inner: HTMLElement, layer: CaptionsLayer, audio: AudioClip[] | undefined, time: number) {
   const line = inner.querySelector<HTMLElement>(':scope > .upw-cap');
   if (!line) return;
-  const chunks = chunksOf(layer, captionSource(layer, audio));
+  const chunks = chunksOf(layer, captionClips(layer, audio));
   const k = chunks.findIndex((c) => time >= c.start - 0.05 && time < c.end);
   if (k < 0) {
     line.style.opacity = '0';
