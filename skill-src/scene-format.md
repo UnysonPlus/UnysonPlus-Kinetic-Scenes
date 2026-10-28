@@ -63,7 +63,7 @@ optionally `start` / `end` (seconds it is there), `opacity`, `overrides`, `link`
 | `diagram` | nodes and connections | `nodes` [{ `id`, `x`, `y` (% of its box), `label`, `sub`, `shape` (box, pill, circle, dot, value), `color`, `at`, `moves` }], `edges` [{ `from`, `to`, `kind` (curve, straight, step), `label`, `dashed`, `arrow`, `at` }], `tag` { `label`, `stops` [{ `node`, `t` }] }, `look` |
 | `code` | an editor or terminal | `code`, `title` (file name: sets the language), `language`, `frame` (window, terminal, plain), `run`, `theme`, `fontSize`, `lineNumbers` |
 | `repeat` | a list | `item` (one layer, usually a group, with `{{field}}` placeholders), `items` [{ … }], `step` { `x`, `y` }, `columns`, `rowStep`, `stagger` |
-| `captions` | the words of a voice-over | `style`, `audio` (clip id), `maxWords`, `mode` (word, karaoke, none), `motion` (pop, slam, drop), `highlight`, `background` |
+| `captions` | the words of a voice-over | `style`, `audio` (clip id), `maxWords`, `mode` (word, karaoke, none), `motion` (pop, slam, drop), `highlight`, `background`, `effect` (none, outline, shadow, glow, chrome: the look on the letters), `effectColor` (the outline or glow colour) |
 | `cursor` | a pointer for tours | `shape` (auto, arrow, hand), `theme`, `ringColor`; its box x / y is where the TIP starts |
 
 Other layer fields:

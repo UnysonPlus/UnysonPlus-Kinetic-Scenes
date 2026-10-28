@@ -928,3 +928,14 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .notes-text { width: 100%; min-height: 46vh; box-sizing: border-box; resize: vertical; padding: 10px 12px; border-radius: 8px;
   border: 1px solid var(--border-soft); background: var(--bg); color: var(--ink); font: 13px/1.55 var(--mono, ui-monospace, monospace); }
 .notes-text:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* Caption style packs: each button shows its own font */
+.cap-packs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.cap-pack { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-soft); background: #111317; color: #fff; cursor: pointer; font-size: 14px; line-height: 1; }
+.cap-pack:hover { border-color: var(--accent); }
+.cap-pack-bold { text-transform: uppercase; -webkit-text-stroke: 1px #000; paint-order: stroke fill; color: #ffe14d; }
+.cap-pack-neon { text-shadow: 0 0 4px #00e5ff, 0 0 10px #00e5ff; }
+.cap-pack-chrome { text-transform: uppercase; background-image: linear-gradient(180deg,#fff 0%,#e6e9ee 38%,#8d949e 50%,#d9dde3 62%,#fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cap-pack-karaoke { color: #00e0b0; background: rgba(0,0,0,.6); }
+.cap-pack-boxed { background: #000; }
+.cap-pack-giant { text-transform: uppercase; font-size: 16px; }

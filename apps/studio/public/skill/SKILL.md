@@ -8,7 +8,7 @@ description: Make motion-graphics scenes for Unyson+ Kinetic Scenes (animated we
 Kinetic Scenes (https://kinetic-scenes.unysonplus.com/) plays **scene files**: JSON data with a stage, layers and
 clips (presets placed on a timeline). You write data, never code, so whatever you make lands in the Studio as
 ordinary layers and clips the person can keep editing. This skill is generated from the Studio's own code
-(version 0.0.86), so the presets, settings and rules here are exactly what the player understands.
+(version 0.0.87), so the presets, settings and rules here are exactly what the player understands.
 
 ## Read first
 

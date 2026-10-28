@@ -598,7 +598,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'cursor' && <CursorSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'repeat' && <RepeatSection layer={layer} set={(p) => props(p as Record<string, unknown>)} onUnpack={() => onCommit(repeatToGroup(scene, layer.id))} />}
-      {layer.type === 'captions' && <CaptionsSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'captions' && <CaptionsSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} onCommit={onCommit} />}
       {layer.type === 'code' && <CodeSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'diagram' && <DiagramSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
 

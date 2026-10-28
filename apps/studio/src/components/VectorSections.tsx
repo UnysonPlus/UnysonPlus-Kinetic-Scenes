@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { CAPTION_PACKS, applyCaptionPack, copyCaptionStyle, countCaptions } from '../lib/captionStyles';
 import type { CaptionsLayer, CodeLayer, CursorLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
 import { applySteps, cutOut } from '../lib/tour';
 import { installVoice, speak, voiceStatus, withVoice } from '../lib/voice';
@@ -168,12 +169,31 @@ export function RepeatSection(props: { layer: RepeatLayer; set: (patch: Partial<
   );
 }
 
-export function CaptionsSection(props: { scene: Scene; layer: CaptionsLayer; set: (patch: Partial<CaptionsLayer>) => void }) {
-  const { scene, layer, set } = props;
+export function CaptionsSection(props: { scene: Scene; layer: CaptionsLayer; set: (patch: Partial<CaptionsLayer>) => void; onCommit?: (scene: Scene) => void }) {
+  const { scene, layer, set, onCommit } = props;
   const voices = (scene.audio ?? []).filter((a) => a.words?.length);
   const style = layer.style;
+  const others = countCaptions(scene) - 1;
+  const [copied, setCopied] = useState<string | null>(null);
   return (
     <Section title="Captions">
+      {onCommit && (
+        <div className="field wide">
+          <span className="field-label">Style</span>
+          <div className="cap-packs">
+            {CAPTION_PACKS.map((p) => (
+              <button key={p.id} type="button" className={`cap-pack cap-pack-${p.id}`} title={p.hint} style={{ fontFamily: `"${p.font.family}", sans-serif`, fontWeight: p.font.weight }}
+                onClick={() => onCommit(applyCaptionPack(scene, layer.id, p))}>{p.name}</button>
+            ))}
+          </div>
+          {others > 0 && (
+            <button type="button" className="btn small ghost" onClick={() => { const r = copyCaptionStyle(scene, layer.id); onCommit(r.scene); setCopied(`Copied onto ${r.count} other caption${r.count === 1 ? '' : 's'}.`); }}>
+              Use this style on every caption ({others} more)
+            </button>
+          )}
+          {copied && <p className="field-hint wide" role="status">{copied}</p>}
+        </div>
+      )}
       {voices.length
         ? <SelectField label="Words from" value={layer.audio ?? ''} options={[{ value: '', label: 'The first voice-over' }, ...voices.map((a) => ({ value: a.id, label: a.name ?? a.id }))]} onChange={(v) => set({ audio: v || undefined })} />
         : <p className="field-hint wide">Captions need a voice-over with its words: add the audio, then transcribe it in its settings.</p>}
@@ -187,6 +207,8 @@ export function CaptionsSection(props: { scene: Scene; layer: CaptionsLayer; set
       <NumberField label="Weight" value={style.fontWeight ?? 800} step={100} min={100} max={900} onCommit={(v) => set({ style: { ...style, fontWeight: v } })} />
       <ColorField label="Box behind" value={layer.background} placeholder="None" onCommit={(v) => set({ background: v || undefined })} />
       <CheckField label="Capitals" checked={!!layer.uppercase} onChange={(v) => set({ uppercase: v || undefined })} />
+      <SelectField label="Letters" value={layer.effect ?? 'none'} options={[{ value: 'none', label: 'Plain' }, { value: 'outline', label: 'Outline' }, { value: 'shadow', label: 'Soft shadow' }, { value: 'glow', label: 'Neon glow' }, { value: 'chrome', label: 'Chrome' }]} onChange={(v) => set({ effect: v === 'none' ? undefined : v as CaptionsLayer['effect'] })} />
+      {(layer.effect === 'glow' || layer.effect === 'outline') && <ColorField label={layer.effect === 'glow' ? 'Glow colour' : 'Outline colour'} value={layer.effectColor} placeholder={layer.effect === 'glow' ? (layer.highlight ?? '#00e5ff') : '#000000'} onCommit={(v) => set({ effectColor: v || undefined })} />}
     </Section>
   );
 }

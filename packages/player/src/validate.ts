@@ -322,6 +322,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.maxWords !== undefined && (!isNum(layer.maxWords) || layer.maxWords < 1 || layer.maxWords > 12)) fail(`${lp}.maxWords`, 'must be 1 to 12');
         if (layer.mode !== undefined && !['word', 'karaoke', 'none'].includes(layer.mode)) fail(`${lp}.mode`, 'must be word, karaoke or none');
         if (layer.motion !== undefined && !['pop', 'slam', 'drop'].includes(layer.motion)) fail(`${lp}.motion`, 'must be pop, slam or drop');
+        if (layer.effect !== undefined && !['none', 'glow', 'outline', 'shadow', 'chrome'].includes(layer.effect)) fail(`${lp}.effect`, 'must be none, glow, outline, shadow or chrome');
         if (!(scene.audio ?? []).some((a) => Array.isArray(a?.words) && a.words.length)) warnings.push(`${lp}: captions need a voice-over with its words (transcribe it in the AI Dev Kit).`);
       } else if (layer.type === 'repeat') {
         // Played as the group it expands into; checked as that group.

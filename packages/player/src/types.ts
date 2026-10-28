@@ -650,6 +650,14 @@ export interface CaptionsLayer extends LayerBase {
    * slams in as it is said (giant captions). drop: each word drops in from above and bounces (viral drop).
    */
   motion?: 'pop' | 'slam' | 'drop';
+  /**
+   * A look on the letters. glow: a neon glow (in effectColor, else the lit colour); outline: a thick outline around each
+   * letter (effectColor, else black), the short-form look; shadow: a soft drop shadow that keeps captions readable on
+   * busy footage; chrome: polished metal letters (the word being said keeps its lit colour).
+   */
+  effect?: 'none' | 'glow' | 'outline' | 'shadow' | 'chrome';
+  /** The colour of the glow or the outline. */
+  effectColor?: string;
 }
 
 /**

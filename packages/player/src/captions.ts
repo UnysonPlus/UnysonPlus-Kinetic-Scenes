@@ -62,8 +62,18 @@ export function buildCaptions(inner: HTMLElement, layer: CaptionsLayer) {
   const line = inner.ownerDocument.createElement('div');
   line.className = 'upw-cap';
   Object.assign(line.style, { display: 'inline-block', padding: layer.background ? '0.18em 0.5em' : '0', borderRadius: '0.25em', background: layer.background ?? '', opacity: '0' });
+  // The look on the letters (chrome is painted per word in drawCaptions, so the lit word can keep its colour).
+  const fx = layer.effect ?? 'none';
+  const c = layer.effectColor;
+  if (fx === 'glow') { const g = c ?? layer.highlight ?? '#00e5ff'; line.style.textShadow = `0 0 0.06em #fff, 0 0 0.18em ${g}, 0 0 0.45em ${g}, 0 0 0.9em ${g}`; }
+  else if (fx === 'outline') { line.style.setProperty('-webkit-text-stroke', `0.07em ${c ?? '#000'}`); line.style.setProperty('paint-order', 'stroke fill'); line.style.textShadow = `0 0.06em 0 ${c ?? '#000'}`; }
+  else if (fx === 'shadow') line.style.textShadow = `0 0.05em 0.02em rgba(0,0,0,.75), 0 0.12em 0.4em rgba(0,0,0,.55)`;
+  else if (fx === 'chrome') line.style.filter = 'drop-shadow(0 0.05em 0.04em rgba(0,0,0,.55))';
   inner.appendChild(line);
 }
+
+/** Polished-metal letters: a gradient painted through the word's own letters. */
+const CHROME = 'linear-gradient(180deg, #ffffff 0%, #e6e9ee 38%, #8d949e 50%, #d9dde3 62%, #ffffff 100%)';
 
 export function drawCaptions(inner: HTMLElement, layer: CaptionsLayer, audio: AudioClip[] | undefined, time: number) {
   const line = inner.querySelector<HTMLElement>(':scope > .upw-cap');
@@ -91,6 +101,13 @@ export function drawCaptions(inner: HTMLElement, layer: CaptionsLayer, audio: Au
     const lit = mode === 'karaoke' ? said : mode === 'word' ? now : false;
     const sp = spans[i];
     sp.style.color = lit ? hl : '';
+    if (layer.effect === 'chrome') {
+      // Metal on every word but the lit one, which keeps its colour so the word being said still stands out.
+      sp.style.backgroundImage = lit ? '' : CHROME;
+      sp.style.setProperty('-webkit-background-clip', lit ? '' : 'text');
+      sp.style.setProperty('background-clip', lit ? '' : 'text');
+      if (!lit) sp.style.color = 'transparent';
+    }
     if (motion === 'pop') return;
     // Word by word: each one arrives as it is said.
     sp.style.display = 'inline-block';
