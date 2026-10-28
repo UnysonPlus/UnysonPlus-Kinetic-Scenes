@@ -8,7 +8,7 @@ description: Make motion-graphics scenes for Unyson+ Kinetic Scenes (animated we
 Kinetic Scenes (https://kinetic-scenes.unysonplus.com/) plays **scene files**: JSON data with a stage, layers and
 clips (presets placed on a timeline). You write data, never code, so whatever you make lands in the Studio as
 ordinary layers and clips the person can keep editing. This skill is generated from the Studio's own code
-(version 0.0.83), so the presets, settings and rules here are exactly what the player understands.
+(version 0.0.84), so the presets, settings and rules here are exactly what the player understands.
 
 ## Read first
 
@@ -36,7 +36,9 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    crossing or touching a panel's edge, words off the stage). Then look at each frame yourself and write one line
    about it against the review list below; fix what fails and render again. Repeat at most a few times. With the
    kit's MCP server connected (`studio-mcp.mjs`), the same steps are the tools `scene_check` and `scene_stills`
-   (which returns the frames as images), plus `scene_inspect`, `scene_render`, `audio_beats` (land reveals on the
+   (which returns the frames as images), `scene_timeline` (one picture of a stretch: frames, the sound wave, every
+   spoken word at its time with pauses inside a phrase marked, and the words on screen; use it wherever there is a
+   voice-over), plus `scene_inspect`, `scene_render`, `audio_beats` (land reveals on the
    music), `audio_transcribe` (time the scene to a voice) and `audio_separate` (the voice and the music of a clip
    as two tracks: transcribe the voice alone, or drop or replace the music).
    **Review list, for each settled frame:**
