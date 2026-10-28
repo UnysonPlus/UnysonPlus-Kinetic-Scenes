@@ -1206,6 +1206,7 @@ export function App() {
           <div className="preview-wrap">
             <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} zones={zones} checker={seeThrough} />
             <AiAssist
+              project={project?.id ?? null}
               onMakeMusic={() => setMusicOpen(true)}
               open={assistOpen}
               onOpenChange={openAssist}

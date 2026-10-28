@@ -1,4 +1,5 @@
 import { AgentCard } from './ProjectsDialog';
+import { cancelSteps, startSteps, stepsAvailable, stepsJob } from '../lib/agent';
 import { applySteps } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
 import { musicCues } from '../lib/beats';
@@ -163,6 +164,8 @@ export function AiAssist(props: {
   settingsRequest?: number;
   /** Open Make music (the ACE-Step add-on). */
   onMakeMusic?: () => void;
+  /** The workspace project open in the Studio: with Claude Code in the kit, requests can run in steps inside it. */
+  project?: string | null;
 }) {
   const { status, scene, messages } = props;
   const empty = scene.layers.length === 0;
@@ -179,6 +182,9 @@ export function AiAssist(props: {
   // The AI director: plan before building, and look at the result before showing it.
   const [planFirst, setPlanFirst] = useState(true);
   const [lookFix, setLookFix] = useState(true);
+  /** Work in steps: an agent in the project folder (only with a project and Claude Code in the kit). */
+  const [inSteps, setInSteps] = useState(true);
+  const canSteps = !!props.project && status.state === 'ready' && stepsAvailable();
   // Settings (connection, style, voice, look and fix) live behind the gear, so the chat keeps its room.
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => { if (props.settingsRequest) setSettingsOpen(true); }, [props.settingsRequest]);
@@ -218,6 +224,28 @@ export function AiAssist(props: {
     abort.current = ctl;
     const before = scene;
     try {
+      // In steps: the agent edits the project's scene.json (the Studio follows the file); here we show its steps.
+      if (canSteps && inSteps && useScope !== 'new' && !extra) {
+        setPhase('Working in steps');
+        const only = useScope === 'selection' && props.selection.length ? `\n\nChange only these layers: ${props.selection.join(', ')}.` : '';
+        const { id } = await startSteps(props.project!, ask + only);
+        ctl.signal.addEventListener('abort', () => { cancelSteps(id); });
+        const msg = nextId.current++;
+        props.onMessages((list) => [...list, { id: msg, role: 'ai' as const, text: 'Starting…' }].slice(-40));
+        const show = (text: string, role: 'ai' | 'error' = 'ai') => props.onMessages((list) => list.map((m) => (m.id === msg ? { ...m, text, role } : m)));
+        for (;;) {
+          await new Promise((r) => setTimeout(r, 1500));
+          if (ctl.signal.aborted) { show('Stopped. What was already saved stays (Undo goes back).', 'error'); break; }
+          const j = await stepsJob(id);
+          const last = j.steps[j.steps.length - 1]?.text;
+          if (last) setPhase(last.length > 60 ? `${last.slice(0, 57)}…` : last);
+          if (j.state === 'running') { show(j.steps.slice(-5).map((s) => `• ${s.text}`).join('\n') || 'Starting…'); continue; }
+          if (j.state === 'done') show(`${j.summary || 'Done.'}\n\n(${j.steps.length} steps, ${j.seconds} s. Undo goes back.)`);
+          else show(j.error || 'The agent stopped.', 'error');
+          break;
+        }
+        return;
+      }
       const mode = useScope === 'new' ? 'create' : 'edit';
       const style = props.styles.find((s) => s.id === props.styleId) ?? null;
       // Plan first: a new scene starts as a storyboard (or a script) the person agrees before it is built.
@@ -488,6 +516,7 @@ export function AiAssist(props: {
                   <button type="button" className="btn small ghost" disabled={busy} onClick={props.onMakeMusic} title="An instrumental from the ACE-Step add-on, added as a Music track">Make music…</button>
                 </div>
               )}
+              {canSteps && <label className="assist-check" title="Claude Code works in the project folder with the Kinetic Scenes tools: reads the notes, edits the scene, looks at frames, checks its work. The steps show here; the scene updates live."><input type="checkbox" checked={inSteps} disabled={busy} onChange={(e) => setInSteps(e.target.checked)} /> Work in steps in the project (an agent: notes, edits, frames, checks)</label>}
               <label className="assist-check" title="After building, the AI Dev Kit renders the key frames and the AI reviews and fixes what it sees"><input type="checkbox" checked={lookFix} disabled={busy} onChange={(e) => setLookFix(e.target.checked)} /> Look and fix (the AI checks the frames it made)</label>
               <button type="button" className="btn small" onClick={() => setSettingsOpen(false)}>Done</button>
             </div>
@@ -590,7 +619,7 @@ export function AiAssist(props: {
               <button type="button" className="assist-summary" onClick={() => setSettingsOpen(true)} title="Change the style, voice or look and fix">
                 Style: <strong>{props.styles.find((x) => x.id === props.styleId)?.name ?? 'None'}</strong>
                 <span aria-hidden="true"> · </span>Voice: <strong>{voices.label}</strong>
-                {lookFix && <><span aria-hidden="true"> · </span>Look and fix</>}
+                {canSteps && inSteps ? <><span aria-hidden="true"> · </span>In steps</> : lookFix && <><span aria-hidden="true"> · </span>Look and fix</>}
               </button>
             )}
             <div className="assist-director">
