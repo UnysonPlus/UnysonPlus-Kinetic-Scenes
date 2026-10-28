@@ -1,6 +1,6 @@
 # Presets
 
-Generated from the Studio 0.0.90. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.0.91. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text

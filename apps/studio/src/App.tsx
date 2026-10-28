@@ -33,6 +33,9 @@ import { useHistory } from './lib/history';
 import { createProject, readProject, saveProject as saveToFolder, watchProject, workspaceAvailable, type OpenProject } from './lib/workspace';
 import { AGENTS_GUIDE, ProjectsDialog } from './components/ProjectsDialog';
 import { NotesDialog } from './components/NotesDialog';
+import { StockDialog } from './components/StockDialog';
+import { stockInStudio } from './lib/stock';
+import type { StockResult } from './lib/stock';
 import {
   addClip, addLayer, blankScene, boxAt, containerOf, duplicateLayer, findClip, findLayer, groupLayers, layersIn, moveBy, removeClip,
   removeLayer, roundTime, setClip, ungroupLayer, writeLayout,
@@ -266,6 +269,7 @@ export function App() {
   const [project, setProject] = useState<OpenProject | null>(null);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [stockOpen, setStockOpen] = useState(false);
   /** Bumped when the project's notes change in the folder (the agent added something). */
   const [notesChanged, setNotesChanged] = useState(0);
   const [projectSave, setProjectSave] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -839,6 +843,27 @@ export function App() {
   const mod = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+';
   const DOCS = 'https://docs.unysonplus.com/kinetic-scenes';
   const link = (u: string) => () => window.open(u, '_blank', 'noopener');
+  // A free-stock pick, already in the project's media/: footage fills the frame, a photo sits in it, a sound starts at the playhead.
+  const addStock = async (r: StockResult, path: string) => {
+    if (!project) return;
+    const src = await stockInStudio(project.id, path);
+    const s = latest.current.scene;
+    const name = r.title.slice(0, 40);
+    if (r.kind === 'audio') {
+      const start = Math.max(0, Math.min(s.duration - 0.1, Math.round(latest.current.state.time * 100) / 100));
+      const a = addAudio(s, { name, src, start, role: 'sfx' });
+      commit(a.scene);
+      setSelection({ layerId: null, clipId: null, audio: a.id });
+    } else if (r.kind === 'video') {
+      const len = r.seconds ? Math.round(r.seconds * 100) / 100 : 0;
+      const a = addLayer(s, 'video', { name, src, ...(len && len < s.duration ? { end: len } : {}) } as Partial<Layer>, latest.current.scope);
+      commit(a.scene);
+      setSelection({ layerId: a.id, clipId: null });
+    } else {
+      addLayerOfType('image', { name, src, alt: '', box: { x: 50, y: 50, w: 30, ...(r.width && r.height ? { ratio: Math.round((r.width / r.height) * 100) / 100 } : {}) } } as Partial<Layer>);
+    }
+    setNotice(`Added ${name} from ${r.source}${r.credit ? `. Credit needed: ${r.credit} (in the project notes)` : ''}.`);
+  };
   const menus: Menu[] = [
     { label: 'File', items: [
       { label: 'Projects…', onSelect: () => setProjectsOpen(true), hint: 'Project folders on this computer (AI Dev Kit), shared with your AI agent' },
@@ -880,6 +905,7 @@ export function App() {
       { label: 'Shape', onSelect: () => onAddLayer('shape') },
       { label: 'Image', onSelect: () => onAddLayer('image') },
       { label: 'Footage', onSelect: () => onAddLayer('video') },
+      { label: 'Free stock…', onSelect: () => setStockOpen(true), hint: 'Footage, photos and sounds free for commercial use (Pexels, Pixabay, NASA, Openverse); choose which sources you and your AI agent use' },
       { label: '3D object', onSelect: () => onAddLayer('model') },
       'sep',
       { label: 'Line', onSelect: () => onAddLayer('path') },
@@ -1310,6 +1336,7 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <StockDialog open={stockOpen} onClose={() => setStockOpen(false)} project={project?.id ?? null} onAdd={addStock} />
       <NotesDialog open={notesOpen} onClose={() => setNotesOpen(false)} project={project?.id ?? null} outsideChange={notesChanged} />
       <ProjectsDialog open={projectsOpen} onClose={() => setProjectsOpen(false)} current={project?.id ?? null} title={scene.title || ''}
         onOpen={(id) => openFolderProject(id)} onCreate={newFolderProject} onCloseProject={closeFolderProject} />
