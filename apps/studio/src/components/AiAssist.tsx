@@ -14,7 +14,7 @@ import { useVoices } from '../lib/voices';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { lintScene } from '@unysonplus/scene-player/lint';
-import { askForPlan, askForQuick, askForReview, askForScene, type KitStatus, type Plan } from '../lib/ai';
+import { askForPlan, askForQuick, askForReview, askForScene, type KitStatus, type Plan, SECURE_KIT } from '../lib/ai';
 import { applyStyle, styleBrief, type SceneStyle } from '../lib/styles';
 import { allLayers } from '@unysonplus/scene-player/groups';
 import { cutOutPerson, useFootageSound } from '../lib/footageKit';
@@ -567,6 +567,14 @@ export function AiAssist(props: {
             {status.state === 'outdated' && <span>Your AI Dev Kit needs an update for the Studio. Close it and start it again (start.bat or start.command): it updates itself.</span>}
             {status.state === 'missing' && (
               <GetKit lead="AI assist runs through the AI Dev Kit with your own AI" />
+            )}
+            {status.state === 'trust' && (
+              <span>
+                In Safari, the AI Dev Kit needs one step the first time. With the kit running, open{' '}
+                <a href={`${SECURE_KIT}/health`} target="_blank" rel="noopener noreferrer">its secure address</a>, choose
+                <strong> Show Details</strong>, then <strong>visit this website</strong> (it is your own computer), and check again.
+                Not running it yet? <a href="https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit" target="_blank" rel="noopener noreferrer">Get the AI Dev Kit</a>.
+              </span>
             )}
             {status.state === 'blocked' && (
               <span>

@@ -10,7 +10,13 @@ import { toVideo } from './videoMode';
  * through our servers: the request travels from this page straight to the user's machine.
  */
 
-const BASES = ['http://localhost:8787', 'http://127.0.0.1:8787'];
+// The secure address comes last: Safari doesn't let this https site reach a plain http address, even on this
+// computer, so the kit also answers on https (with a certificate it made for this computer, trusted once in Safari).
+export const SECURE_KIT = 'https://127.0.0.1:8789';
+const BASES = ['http://localhost:8787', 'http://127.0.0.1:8787', SECURE_KIT];
+
+/** Safari (and other WebKit browsers): the one that needs the secure address. */
+export const isSafari = () => typeof navigator !== 'undefined' && /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg|OPR|Firefox|FxiOS|CriOS/.test(navigator.userAgent);
 let base: string | null = null;
 /** What the running kit can do beyond the basics (an older kit reports none). */
 let features = new Set<string>();
@@ -25,6 +31,8 @@ export type KitStatus =
   | { state: 'missing' }
   /** The browser refuses to let this site reach apps on the user's computer (its local-network permission). */
   | { state: 'blocked' }
+  /** Safari, nothing answered: either the kit isn't running, or Safari doesn't trust its secure address yet. */
+  | { state: 'trust' }
   | { state: 'outdated' }
   | { state: 'off'; version: string }
   | { state: 'ready'; version: string; model: string; backend: string };
@@ -51,7 +59,8 @@ export async function kitStatus(): Promise<KitStatus> {
   }
   // Nothing answered. Browsers now ask before a website may reach apps on the user's own computer;
   // if that was refused, say so rather than claiming the kit isn't running.
-  return (await localNetworkPermission()) === 'denied' ? { state: 'blocked' } : { state: 'missing' };
+  if ((await localNetworkPermission()) === 'denied') return { state: 'blocked' };
+  return isSafari() ? { state: 'trust' } : { state: 'missing' };
 }
 
 /** The kit's address on this computer (found by kitStatus), or null when it is not running. */
