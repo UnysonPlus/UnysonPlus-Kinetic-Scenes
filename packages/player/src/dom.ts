@@ -123,7 +123,7 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
   }
 
   if (layer.type === 'shape') {
-    if (layer.fill) inner.style.background = layer.fill;
+    if (layer.fill) inner.style.background = smoothGradient(layer.fill);
     inner.style.borderRadius = layer.shape === 'ellipse' ? '50%' : `${layer.radius ?? 0}cqw`;
     if (layer.stroke && typeof layer.dash === 'number' && layer.dash > 0) {
       // A dashed outline is drawn as SVG (a CSS dashed border can't set its dash length or move it).
@@ -408,4 +408,19 @@ function frameMedia(doc: Document, inner: HTMLElement, media: HTMLElement, frame
   } else if (frame === 'card') {
     Object.assign(inner.style, { borderRadius: `${Math.max(radius, 1.6)}cqw`, boxShadow: '0 0 0 0.15cqw rgba(255,255,255,.18), 0 1.6cqw 4cqw rgba(0,0,0,.45)', overflow: 'hidden' });
   }
+}
+
+/**
+ * Gradients blend through OKLab, so colour changes stay clear instead of passing through grey (blue to yellow no
+ * longer dips to a muddy grey in the middle). OKLab rather than OKLCH: OKLCH is more vivid but leaves hard seams where
+ * its colours fall outside the screen's range (tested 2026-10-28). Only where the browser understands it, and only
+ * when the gradient does not name its own colour space; elsewhere it is used exactly as written.
+ */
+export function smoothGradient(fill: string): string {
+  const m = /^(\s*(?:repeating-)?(?:linear|radial|conic)-gradient\()([\s\S]*)\)\s*$/i.exec(fill);
+  if (!m || /\bin\s+(srgb|oklch|oklab|lab|lch|hsl|hwb|display-p3|xyz)/i.test(m[2])) return fill;
+  const first = m[2].split(',')[0].trim();
+  const isSetup = /^(to\s|[-\d.]+(deg|turn|rad|grad)\b|circle|ellipse|closest|farthest|at\s|from\s)/i.test(first);
+  const out = isSetup ? `${m[1]}${first} in oklab${m[2].slice(m[2].indexOf(',')) || ''})` : `${m[1]}in oklab, ${m[2]})`;
+  try { return typeof CSS !== 'undefined' && CSS.supports('background-image', out) ? out : fill; } catch { return fill; }
 }

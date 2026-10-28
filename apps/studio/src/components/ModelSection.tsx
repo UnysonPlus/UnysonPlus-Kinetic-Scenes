@@ -1,3 +1,4 @@
+import { kitBase } from '../lib/ai';
 import { useRef, useState } from 'react';
 import type { ModelLayer } from '@unysonplus/scene-player/types';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
@@ -30,6 +31,24 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
   const setModel = (patch: Partial<ModelLayer['model']>) => set({ model: { ...m, ...patch } });
   const setMat = (patch: Partial<NonNullable<ModelLayer['material']>>) => set({ material: { ...mat, ...patch } });
   const setPose = (patch: Partial<NonNullable<ModelLayer['pose']>>) => set({ pose: { ...pose, ...patch } });
+
+  // A 3D object from a description, built and checked by the AI Dev Kit.
+  const [describe, setDescribe] = useState('');
+  const [making, setMaking] = useState('');
+  const makeIt = async () => {
+    setNote(null); setMaking('Designing, measuring and looking at it');
+    try {
+      const b = await kitBase();
+      if (!b) throw new Error('This needs the AI Dev Kit running on this computer.');
+      const r = await fetch(`${b}/studio/object3d`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ prompt: describe, playerBase: new URL(`/player/${__PLAYER_VERSION__}/`, location.href).href }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 404 && !j.error) throw new Error('Your AI Dev Kit is too old for this. Close it and start it again: it updates itself.');
+      if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
+      set({ model: { kind: 'gltf', src: j.src }, material: { ...mat, original: true }, alt: layer.alt || j.name });
+      setNote(`Made "${j.name}" from ${j.parts} parts. ${j.problems?.length ? `Still not quite right: ${j.problems.join(' ')}` : 'Every part measured right.'} ${j.notes || ''} Turn it with the pose below, or describe it differently and make it again.`);
+    } catch (e) { setNote((e as Error).message); }
+    setMaking('');
+  };
 
   const upload = (file: File) => {
     if (file.size > MAX_UPLOAD) {
@@ -66,6 +85,12 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
                 ? 'Filled shapes become solid; each keeps its colour unless you set one below. An address must allow loading from other sites (CORS).'
                 : 'A .glb file is easiest (one file). An address must allow loading from other sites (CORS).'}
             </p>
+            {m.kind === 'gltf' && (
+              <div className="wide describe-3d">
+                <TextField label="Or make one from a description" wide value={describe} onCommit={setDescribe} />
+                <button type="button" className="btn small wide-btn" disabled={!describe.trim() || !!making} onClick={makeIt}>{making ? `${making}…` : 'Make it (one to three minutes)'}</button>
+              </div>
+            )}
             {note && <p className="field-hint wide">{note}</p>}
           </>
         )}

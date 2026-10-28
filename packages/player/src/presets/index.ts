@@ -387,12 +387,18 @@ const BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   recolor(ctx) {
     const to = typeof ctx.params.to === 'string' ? ctx.params.to : '#ffffff';
     const { layer } = ctx;
-    if (layer.type === 'text') {
-      ctx.tl.fromTo(ctx.el, { color: layer.style.color ?? '#ffffff' }, { color: to, duration: ctx.duration, ease: ctx.ease, immediateRender: false }, ctx.at);
-    } else if (layer.type === 'shape' && layer.fill && !/gradient|url\(/i.test(layer.fill)) {
-      // Gradients can't be blended into a colour, so only a solid fill takes part.
-      ctx.tl.fromTo(ctx.el, { backgroundColor: layer.fill }, { backgroundColor: to, duration: ctx.duration, ease: ctx.ease, immediateRender: false }, ctx.at);
-    }
+    // Blended through OKLab (color-mix), so the colours in between stay clear instead of passing through grey.
+    // Browsers without color-mix fall back to the plain tween.
+    const mix = typeof CSS !== 'undefined' && CSS.supports('color', 'color-mix(in oklab, red 50%, blue)');
+    const tween = (prop: 'color' | 'backgroundColor', from: string) => {
+      if (!mix) { ctx.tl.fromTo(ctx.el, { [prop]: from }, { [prop]: to, duration: ctx.duration, ease: ctx.ease, immediateRender: false }, ctx.at); return; }
+      const k = { v: 0 };
+      const paint = () => { ctx.el.style[prop] = k.v <= 0 ? from : k.v >= 1 ? to : `color-mix(in oklab, ${to} ${(k.v * 100).toFixed(2)}%, ${from})`; };
+      ctx.tl.fromTo(k, { v: 0 }, { v: 1, duration: ctx.duration, ease: ctx.ease, immediateRender: false, onUpdate: paint, onStart: paint, onComplete: paint, onReverseComplete: paint }, ctx.at);
+    };
+    if (layer.type === 'text') tween('color', layer.style.color ?? '#ffffff');
+    // Gradients can't be blended into a colour, so only a solid fill takes part.
+    else if (layer.type === 'shape' && layer.fill && !/gradient|url\(/i.test(layer.fill)) tween('backgroundColor', layer.fill);
   },
 };
 
