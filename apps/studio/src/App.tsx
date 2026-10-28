@@ -34,6 +34,9 @@ import { createProject, readProject, saveProject as saveToFolder, watchProject, 
 import { AGENTS_GUIDE, ProjectsDialog } from './components/ProjectsDialog';
 import { NotesDialog } from './components/NotesDialog';
 import { StockDialog } from './components/StockDialog';
+import { BatchDialog } from './components/BatchDialog';
+import { fillScene, rowLabel } from './lib/batch';
+import type { Sheet } from './lib/batch';
 import { stockInStudio } from './lib/stock';
 import type { StockResult } from './lib/stock';
 import {
@@ -212,11 +215,16 @@ export function App() {
   const commit = history.commit;
 
   // ---- keep the preview in step with the scene, selection and settings ----
+  // Videos from a spreadsheet: the rows, the pictures they name, and the row shown on the stage (the scene is not changed).
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [sheet, setSheet] = useState<{ sheet: Sheet | null; files: Map<string, string> }>({ sheet: null, files: new Map() });
+  const [rowView, setRowView] = useState<number | null>(null);
+  const shown = useMemo(() => (rowView !== null && sheet.sheet?.rows[rowView] ? fillScene(scene, sheet.sheet.rows[rowView], sheet.files) : scene), [scene, rowView, sheet]);
   useEffect(() => {
-    if (!ready || sentScene.current === scene) return;
-    sentScene.current = scene;
-    post({ type: 'scene', scene });
-  }, [scene, ready, post]);
+    if (!ready || sentScene.current === shown) return;
+    sentScene.current = shown;
+    post({ type: 'scene', scene: shown });
+  }, [shown, ready, post]);
   const selKey = selectedIds(selection).join('|');
   useEffect(() => { if (ready) post({ type: 'select', ids: selKey ? selKey.split('|') : [] }); }, [selKey, ready, post]);
   useEffect(() => { if (ready) post({ type: 'safe', show: safe }); }, [safe, ready, post]);
@@ -938,6 +946,7 @@ export function App() {
     { label: 'Tools', items: [
       { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox, ACE-Step music and other tools the AI Dev Kit can use on this computer' },
       { label: 'Make music…', onSelect: () => setMusicOpen(true) },
+      { label: 'Videos from a spreadsheet…', onSelect: () => setBatchOpen(true), hint: 'One design, a video per row: fill the {{placeholders}} in the scene from a CSV, preview each row, render them all' },
       'sep',
       { label: 'Separate voice and music', disabled: !(selLayer?.type === 'video' || (selAudio && !selAudio.src.startsWith('sfx:'))),
         hint: 'Select footage or an audio clip first', onSelect: () => showLayerSection(selLayer?.type === 'video' ? 'Footage tools' : 'Voice and music') },
@@ -1230,6 +1239,14 @@ export function App() {
           </div>
 
           <div className="preview-wrap">
+            {rowView !== null && sheet.sheet && (
+              <div className="row-bar" role="status">
+                <span>Row {rowView + 1} of {sheet.sheet.rows.length}: <strong>{rowLabel(sheet.sheet, rowView)}</strong> (a preview; your scene is unchanged)</span>
+                <button type="button" className="btn small ghost" disabled={rowView === 0} onClick={() => setRowView(rowView - 1)} aria-label="Previous row">‹</button>
+                <button type="button" className="btn small ghost" disabled={rowView >= sheet.sheet.rows.length - 1} onClick={() => setRowView(rowView + 1)} aria-label="Next row">›</button>
+                <button type="button" className="btn small" onClick={() => setRowView(null)}>Back to the design</button>
+              </div>
+            )}
             <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} zones={zones} checker={seeThrough} />
             <AiAssist
               project={project?.id ?? null}
@@ -1336,6 +1353,9 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <BatchDialog open={batchOpen} onClose={() => setBatchOpen(false)} scene={scene} sheet={sheet.sheet} files={sheet.files}
+        onSheet={(s, files) => { setSheet({ sheet: s, files }); if (!s) setRowView(null); }}
+        onPreview={(i) => { setRowView(i); setBatchOpen(false); }} />
       <StockDialog open={stockOpen} onClose={() => setStockOpen(false)} project={project?.id ?? null} onAdd={addStock} />
       <NotesDialog open={notesOpen} onClose={() => setNotesOpen(false)} project={project?.id ?? null} outsideChange={notesChanged} />
       <ProjectsDialog open={projectsOpen} onClose={() => setProjectsOpen(false)} current={project?.id ?? null} title={scene.title || ''}
