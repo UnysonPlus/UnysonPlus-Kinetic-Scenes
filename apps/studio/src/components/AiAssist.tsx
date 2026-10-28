@@ -54,6 +54,8 @@ export type QueuedRequest = string | {
   base?: Scene;
   /** A plan the person approved: build it without planning again. */
   approved?: boolean;
+  /** What the request makes: a new scene, or a change to this one (the default). */
+  scope?: Scope;
   /** A direction the person picked (Three directions first): plan and build in it, without proposing again. */
   direction?: Direction;
   /** Files the AI may place by name ("shot:1"), filled in afterwards. */
@@ -508,7 +510,7 @@ export function AiAssist(props: {
     const q = props.queued;
     props.onQueuedTaken();
     if (typeof q === 'string') send(q, 'scene');
-    else send(q.text, 'scene', q);
+    else send(q.text, q.scope ?? 'scene', q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.queued, props.open, busy, status.state]);
 

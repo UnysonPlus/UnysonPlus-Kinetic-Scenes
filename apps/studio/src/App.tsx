@@ -36,6 +36,7 @@ import { NotesDialog } from './components/NotesDialog';
 import { StockDialog } from './components/StockDialog';
 import { BatchDialog } from './components/BatchDialog';
 import { HighlightsDialog } from './components/HighlightsDialog';
+import { LikeThisDialog } from './components/LikeThisDialog';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { fillScene, rowLabel } from './lib/batch';
 import type { Sheet } from './lib/batch';
@@ -282,6 +283,7 @@ export function App() {
   const [stockOpen, setStockOpen] = useState(false);
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
+  const [likeOpen, setLikeOpen] = useState(false);
   /** Bumped when the project's notes change in the folder (the agent added something). */
   const [notesChanged, setNotesChanged] = useState(0);
   const [projectSave, setProjectSave] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -952,6 +954,7 @@ export function App() {
       { label: 'AI settings (style, voice, look and fix)', onSelect: () => { openAssist(true); setAiSettingsAsk(Date.now()); } },
       'sep',
       { label: 'Voice-over from a script', onSelect: () => showSceneSection('Voice-over from a script') },
+      { label: 'Make one like this…', onSelect: () => setLikeOpen(true), hint: 'Give a video you like: the AI makes yours the same way (structure, pacing, text style, cuts), with your own content' },
       { label: 'Make music…', onSelect: () => setMusicOpen(true) },
     ] },
     { label: 'Tools', items: [
@@ -1366,6 +1369,8 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} project={project?.id ?? null} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <LikeThisDialog open={likeOpen} onClose={() => setLikeOpen(false)}
+        onBrief={(r) => { setLikeOpen(false); setQueued({ text: r.about, brief: r.brief, context: r.context, scope: 'new' }); openAssist(true); setNotice(`How the video is made: ${r.summary} AI assist is making yours.`); }} />
       <ShortcutsDialog open={keysOpen} onClose={() => setKeysOpen(false)} />
       <HighlightsDialog open={highlightsOpen} onClose={() => setHighlightsOpen(false)}
         onScene={(s, note) => { commit(s); setSelection({ layerId: null, clipId: null }); setHighlightsOpen(false); setNotice(note); }} />
