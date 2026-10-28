@@ -32,6 +32,7 @@ import { formatScene } from './lib/format';
 import { useHistory } from './lib/history';
 import { createProject, readProject, saveProject as saveToFolder, watchProject, workspaceAvailable, type OpenProject } from './lib/workspace';
 import { AGENTS_GUIDE, ProjectsDialog } from './components/ProjectsDialog';
+import { NotesDialog } from './components/NotesDialog';
 import {
   addClip, addLayer, blankScene, boxAt, containerOf, duplicateLayer, findClip, findLayer, groupLayers, layersIn, moveBy, removeClip,
   removeLayer, roundTime, setClip, ungroupLayer, writeLayout,
@@ -264,6 +265,9 @@ export function App() {
   // ---- the workspace: the scene kept in a project folder on this computer (AI Dev Kit), shared with an AI agent ----
   const [project, setProject] = useState<OpenProject | null>(null);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  /** Bumped when the project's notes change in the folder (the agent added something). */
+  const [notesChanged, setNotesChanged] = useState(0);
   const [projectSave, setProjectSave] = useState<'saved' | 'saving' | 'error'>('saved');
   const projectRef = useRef(project);
   projectRef.current = project;
@@ -349,6 +353,7 @@ export function App() {
   useEffect(() => {
     if (!project) return;
     return watchProject(project.id, (ev) => {
+      if (ev.kind === 'notes') { setNotesChanged((n) => n + 1); return; }
       if (ev.kind !== 'scene') return;
       saveChain.current = saveChain.current.then(async () => {
         const p = projectRef.current;
@@ -837,6 +842,7 @@ export function App() {
   const menus: Menu[] = [
     { label: 'File', items: [
       { label: 'Projects…', onSelect: () => setProjectsOpen(true), hint: 'Project folders on this computer (AI Dev Kit), shared with your AI agent' },
+      { label: 'Project notes…', onSelect: () => setNotesOpen(true), disabled: !project, hint: project ? 'The plan, what was decided and what is left, shared with your AI agent' : 'Open a project first (File › Projects)' },
       'sep',
       { label: 'New', onSelect: startNew, hint: 'An empty scene (same screen sizes and fonts). Undo brings back the current one.' },
       { label: 'Open…', onSelect: () => openRef.current?.click() },
@@ -1303,6 +1309,7 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <NotesDialog open={notesOpen} onClose={() => setNotesOpen(false)} project={project?.id ?? null} outsideChange={notesChanged} />
       <ProjectsDialog open={projectsOpen} onClose={() => setProjectsOpen(false)} current={project?.id ?? null} title={scene.title || ''}
         onOpen={(id) => openFolderProject(id)} onCreate={newFolderProject} onCloseProject={closeFolderProject} />
       <MusicDialog open={musicOpen} onClose={() => setMusicOpen(false)} scene={scene} onCommit={commit}

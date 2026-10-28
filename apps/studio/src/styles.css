@@ -924,3 +924,7 @@ h1, h2, p { margin: 0; }
 .project-state.is-error { color: #ff7a7a; }
 .agent-connected { display: flex; gap: 8px; align-items: baseline; margin: 0; font-size: 12.5px; line-height: 1.45; opacity: .85; }
 .assist-panel .agent-connected { margin: 8px 12px 0; }
+dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
+.notes-text { width: 100%; min-height: 46vh; box-sizing: border-box; resize: vertical; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border-soft); background: var(--bg); color: var(--ink); font: 13px/1.55 var(--mono, ui-monospace, monospace); }
+.notes-text:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }

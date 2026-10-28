@@ -20,6 +20,9 @@ ordinary layers and clips the person can keep editing. This skill is generated f
 
 ## How to work
 
+0. **In a workspace project, read its notes first** (`notes.md`: the plan, what was decided, what is left; MCP
+   `project_notes`, or `kinetic-scenes notes "<project>"`), and add a line when something is decided or done, so the
+   person and the next session can carry on.
 1. **Plan before building.** Write a storyboard: the hook in the first two seconds, the highlights in order, the
    ending (a call to action), each act's length, what appears one by one, the transitions and the sound. For an
    explainer, write the narration first, split into segments that each name what the screen shows. Agree it

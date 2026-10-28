@@ -140,7 +140,7 @@ export async function saveProject(id: string, scene: Scene, base: number, packed
 }
 
 /** Calls back when someone else changes the project (an agent, another window). Returns a stop function. */
-export function watchProject(id: string, onChange: (ev: { kind: 'scene' | 'media'; mtime?: number }) => void): () => void {
+export function watchProject(id: string, onChange: (ev: { kind: 'scene' | 'notes' | 'media'; mtime?: number }) => void): () => void {
   let es: EventSource | null = null;
   let stopped = false;
   kitBase().then((b) => {
@@ -152,3 +152,7 @@ export function watchProject(id: string, onChange: (ev: { kind: 'scene' | 'media
 }
 
 export const revealProject = (id?: string) => call<{ dir: string }>(id ? `/${enc(id)}/reveal` : '/reveal', { method: 'POST' });
+
+/** The project's notes (notes.md): the plan, what was decided, what is left, shared with the agent. */
+export const readNotes = (id: string) => call<{ notes: string; mtime: number }>(`/${enc(id)}/notes`);
+export const saveNotes = (id: string, notes: string) => call<{ mtime: number }>(`/${enc(id)}/notes`, post({ notes }));
