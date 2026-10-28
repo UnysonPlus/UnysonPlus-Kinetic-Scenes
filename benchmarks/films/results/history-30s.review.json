@@ -1,0 +1,23 @@
+{
+  "brief": "The history of the bicycle in about 20 seconds: four dates (1817, 1885, 1970, 2020), one short line each, ending on \"Still the best machine\".",
+  "style": "Swiss grid",
+  "seconds": 336,
+  "scores": {
+    "style": 4,
+    "idea": 4,
+    "motion": 2,
+    "design": 2,
+    "finish": 2,
+    "sound": 3,
+    "technical": 2
+  },
+  "notes": "The measured year-overlaps-line warning showed on every act (the huge 18-unit year sat on top of its caption and the red rule cut through the digits), so I separated each pair vertically — rule just under the number, caption a clear ~4 units below it. The check flagged all four captions at ~11 px (unreadable) and the 18:3 size jump was too steep, so I lifted the caption size from 3 to 5 (now ~18 px, a clean 3.6x hierarchy). To kill the four 2-second dead holds I added a gentle one-cycle float on each year during its hold. I left the strong final 'Still the best machine' payoff untouched.",
+  "frames": [
+    2,
+    5.6,
+    9.2,
+    12.8,
+    16.4,
+    19.9
+  ]
+}

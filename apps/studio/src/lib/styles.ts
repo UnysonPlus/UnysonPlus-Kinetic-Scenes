@@ -2,6 +2,7 @@ import type { Clip, ClipSound, Layer, Scene, TextLayer } from '@unysonplus/scene
 import { presetMeta } from '@unysonplus/scene-player/catalog';
 import { SFX_IDS } from '@unysonplus/scene-player/sfx';
 import { readingTime } from '@unysonplus/scene-player/lint';
+import { MOTION_STYLES } from './motionStyles';
 
 /**
  * Styles: ready looks a scene can be built from. A style is a palette, a type pairing, a motion
@@ -62,6 +63,13 @@ export interface SceneStyle {
     easeOut: string;
   };
   sounds: { enter: string; exit: string; hit: string; accent: string; density: 'none' | 'light' | 'normal' };
+  /**
+   * For recognised motion-design styles: what makes the style recognisable at a glance (signs) and how to build it
+   * from the Studio's layers, presets and fonts (build). Sent to AI assist with the rest of the style.
+   */
+  guide?: { signs: string; build: string };
+  /** The style's signature effect, put on the starter scene's backdrop (a boil, scanlines, halftone…). */
+  signature?: StyleMove;
   /** Words for the starter scene. */
   sample: { kicker: string; headline: string; sub: string };
 }
@@ -165,6 +173,8 @@ export const BUILT_IN_STYLES: SceneStyle[] = [
     sounds: { enter: 'swell', exit: 'whoosh-out', hit: 'sub-hit', accent: 'shimmer', density: 'light' },
     sample: { kicker: 'Maison', headline: 'Made to last.', sub: 'Hand-finished, one at a time.' },
   },
+  // Recognised motion-design styles (synthwave, line art, Swiss grid…), each with a guide for AI assist.
+  ...MOTION_STYLES,
 ];
 
 /* ---------------------------------------------------------------- colours */
@@ -474,6 +484,20 @@ export function starterScene(style: SceneStyle, base?: Scene): Scene {
   const head = move(style.motion.headline, 'in');
   const text = move(style.motion.text, 'in');
   const shape = move(style.motion.shape, 'in');
+  // A motion-design style shows its signature effect: an ambient look on the glow (liquid) or on the headline once it
+  // has landed (boil, scanlines, halftone, the text looks). Entrance presets are already in the style's motion.
+  // Only looks count as a signature: ambient ones run until the exit, the others ease in once and hold.
+  const LONG = ['boil', 'liquid', 'scanlines', 'text-gradient', 'float', 'drift', 'gradient-flow'];
+  const SHORT = ['halftone', 'text-outline', 'text-3d', 'text-skew', 'glow', 'sheen', 'spotlight', 'jiggle'];
+  const sigClip = (layerType: Layer['type'], from: number): Clip[] => {
+    const id = style.signature?.preset;
+    if (!id || ![...LONG, ...SHORT].includes(id) || !presetMeta[id] || !fits(id, { type: layerType } as Layer)) return [];
+    const dur = LONG.includes(id) ? Math.max(0.5, Math.round((exitAt - from) * 100) / 100) : t(0.6);
+    return [{ id: `${layerType}-signature`, preset: id, start: from, duration: dur, params: { ...(style.signature!.params ?? {}) } }];
+  };
+  const onGlow = style.signature?.preset === 'liquid';
+  // Screen-wide looks (VHS, CRT) go on a see-through layer over the whole stage instead of one layer's box.
+  const onStage = style.signature?.preset === 'scanlines';
 
   return {
     format: 'unysonplus-scene', version: 1, title: `${style.name} title`, duration,
@@ -486,7 +510,7 @@ export function starterScene(style: SceneStyle, base?: Scene): Scene {
       {
         id: 'glow', name: 'Glow', type: 'shape', shape: 'ellipse', box: { x: 50, y: 50, w: 70, ratio: 1.6 }, opacity: 0.18,
         fill: `radial-gradient(closest-side, ${style.palette.accent} 0%, transparent 100%)`,
-        clips: [{ id: 'glow-in', preset: 'fade', start: 0, duration: t(1.2), params: { y: 0, scale: 0.8 } }, { id: 'glow-drift', preset: 'drift', start: t(1.2), duration: Math.max(0.5, exitAt - t(1.2)), params: { x: 0, y: -2, scale: 1.08 } }],
+        clips: [{ id: 'glow-in', preset: 'fade', start: 0, duration: 0.7, params: { y: 0, scale: 0.8 } }, { id: 'glow-drift', preset: 'drift', start: 0.7, duration: Math.max(0.5, exitAt - 0.7), params: { x: 0, y: -2, scale: 1.08 } }, ...(onGlow ? sigClip('shape', 0) : [])],
         overrides: ov({ w: 120 }),
       },
       ...(style.logo ? [{
@@ -502,7 +526,7 @@ export function starterScene(style: SceneStyle, base?: Scene): Scene {
       {
         id: 'headline', name: 'Headline', type: 'text', text: style.sample.headline, box: { x: 50, y: 46, w: 84 },
         style: { ...heading, fontSize: 9, lineHeight: 1.02, color: style.palette.text, align: 'center' },
-        clips: [{ id: 'headline-in', ...head, start: t(0.5), duration: t(0.9), ease: style.motion.easeIn, ...snd(style.sounds.hit, { at: 'end', delay: -0.15 }) }, ...exit('headline-out', 'text')],
+        clips: [{ id: 'headline-in', ...head, start: t(0.5), duration: t(0.9), ease: style.motion.easeIn, ...snd(style.sounds.hit, { at: 'end', delay: -0.15 }) }, ...(onGlow || onStage ? [] : sigClip('text', t(1.4))), ...exit('headline-out', 'text')],
         overrides: ov({ fontSize: 12.5, y: 42, w: 86 }, { fontSize: 11 }),
       },
       {
@@ -516,6 +540,10 @@ export function starterScene(style: SceneStyle, base?: Scene): Scene {
         clips: [{ id: 'sub-in', ...text, start: t(1.8), duration: t(0.9), ease: style.motion.easeIn, ...snd(style.sounds.accent) }, ...exit('sub-out', 'text')],
         overrides: ov({ fontSize: 5, y: 68, w: 86 }, { fontSize: 3 }),
       },
+      ...(onStage ? [{
+        id: 'texture', name: 'Screen texture', type: 'shape' as const, shape: 'rect' as const, box: { x: 50, y: 50, w: 100, h: 100 }, fill: 'transparent',
+        clips: sigClip('shape', 0),
+      }] : []),
     ],
   };
 }
@@ -621,5 +649,7 @@ export function styleBrief(style: SceneStyle): string {
 - Stage background: ${style.palette.background}. Colours: text ${style.palette.text}, secondary text ${style.palette.muted}, accent ${style.palette.accent}${style.palette.accent2 ? `, second accent ${style.palette.accent2}` : ''}. Use the accent sparingly, on what matters most.
 - Fonts: headlines "${style.fonts.heading}" weight ${style.fonts.headingWeight}${style.fonts.uppercase ? ' in capitals' : ''}; other text "${style.fonts.body}" weight ${style.fonts.bodyWeight}.${style.fonts.href ? ` Set stage.fonts to [{ "family": "${style.fonts.heading}", "href": "${style.fonts.href}" }].` : ''}
 - Motion: headlines enter with ${mv(m.headline)}, other text with ${mv(m.text)}, shapes with ${mv(m.shape)}; exits use ${mv(m.exit)}. Entrances ease "${m.easeIn}", exits "${m.easeOut}". Pace ${m.pace < 0.95 ? 'snappy: shorter moves and tighter gaps' : m.pace > 1.15 ? 'calm: longer moves and more breathing room' : 'steady'}. Vary supporting entrances a little where it helps, but keep this personality.
-${style.logo ? '- Logo: the brand has a logo. Show it where a brand would (the opening or the call to action): an image layer with "src": "brand:logo", "fit": "contain", about 12 to 20 wide.\n' : ''}- Sounds: ${style.sounds.density === 'none' ? 'none.' : `${style.sounds.density === 'light' ? 'a few, only the key moments' : 'on the key moments'}: entrances "${style.sounds.enter}", exits "${style.sounds.exit}", landings "${style.sounds.hit}", accents "${style.sounds.accent}".`}`;
+${style.logo ? '- Logo: the brand has a logo. Show it where a brand would (the opening or the call to action): an image layer with "src": "brand:logo", "fit": "contain", about 12 to 20 wide.\n' : ''}- Sounds: ${style.sounds.density === 'none' ? 'none.' : `${style.sounds.density === 'light' ? 'a few, only the key moments' : 'on the key moments'}: entrances "${style.sounds.enter}", exits "${style.sounds.exit}", landings "${style.sounds.hit}", accents "${style.sounds.accent}".`}${style.guide ? `
+- What makes it ${style.name}: ${style.guide.signs} Someone should recognise the style from any single frame.
+- How to build it here: ${style.guide.build}${style.signature ? ` Its signature effect is the "${style.signature.preset}" preset.` : ''}` : ''}`;
 }

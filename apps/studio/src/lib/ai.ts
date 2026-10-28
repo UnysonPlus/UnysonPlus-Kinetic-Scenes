@@ -280,15 +280,17 @@ export function askForPlan(opts: { prompt: string; kind: 'storyboard' | 'explain
 /** Look, criticise, fix: the kit renders key frames and the AI reviews them; a corrected scene comes back validated. */
 export async function askForReview(opts: { scene: Scene; prompt: string; playerBase: string; signal: AbortSignal }): Promise<{ scene?: Scene; note: string; looked: boolean; frames: number }> {
   // The real scene goes to the kit (it renders the frames from it; it shortens the files for the AI itself).
-  const r = await post<{ ok: boolean; notes?: string; scene?: Scene; explanation?: string; looked: boolean; frames: number[] }>('/studio/review', {
+  const r = await post<{ ok: boolean; notes?: string; scene?: Scene; explanation?: string; scores?: Record<string, number> | null; looked: boolean; frames: number[] }>('/studio/review', {
     scene: opts.scene, prompt: opts.prompt, playerBase: opts.playerBase, catalog: catalogForAi(), rules: MOTION_RULES,
     // Only the changed layers come back (the kit merges them); an older kit ignores this and returns the whole scene.
     patch: true,
   }, opts.signal);
-  if (r.ok || !r.scene) return { note: r.notes || 'No changes needed.', looked: r.looked, frames: r.frames?.length ?? 0 };
+  // The jury's scores (1-5 on seven points), when the kit gives them, follow the note.
+  const jury = r.scores && typeof r.scores === 'object' ? ` Jury (1-5): ${Object.entries(r.scores).filter(([, n]) => typeof n === 'number').map(([k, n]) => `${k} ${n}`).join(' · ')}.` : '';
+  if (r.ok || !r.scene) return { note: (r.notes || 'No changes needed.') + jury, looked: r.looked, frames: r.frames?.length ?? 0 };
   const v = validateScene(r.scene);
   if (!v.ok) return { note: 'The review suggested changes that did not validate, so the scene was kept as it was.', looked: r.looked, frames: r.frames?.length ?? 0 };
-  return { scene: keepMode(guardCode(v.scene, codeClips(opts.scene)), opts.scene), note: r.explanation || '', looked: r.looked, frames: r.frames?.length ?? 0 };
+  return { scene: keepMode(guardCode(v.scene, codeClips(opts.scene)), opts.scene), note: (r.explanation || '') + jury, looked: r.looked, frames: r.frames?.length ?? 0 };
 }
 
 /** A website (or a project folder)'s real words, colours, fonts and screenshots, for a quick scene. */

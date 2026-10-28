@@ -1,0 +1,699 @@
+{
+  "format": "unysonplus-scene",
+  "version": 1,
+  "title": "History of the Bicycle",
+  "duration": 20,
+  "stage": {
+    "breakpoints": [
+      {
+        "id": "desktop",
+        "label": "Desktop",
+        "minWidth": 0,
+        "aspect": [
+          16,
+          9
+        ]
+      }
+    ],
+    "heightMode": "ratio-capped",
+    "background": "#ffffff",
+    "safeArea": 0.06,
+    "fonts": [
+      {
+        "family": "Inter",
+        "href": "https://fonts.googleapis.com/css2?family=Inter:wght@500;900&display=swap"
+      }
+    ]
+  },
+  "playback": {
+    "trigger": "view",
+    "loop": false,
+    "posterTime": 2
+  },
+  "layers": [
+    {
+      "id": "year1",
+      "name": "1817",
+      "type": "text",
+      "start": 0,
+      "end": 4.2,
+      "box": {
+        "x": 8,
+        "y": 32,
+        "anchor": "left"
+      },
+      "text": "1817",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 18,
+        "fontWeight": 900,
+        "lineHeight": 0.95,
+        "letterSpacing": -0.04,
+        "color": "#0a0a0a",
+        "align": "left"
+      },
+      "clips": [
+        {
+          "id": "c-y1-in",
+          "preset": "text-rise",
+          "start": 0.3,
+          "duration": 0.6,
+          "ease": "expo.out",
+          "params": {
+            "by": "chars",
+            "stagger": 0.03,
+            "rhythm": "natural"
+          }
+        },
+        {
+          "id": "c-y1-float",
+          "preset": "float",
+          "start": 1.1,
+          "duration": 2.3,
+          "params": {
+            "height": 2,
+            "cycles": 1
+          }
+        },
+        {
+          "id": "c-y1-out",
+          "preset": "text-rise",
+          "start": 3.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "by": "chars",
+            "stagger": 0.02
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule1",
+      "name": "Rule 1",
+      "type": "shape",
+      "start": 0,
+      "end": 4.2,
+      "box": {
+        "x": 8,
+        "y": 45,
+        "anchor": "left",
+        "w": 28,
+        "h": 0.6
+      },
+      "shape": "rect",
+      "fill": "#ff2a1a",
+      "clips": [
+        {
+          "id": "c-r1-in",
+          "preset": "grow",
+          "start": 0.6,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "axis": "x",
+            "origin": "start"
+          }
+        },
+        {
+          "id": "c-r1-out",
+          "preset": "grow",
+          "start": 3.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "axis": "x",
+            "origin": "end"
+          }
+        }
+      ]
+    },
+    {
+      "id": "line1",
+      "name": "Line 1",
+      "type": "text",
+      "start": 0,
+      "end": 4.2,
+      "box": {
+        "x": 8,
+        "y": 52,
+        "anchor": "left"
+      },
+      "text": "The running machine.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 5,
+        "fontWeight": 500,
+        "lineHeight": 1.1,
+        "letterSpacing": -0.01,
+        "color": "#5c5c5c",
+        "align": "left"
+      },
+      "clips": [
+        {
+          "id": "c-l1-in",
+          "preset": "wipe",
+          "start": 0.9,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "from": "left"
+          }
+        },
+        {
+          "id": "c-l1-out",
+          "preset": "wipe",
+          "start": 3.7,
+          "duration": 0.35,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "from": "right"
+          }
+        }
+      ]
+    },
+    {
+      "id": "year2",
+      "name": "1885",
+      "type": "text",
+      "start": 4.2,
+      "end": 8.2,
+      "box": {
+        "x": 8,
+        "y": 50,
+        "anchor": "left"
+      },
+      "text": "1885",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 18,
+        "fontWeight": 900,
+        "lineHeight": 0.95,
+        "letterSpacing": -0.04,
+        "color": "#0a0a0a",
+        "align": "left"
+      },
+      "clips": [
+        {
+          "id": "c-y2-in",
+          "preset": "text-rise",
+          "start": 4.4,
+          "duration": 0.6,
+          "ease": "expo.out",
+          "params": {
+            "by": "chars",
+            "stagger": 0.03,
+            "rhythm": "natural"
+          }
+        },
+        {
+          "id": "c-y2-float",
+          "preset": "float",
+          "start": 5.2,
+          "duration": 2.2,
+          "params": {
+            "height": 2,
+            "cycles": 1
+          }
+        },
+        {
+          "id": "c-y2-out",
+          "preset": "text-rise",
+          "start": 7.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "by": "chars",
+            "stagger": 0.02
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule2",
+      "name": "Rule 2",
+      "type": "shape",
+      "start": 4.2,
+      "end": 8.2,
+      "box": {
+        "x": 8,
+        "y": 63,
+        "anchor": "left",
+        "w": 28,
+        "h": 0.6
+      },
+      "shape": "rect",
+      "fill": "#ff2a1a",
+      "clips": [
+        {
+          "id": "c-r2-in",
+          "preset": "grow",
+          "start": 4.7,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "axis": "x",
+            "origin": "start"
+          }
+        },
+        {
+          "id": "c-r2-out",
+          "preset": "grow",
+          "start": 7.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "axis": "x",
+            "origin": "end"
+          }
+        }
+      ]
+    },
+    {
+      "id": "line2",
+      "name": "Line 2",
+      "type": "text",
+      "start": 4.2,
+      "end": 8.2,
+      "box": {
+        "x": 8,
+        "y": 70,
+        "anchor": "left"
+      },
+      "text": "The safety bicycle.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 5,
+        "fontWeight": 500,
+        "lineHeight": 1.1,
+        "letterSpacing": -0.01,
+        "color": "#5c5c5c",
+        "align": "left"
+      },
+      "clips": [
+        {
+          "id": "c-l2-in",
+          "preset": "wipe",
+          "start": 5,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "from": "left"
+          }
+        },
+        {
+          "id": "c-l2-out",
+          "preset": "wipe",
+          "start": 7.7,
+          "duration": 0.35,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "from": "right"
+          }
+        }
+      ]
+    },
+    {
+      "id": "year3",
+      "name": "1970",
+      "type": "text",
+      "start": 8.2,
+      "end": 12.2,
+      "box": {
+        "x": 92,
+        "y": 32,
+        "anchor": "right"
+      },
+      "text": "1970",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 18,
+        "fontWeight": 900,
+        "lineHeight": 0.95,
+        "letterSpacing": -0.04,
+        "color": "#0a0a0a",
+        "align": "right"
+      },
+      "clips": [
+        {
+          "id": "c-y3-in",
+          "preset": "text-rise",
+          "start": 8.5,
+          "duration": 0.6,
+          "ease": "expo.out",
+          "params": {
+            "by": "chars",
+            "stagger": 0.03,
+            "rhythm": "natural"
+          }
+        },
+        {
+          "id": "c-y3-float",
+          "preset": "float",
+          "start": 9.3,
+          "duration": 2.1,
+          "params": {
+            "height": 2,
+            "cycles": 1
+          }
+        },
+        {
+          "id": "c-y3-out",
+          "preset": "text-rise",
+          "start": 11.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "by": "chars",
+            "stagger": 0.02
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule3",
+      "name": "Rule 3",
+      "type": "shape",
+      "start": 8.2,
+      "end": 12.2,
+      "box": {
+        "x": 92,
+        "y": 45,
+        "anchor": "right",
+        "w": 28,
+        "h": 0.6
+      },
+      "shape": "rect",
+      "fill": "#ff2a1a",
+      "clips": [
+        {
+          "id": "c-r3-in",
+          "preset": "grow",
+          "start": 8.8,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "axis": "x",
+            "origin": "end"
+          }
+        },
+        {
+          "id": "c-r3-out",
+          "preset": "grow",
+          "start": 11.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "axis": "x",
+            "origin": "start"
+          }
+        }
+      ]
+    },
+    {
+      "id": "line3",
+      "name": "Line 3",
+      "type": "text",
+      "start": 8.2,
+      "end": 12.2,
+      "box": {
+        "x": 92,
+        "y": 52,
+        "anchor": "right"
+      },
+      "text": "The mountain bike.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 5,
+        "fontWeight": 500,
+        "lineHeight": 1.1,
+        "letterSpacing": -0.01,
+        "color": "#5c5c5c",
+        "align": "right"
+      },
+      "clips": [
+        {
+          "id": "c-l3-in",
+          "preset": "wipe",
+          "start": 9.1,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "from": "right"
+          }
+        },
+        {
+          "id": "c-l3-out",
+          "preset": "wipe",
+          "start": 11.7,
+          "duration": 0.35,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "from": "left"
+          }
+        }
+      ]
+    },
+    {
+      "id": "year4",
+      "name": "2020",
+      "type": "text",
+      "start": 12.2,
+      "end": 16.2,
+      "box": {
+        "x": 92,
+        "y": 50,
+        "anchor": "right"
+      },
+      "text": "2020",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 18,
+        "fontWeight": 900,
+        "lineHeight": 0.95,
+        "letterSpacing": -0.04,
+        "color": "#0a0a0a",
+        "align": "right"
+      },
+      "clips": [
+        {
+          "id": "c-y4-in",
+          "preset": "text-rise",
+          "start": 12.5,
+          "duration": 0.6,
+          "ease": "expo.out",
+          "params": {
+            "by": "chars",
+            "stagger": 0.03,
+            "rhythm": "natural"
+          }
+        },
+        {
+          "id": "c-y4-float",
+          "preset": "float",
+          "start": 13.3,
+          "duration": 2.1,
+          "params": {
+            "height": 2,
+            "cycles": 1
+          }
+        },
+        {
+          "id": "c-y4-out",
+          "preset": "text-rise",
+          "start": 15.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "by": "chars",
+            "stagger": 0.02
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule4",
+      "name": "Rule 4",
+      "type": "shape",
+      "start": 12.2,
+      "end": 16.2,
+      "box": {
+        "x": 92,
+        "y": 63,
+        "anchor": "right",
+        "w": 28,
+        "h": 0.6
+      },
+      "shape": "rect",
+      "fill": "#ff2a1a",
+      "clips": [
+        {
+          "id": "c-r4-in",
+          "preset": "grow",
+          "start": 12.8,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "axis": "x",
+            "origin": "end"
+          }
+        },
+        {
+          "id": "c-r4-out",
+          "preset": "grow",
+          "start": 15.6,
+          "duration": 0.4,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "axis": "x",
+            "origin": "start"
+          }
+        }
+      ]
+    },
+    {
+      "id": "line4",
+      "name": "Line 4",
+      "type": "text",
+      "start": 12.2,
+      "end": 16.2,
+      "box": {
+        "x": 92,
+        "y": 70,
+        "anchor": "right"
+      },
+      "text": "Electric, everywhere.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 5,
+        "fontWeight": 500,
+        "lineHeight": 1.1,
+        "letterSpacing": -0.01,
+        "color": "#5c5c5c",
+        "align": "right"
+      },
+      "clips": [
+        {
+          "id": "c-l4-in",
+          "preset": "wipe",
+          "start": 13.1,
+          "duration": 0.5,
+          "ease": "expo.out",
+          "params": {
+            "from": "right"
+          }
+        },
+        {
+          "id": "c-l4-out",
+          "preset": "wipe",
+          "start": 15.7,
+          "duration": 0.35,
+          "ease": "expo.in",
+          "params": {
+            "direction": "out",
+            "from": "left"
+          }
+        }
+      ]
+    },
+    {
+      "id": "finalRule",
+      "name": "Final rule",
+      "type": "shape",
+      "start": 16.2,
+      "end": 20,
+      "box": {
+        "x": 8,
+        "y": 62,
+        "anchor": "left",
+        "w": 30,
+        "h": 0.6
+      },
+      "shape": "rect",
+      "fill": "#ff2a1a",
+      "clips": [
+        {
+          "id": "c-fr-in",
+          "preset": "grow",
+          "start": 16.7,
+          "duration": 0.6,
+          "ease": "expo.out",
+          "params": {
+            "axis": "x",
+            "origin": "start"
+          }
+        }
+      ]
+    },
+    {
+      "id": "finalHead",
+      "name": "Still the best machine",
+      "type": "text",
+      "start": 16.2,
+      "end": 20,
+      "box": {
+        "x": 8,
+        "y": 40,
+        "anchor": "left"
+      },
+      "text": "Still the\nbest machine.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 900,
+        "lineHeight": 0.95,
+        "letterSpacing": -0.04,
+        "color": "#0a0a0a",
+        "align": "left"
+      },
+      "clips": [
+        {
+          "id": "c-fh-in",
+          "preset": "text-rise",
+          "start": 16.4,
+          "duration": 0.8,
+          "ease": "expo.out",
+          "params": {
+            "by": "chars",
+            "stagger": 0.02,
+            "rhythm": "natural"
+          }
+        },
+        {
+          "id": "c-fh-sel",
+          "preset": "select-box",
+          "start": 17.6,
+          "duration": 0.6,
+          "ease": "expo.out",
+          "params": {
+            "word": 3,
+            "color": "#ff2a1a",
+            "tint": true,
+            "handles": true
+          }
+        },
+        {
+          "id": "c-fh-float",
+          "preset": "float",
+          "start": 18.4,
+          "duration": 1.6,
+          "params": {
+            "height": 2,
+            "cycles": 1
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Motion rules
 
-The rules the Studio's own AI follows (Studio 0.1.2).
+The rules the Studio's own AI follows (Studio 0.1.6).
 
 ```text
 TIMING
@@ -158,10 +158,71 @@ Interface pieces (build from layers like the Pieces library): comment CTA / comm
   the footage with frame phone; B-roll overlay = a picture or footage with frame browser over the speaker; video card =
   footage with frame card.
 
+THE FILM'S SHAPE (plan every scene this way before building it)
+- Hook: something visibly happens in the first half-second (a word lands, a shape moves, a cut); never open on an empty or still frame.
+- One hero moment, about two-thirds of the way through: the single most striking thing in the scene (the reveal, the biggest type, the product, the payoff number). Build up to it, give it the strongest move and, with sound, the biggest hit; nothing else competes with it.
+- A composed end frame: the last arrangement is designed as a still (logo, line, call to action placed with care) and held about a second or more with only gentle movement (a drift or float), not cut off mid-move.
+- Decide the key frames first (the hook, the hero moment, the end frame, one per act) as still layouts that already look good, then add the motion between them.
+- Sound hits sit on the same cue times as the picture: a hit lands when the move lands, not near it.
+
+COMPOSITION
+- One focal point per frame: the eye goes to one thing first. Size, contrast, colour and motion all point at it; the rest is quieter.
+- Use the frame: balance the weight across it, leave generous margins (at least the safe area) and real empty space; don't line everything up in the dead centre unless the style calls for it.
+- Align to a grid: things that belong together share an edge or a centre, and gaps repeat.
+- Contrast carries hierarchy: a few sizes far apart (a headline 2-4 times the text), one accent colour on what matters.
+
+CUTTING TO THE BEAT
+- Change scenes (a new act, a transition, a cut in footage) on a beat or a strong moment of the music, or on the end of a spoken sentence, never in the middle of a word.
+- Let a part breathe before it cuts: the last thing to land is readable before the next part starts.
+- Vary the length of parts: a quick run of short beats, then a longer hold, reads as rhythm; equal lengths read as a slideshow.
+
+RESTRAINT
+- One idea per frame and one hero per scene. If two things fight for attention, cut one.
+- Two or three kinds of entrance per scene, used consistently; a style's motion personality beats variety.
+- Effects serve the message: a glow, a shake, a glitch or a grade is an accent at a moment, not the texture of the whole scene (a style's own signature look, such as VHS scanlines or line boil, is the exception).
+- When unsure, remove: fewer layers, fewer moves and longer holds usually look more professional.
+
+MISTAKES TO AVOID (found by benchmarking real film briefs)
+- Supporting text too small: on a 16:9 stage, a supporting line, date, caption or tagline is at least 2.6 (about 15 px at
+  1080p), never 2.2 or less; a headline 7-12. Keep the jump between them 2.5-4 times, not 6.
+- Two clips fighting on one layer: an ambient or looping clip (drift, float, text-gradient, liquid, boil, a keyframes
+  move) starts after that layer's entrance has ended and ends before its exit starts. Never let a fade and a drift share
+  the same seconds on one layer.
+- Stacked words colliding: give each line of a stack its own band. The gap between a big line and the line under it is
+  at least half the big line's font size; a rule or divider sits in that gap, never through the letters.
+- Words on a panel: the panel is at least the words' width plus 4 on each side, and its colour contrasts with the words.
+- The same entrance on everything, or a spring on everything: see STAGGER AND RHYTHM and TIMING. One spring per scene.
+- Dead stretches: no part of the scene sits still for more than about 1.5 s; a slow drift or float keeps it alive.
+
+STYLES
+- When the request names a motion-design style (synthwave, line art, Swiss grid, risograph…) or one is set in the brief, follow its "What makes it" and "How to build it" lines: someone should recognise the style from any single frame, so its signs (palette, type, texture, the way things move) are in every part of the scene, not only the title.
+
 AVOID
 - Two moving clips overlapping in time on the same layer (they fight over the same property).
 - Endless motion everywhere: pulse, shake and float are accents, not wallpaper.
 - Numbers, statistics or claims the request did not give.
+
+MOTION-DESIGN STYLES (when one is named: its signs, then how to build it here; use its palette and fonts from the Style library when set)
+- Flat vector: Solid fills, no gradients or shadows; simple geometric icons and people; 3-4 saturated colours on a light, warm background; everything overshoots slightly and settles. BUILD: Shapes (rect with radius, ellipse) with pop/stack-in entrances at back.out easing, 0.08-0.12 s staggers so moves overlap; a big rounded headline; icons as simple shapes; no grade, no blur.
+- Line art: Everything is an outline in one stroke weight, black (or one ink) on off-white; lines draw on from start to end; a single accent colour at most; a slight hand-drawn wobble. BUILD: Path and flow layers with the draw preset (power2.inOut, 1-1.6 s); shapes with a stroke and no fill; text-outline on big words; a long boil clip (amount 1.5-2.5, 8 fps) on the drawing group for the hand-drawn feel.
+- Isometric: Objects on a 30° grid with three shaded faces (light top, mid left, dark right); no perspective; small worlds on platforms; pieces drop or slide in along the grid axes. BUILD: Group three shapes per block (top/left/right faces) or use 3D models with an isometric camera; gravity-drop / stack-in entrances; keep motion along the grid diagonals; pastel faces from the palette with accent on one object.
+- Toy 3D: Rounded, glossy or matte "clay" objects with soft shadows and rim light; bright toy colours on a warm gradient; objects bounce, squash and land with weight. BUILD: 3D model layers (rounded primitives) with orbit-3d / spin-3d for hero turns; gravity-drop and tumble-in with back easing; a soft glow shape under each object as its shadow; chunky rounded type.
+- Bauhaus: Red, blue, yellow and black on cream; perfect circles, squares, half-circles and bars arranged on a strict grid; heavy sans capitals; moves are straight, mechanical and precise. BUILD: Shapes only (rect, ellipse, half circles by clipping), placed on grid units; grow/wipe/slide along one axis with power4.inOut; one rotation (spin) as the hero; no blur, no glow, no gradients.
+- Swiss grid: A visible or implied column grid; very large, tightly tracked sans headlines, often flush left and cropped by the frame; lots of white; one red accent; words move as the design (kinetic type). BUILD: Text layers aligned to 12-column positions (left anchors), headline 14-22 wide units with letterSpacing -0.04; text-rise by chars with expo.out; thin red rules that grow; numbers as kickers; no images or one photo in a strict box.
+- Synthwave: Dusk gradient (deep purple to hot pink), a perspective grid floor in magenta or cyan running to the horizon, a sun with horizontal stripes, neon glow on type, chrome or outlined lettering, VHS scanlines. BUILD: Stage background gradient; a grid floor from repeated thin shapes (repeat layer) with a slow slide toward the viewer; a striped sun (ellipse with a repeating-linear-gradient fill); glow on headlines, text-3d (accent2) or text-outline; a scanlines clip on the whole scene group.
+- Aurora glass: Large blurred colour fields (aurora blobs) drifting slowly behind translucent, frosted cards with a thin light border; white type; slow, soft blurs and floats; never busy. BUILD: Background: two or three big ellipses with radial-gradient fills, a liquid or drift clip, opacity 0.6-0.8; cards: rect shapes with fill rgba(255,255,255,.08), a 1px light stroke and a glass clip for a passing highlight; text-blur headlines, 1.2-1.5 s moves.
+- Collage: Photos cut out with rough edges and slight rotations, paper texture, tape strips, halftone dots and mismatched type; pieces land in place on a few frames (stepped), not smoothly. BUILD: Image layers with small rotations (-6 to 6°) and the halftone clip; sticker / stack-in entrances with a steps(4) ease for stop-motion; tape as small semi-transparent rects; mix two fonts; the boil preset on the whole group at fps 6 for jitter.
+- HUD and terminal: Thin cyan or amber lines on near-black; corner brackets, crosshairs, tick rulers, circular gauges; monospace readouts that type and count; scanning bars; data appears in bursts. BUILD: Thin shapes (h 0.2-0.4) that grow, path layers that draw for brackets and gauges; text-scramble for headings, text-typewriter and text-count for readouts; a slow scanlines clip; beep/typing sounds on reveals; keep everything aligned to a fine grid.
+- Dark tech keynote: Pure black, one short statement at a time, very large and centred; one hero image or product lit from the side; a gradient on the key word; long holds and slow crossfades; lots of empty space. BUILD: One headline per beat (text 8-12 units, weight 800) with a slow fade-up (1-1.4 s); a text-gradient clip on the hero word; a hero image with sheen or camera-push; spotlight for emphasis; no more than two elements on screen.
+- Data story: One clear claim per chart; bars or lines growing from the baseline, numbers counting up, one series in the accent and the rest grey; plain direct labels instead of legends; a takeaway headline. BUILD: Bars as rect shapes with grow (axis y, origin end) staggered 0.1 s; lines as path layers with draw; big numbers with text-count or odometer; muted grey for context, accent for the point; finish on the headline number held.
+- Living UI: A real-looking interface (cards, lists, buttons) in a browser or phone frame; a cursor moves and clicks; values update in place; a notification slides in; camera pushes to the detail that matters. BUILD: A screenshot or built UI in an image layer with frame "browser"/"phone"; cursor layer with cursor-move and cursor-click; text-swap and text-count for changing values; select-box and spotlight for focus; digital-zoom or camera-push into the key area.
+- Vertical social: 9:16 footage of a person; captions of one to three words in heavy capitals with a dark outline, the spoken word highlighted in yellow; emoji and stickers pop on key words; fast punch-ins (digital zoom) on jokes; cuts every 1-2 s. BUILD: A captions layer (karaoke, 5-7 units, 60-70% down) from the voice; text-3d or text-outline for readability; pop with back.out on emphasis words; digital-zoom 1.1-1.2 on beats; keep words clear of the app buttons.
+- Risograph: Two or three flat inks (fluorescent pink, blue, yellow) on off-white paper, visible halftone dots and grain, plates printed slightly out of register, chunky type; moves feel stepped, like flipping prints. BUILD: The halftone clip on photos and big shapes (ink = accent, offset 0.4-0.8); text in the blue ink with text-3d (color = accent, depth 2) for the misregistered plate; steps() easing; a boil clip at fps 6 for a printed jitter.
+- VHS and CRT: Scanlines, red/blue colour bleed at the edges, soft vignette, a tracking band rolling through, jittering frame; on-screen camcorder text (PLAY, REC, a date stamp) in a pixel font; cuts that glitch. BUILD: A scanlines clip across the whole scene (bleed 0.3-0.6, jitter 0.2); a REC dot that blinks (pulse); a VT323 timestamp in a corner; tr-glitch between parts; grade "faded" on footage; stepped eases.
+- Pixel art: Everything on a coarse pixel grid; limited palette; a blocky pixel font; things move in whole steps (no smooth easing); sprites blink and bounce; 8-bit sounds. BUILD: Pixelate entrances and exits (steps easing, size 16-32); Press Start 2P for all text (small sizes read best: 3-5 units); jiggle for idle sprites; shapes with no radius; beep/tap sounds on every move.
+- Watercolour and ink: Soft, uneven colour washes with darker edges, ink outlines, visible paper texture; handwritten titles; things paint on in strokes rather than sliding; long, quiet pacing. BUILD: Shapes or images with soft edges (blur 0.2-0.4) and the brush reveal (2-4 strokes, 1.2-1.8 s); line art with draw for ink; Caveat headlines; a faint paper texture image over everything at opacity 0.15; no hard cuts.
+- Hand-drawn cel: Thick black outlines that wobble slightly on every drawing (line boil), flat fills, squash-and-stretch on impacts, animation "on twos" (12 drawings a second) rather than perfectly smooth. BUILD: A boil clip (amount 2.5-3.5, fps 12) on the whole drawing group; shapes with a dark 0.6-0.8 stroke and flat fills; pop/jiggle with steps(6) easing for "on twos"; text-3d (depth 2, dark) on the title for a cartoon drop shadow.
+- Liquid and morph: Organic blobs that wobble and merge, flowing gradients, one shape morphing into the next scene instead of a cut; soft blur on type; slow, continuous motion. BUILD: Large ellipse or rect shapes with gradient fills and a long liquid clip (speed 0.4-0.8); gradient-flow on fills; morph from one layer into the next between parts (morph preset "to" the next scene’s main shape); text-blur by chars.
 
 SOUNDS (id: what it is)
 - whoosh (0.55 s): Air rushing past: something flies in.

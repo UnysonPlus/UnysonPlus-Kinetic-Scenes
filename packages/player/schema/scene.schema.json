@@ -409,7 +409,17 @@
             "tumble-in",
             "orbit-3d",
             "camera-push",
-            "code"
+            "code",
+            "boil",
+            "liquid",
+            "pixelate",
+            "brush",
+            "halftone",
+            "scanlines",
+            "text-outline",
+            "text-3d",
+            "text-gradient",
+            "text-skew"
           ]
         },
         "start": {

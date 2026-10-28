@@ -1,0 +1,579 @@
+{
+  "format": "unysonplus-scene",
+  "version": 1,
+  "title": "Night Market — poster comes alive",
+  "duration": 8,
+  "stage": {
+    "breakpoints": [
+      {
+        "id": "desktop",
+        "label": "Desktop",
+        "minWidth": 0,
+        "aspect": [
+          16,
+          9
+        ]
+      }
+    ],
+    "heightMode": "ratio-capped",
+    "background": "#efe6d6",
+    "safeArea": 0.06,
+    "fonts": [
+      {
+        "family": "Rubik Mono One",
+        "href": "https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Courier+Prime:wght@400;700&display=swap"
+      }
+    ]
+  },
+  "playback": {
+    "trigger": "view",
+    "loop": true,
+    "repeatDelay": 1,
+    "posterTime": 7
+  },
+  "layers": [
+    {
+      "id": "poster",
+      "name": "Poster group",
+      "type": "group",
+      "box": {
+        "x": 50,
+        "y": 50,
+        "anchor": "center"
+      },
+      "clips": [
+        {
+          "id": "c_boil",
+          "preset": "boil",
+          "start": 0,
+          "duration": 8,
+          "params": {
+            "amount": 2,
+            "fps": 6
+          }
+        }
+      ],
+      "layers": [
+        {
+          "id": "paper",
+          "name": "Poster paper",
+          "type": "shape",
+          "shape": "rect",
+          "fill": "#efe6d6",
+          "stroke": "#1a1a1a",
+          "strokeWidth": 0.5,
+          "radius": 0.4,
+          "box": {
+            "x": 50,
+            "y": 50,
+            "w": 28,
+            "ratio": 0.72,
+            "anchor": "center",
+            "rotate": -1.5
+          },
+          "clips": [
+            {
+              "id": "c_paper_in",
+              "preset": "sticker",
+              "start": 0,
+              "duration": 0.5,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "width": 1.4,
+                "color": "#ffffff"
+              }
+            }
+          ]
+        },
+        {
+          "id": "block",
+          "name": "Accent block",
+          "type": "shape",
+          "shape": "rect",
+          "fill": "#2f6fd6",
+          "radius": 0.2,
+          "box": {
+            "x": 50,
+            "y": 40,
+            "w": 26,
+            "h": 17,
+            "anchor": "center",
+            "rotate": -3
+          },
+          "clips": [
+            {
+              "id": "c_block_in",
+              "preset": "sticker",
+              "start": 0.4,
+              "duration": 0.5,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "width": 1
+              }
+            },
+            {
+              "id": "c_block_kf",
+              "preset": "keyframes",
+              "start": 3,
+              "duration": 2.4,
+              "params": {
+                "frames": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -3
+                  },
+                  {
+                    "t": 0.45,
+                    "x": -30,
+                    "y": 34,
+                    "rotate": -11,
+                    "ease": "whip"
+                  },
+                  {
+                    "t": 1.3,
+                    "x": -30,
+                    "y": 34,
+                    "rotate": -11
+                  },
+                  {
+                    "t": 2.1,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -3,
+                    "ease": "softLand"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "tape1",
+          "name": "Tape strip (top-left)",
+          "type": "shape",
+          "shape": "rect",
+          "fill": "rgba(26,26,26,0.18)",
+          "box": {
+            "x": 41,
+            "y": 17.5,
+            "w": 7,
+            "h": 2.4,
+            "anchor": "center",
+            "rotate": -24
+          },
+          "clips": [
+            {
+              "id": "c_tape1_in",
+              "preset": "sticker",
+              "start": 0.7,
+              "duration": 0.4,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "width": 0.6
+              }
+            },
+            {
+              "id": "c_tape1_kf",
+              "preset": "keyframes",
+              "start": 3,
+              "duration": 2.3,
+              "params": {
+                "frames": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -24
+                  },
+                  {
+                    "t": 0.45,
+                    "x": -70,
+                    "y": -60,
+                    "rotate": -50,
+                    "ease": "whip"
+                  },
+                  {
+                    "t": 1.25,
+                    "x": -70,
+                    "y": -60,
+                    "rotate": -50
+                  },
+                  {
+                    "t": 2,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -24,
+                    "ease": "softLand"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "tape2",
+          "name": "Tape strip (bottom-right)",
+          "type": "shape",
+          "shape": "rect",
+          "fill": "rgba(26,26,26,0.18)",
+          "box": {
+            "x": 60,
+            "y": 81,
+            "w": 7,
+            "h": 2.4,
+            "anchor": "center",
+            "rotate": 20
+          },
+          "clips": [
+            {
+              "id": "c_tape2_in",
+              "preset": "sticker",
+              "start": 0.85,
+              "duration": 0.4,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "width": 0.6
+              }
+            },
+            {
+              "id": "c_tape2_kf",
+              "preset": "keyframes",
+              "start": 3.05,
+              "duration": 2.3,
+              "params": {
+                "frames": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": 20
+                  },
+                  {
+                    "t": 0.45,
+                    "x": 70,
+                    "y": 65,
+                    "rotate": 54,
+                    "ease": "whip"
+                  },
+                  {
+                    "t": 1.25,
+                    "x": 70,
+                    "y": 65,
+                    "rotate": 54
+                  },
+                  {
+                    "t": 2,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": 20,
+                    "ease": "softLand"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "stamp",
+          "name": "Halftone circle",
+          "type": "shape",
+          "shape": "ellipse",
+          "fill": "#e8412b",
+          "box": {
+            "x": 60,
+            "y": 26,
+            "w": 9,
+            "ratio": 1,
+            "anchor": "center",
+            "rotate": 4
+          },
+          "clips": [
+            {
+              "id": "c_stamp_in",
+              "preset": "sticker",
+              "start": 0.9,
+              "duration": 0.5,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "width": 1
+              }
+            },
+            {
+              "id": "c_stamp_ht",
+              "preset": "halftone",
+              "start": 0.9,
+              "duration": 0.6,
+              "params": {
+                "direction": "in",
+                "dot": 1.4,
+                "ink": "#1a1a1a",
+                "offset": 0.6
+              }
+            },
+            {
+              "id": "c_stamp_kf",
+              "preset": "keyframes",
+              "start": 3.1,
+              "duration": 2.3,
+              "params": {
+                "frames": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": 4,
+                    "scale": 1
+                  },
+                  {
+                    "t": 0.45,
+                    "x": 85,
+                    "y": -40,
+                    "rotate": 30,
+                    "scale": 1.25,
+                    "ease": "whip"
+                  },
+                  {
+                    "t": 1.25,
+                    "x": 85,
+                    "y": -40,
+                    "rotate": 30,
+                    "scale": 1.25
+                  },
+                  {
+                    "t": 2,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": 4,
+                    "scale": 1,
+                    "ease": "softLand"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "NIGHT\nMARKET",
+          "style": {
+            "fontFamily": "Rubik Mono One",
+            "fontSize": 5,
+            "fontWeight": 400,
+            "lineHeight": 1.02,
+            "letterSpacing": 0,
+            "color": "#efe6d6",
+            "align": "center",
+            "uppercase": true
+          },
+          "box": {
+            "x": 50,
+            "y": 40,
+            "anchor": "center",
+            "rotate": -3
+          },
+          "clips": [
+            {
+              "id": "c_head_in",
+              "preset": "sticker",
+              "start": 0.6,
+              "duration": 0.6,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "width": 1
+              }
+            },
+            {
+              "id": "c_head_kf",
+              "preset": "keyframes",
+              "start": 3,
+              "duration": 2.4,
+              "params": {
+                "frames": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -3
+                  },
+                  {
+                    "t": 0.45,
+                    "x": -55,
+                    "y": -45,
+                    "rotate": -12,
+                    "ease": "whip"
+                  },
+                  {
+                    "t": 1.35,
+                    "x": -55,
+                    "y": -45,
+                    "rotate": -12
+                  },
+                  {
+                    "t": 2.15,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -3,
+                    "ease": "softLand"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "date",
+          "name": "Date",
+          "type": "text",
+          "text": "12 JUNE",
+          "style": {
+            "fontFamily": "Courier Prime",
+            "fontSize": 3.4,
+            "fontWeight": 700,
+            "lineHeight": 1.1,
+            "letterSpacing": 0.04,
+            "color": "#e8412b",
+            "align": "center",
+            "uppercase": true
+          },
+          "box": {
+            "x": 50,
+            "y": 58,
+            "anchor": "center",
+            "rotate": -2
+          },
+          "clips": [
+            {
+              "id": "c_date_in",
+              "preset": "stack-in",
+              "start": 1.1,
+              "duration": 0.55,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "lift": 30
+              }
+            },
+            {
+              "id": "c_date_kf",
+              "preset": "keyframes",
+              "start": 3.2,
+              "duration": 2.3,
+              "params": {
+                "frames": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -2
+                  },
+                  {
+                    "t": 0.45,
+                    "x": 60,
+                    "y": 55,
+                    "rotate": 10,
+                    "ease": "whip"
+                  },
+                  {
+                    "t": 1.25,
+                    "x": 60,
+                    "y": 55,
+                    "rotate": 10
+                  },
+                  {
+                    "t": 2,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -2,
+                    "ease": "softLand"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "sub",
+          "name": "Sub line",
+          "type": "text",
+          "text": "LIVE MUSIC\nSTREET FOOD",
+          "style": {
+            "fontFamily": "Courier Prime",
+            "fontSize": 3,
+            "fontWeight": 700,
+            "lineHeight": 1.2,
+            "letterSpacing": 0.02,
+            "color": "#5a4e42",
+            "align": "center",
+            "uppercase": true
+          },
+          "box": {
+            "x": 50,
+            "y": 70,
+            "w": 26,
+            "anchor": "center",
+            "rotate": -1
+          },
+          "clips": [
+            {
+              "id": "c_sub_in",
+              "preset": "stack-in",
+              "start": 1.3,
+              "duration": 0.55,
+              "ease": "steps(4)",
+              "params": {
+                "direction": "in",
+                "lift": 24
+              }
+            },
+            {
+              "id": "c_sub_kf",
+              "preset": "keyframes",
+              "start": 3.3,
+              "duration": 2.3,
+              "params": {
+                "frames": [
+                  {
+                    "t": 0,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -1
+                  },
+                  {
+                    "t": 0.45,
+                    "x": -45,
+                    "y": 60,
+                    "rotate": -9,
+                    "ease": "whip"
+                  },
+                  {
+                    "t": 1.25,
+                    "x": -45,
+                    "y": 60,
+                    "rotate": -9
+                  },
+                  {
+                    "t": 2,
+                    "x": 0,
+                    "y": 0,
+                    "rotate": -1,
+                    "ease": "softLand"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

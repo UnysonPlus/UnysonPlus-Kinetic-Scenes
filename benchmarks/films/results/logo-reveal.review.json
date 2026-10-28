@@ -1,0 +1,24 @@
+{
+  "brief": "A 6-second logo reveal for a studio called Flux: abstract shapes gather and morph into the wordmark \"FLUX\", which holds at the end.",
+  "style": "Liquid and morph",
+  "seconds": 219,
+  "scores": {
+    "style": 4,
+    "idea": 4,
+    "motion": 3,
+    "design": 3,
+    "finish": 2,
+    "sound": 3,
+    "technical": 3
+  },
+  "notes": "Weakest was finish/motion: on Blobs A and C the entrance fade and the drift keyframes overlapped and the drift also overlapped the exit fade, so two clips fought the same movement — I split each fade down to a 0.3 s helper and shortened each drift so the in-fade (0–0.3 s / 0.2–0.5 s), drift and out-fade at 2.7 s never overlap. The tagline measured ~8 px (fontSize 2.2) and its box at y 62 collided with the 18-unit FLUX wordmark at 4.92 s and 5.76 s, so I raised it to 4.5 (4× the headline, readable) with brighter #cbb8e6, moved it to y 66 and lifted FLUX to y 42 to open an 11-unit gap. I also varied Blob B's entrance (zoom in from 1.2, the hero that becomes the logo) so the three shapes no longer enter with identical fades.",
+  "frames": [
+    0.6,
+    1.68,
+    2.76,
+    3.3,
+    3.84,
+    4.92,
+    5.76
+  ]
+}

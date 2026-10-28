@@ -1,0 +1,25 @@
+{
+  "brief": "A 15-second launch film for a note-taking app called Ledger: the problem (notes everywhere), the product appearing, three features, and the launch date \"Available today\".",
+  "style": "Dark tech keynote",
+  "seconds": 254,
+  "scores": {
+    "style": 4,
+    "idea": 3,
+    "motion": 2,
+    "design": 3,
+    "finish": 2,
+    "sound": 4,
+    "technical": 2
+  },
+  "notes": "The subtitle was only ~8px and readable for 0.9s against a 1.2s read, and the end wordmark was ~11px, so I enlarged the subtitle to 4.5 (readable now ~1.5s, 4.0-6.1s) and the end 'Ledger' to 5. On both wordmarks the Fade and Gradient-letters clips overlapped and fought, so I shortened each Fade and started the gradient only after it ends (Ledger 4.1s, end 13.1s). I also trimmed the three 1.2s headline entrances to <=0.8s, varied the three identical feature Fades into staggered slides so the list leads and reads, and added a slow float through the dead 9.3-10.9s hold.",
+  "frames": [
+    1.5,
+    2.9,
+    4.2,
+    6.9,
+    9.6,
+    10.8,
+    12.3,
+    14.4
+  ]
+}

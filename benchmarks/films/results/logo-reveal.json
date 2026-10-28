@@ -1,0 +1,351 @@
+{
+  "format": "unysonplus-scene",
+  "version": 1,
+  "title": "Flux — logo reveal",
+  "duration": 6,
+  "stage": {
+    "breakpoints": [
+      {
+        "id": "desktop",
+        "label": "Desktop",
+        "minWidth": 0,
+        "aspect": [
+          16,
+          9
+        ]
+      }
+    ],
+    "heightMode": "ratio-capped",
+    "background": "#0a0612",
+    "safeArea": 0.06,
+    "fonts": [
+      {
+        "family": "Syne",
+        "href": "https://fonts.googleapis.com/css2?family=Syne:wght@500;800&display=swap"
+      }
+    ]
+  },
+  "playback": {
+    "trigger": "view",
+    "loop": false,
+    "posterTime": 5
+  },
+  "layers": [
+    {
+      "id": "bg_blob",
+      "name": "Backdrop glow",
+      "type": "shape",
+      "shape": "ellipse",
+      "fill": "radial-gradient(circle at 50% 60%, #2a0f3a, #0a0612 72%)",
+      "opacity": 0.7,
+      "box": {
+        "x": 50,
+        "y": 52,
+        "w": 90,
+        "ratio": 1.6,
+        "anchor": "center"
+      },
+      "clips": [
+        {
+          "id": "bg_liquid",
+          "preset": "liquid",
+          "start": 0,
+          "duration": 6,
+          "params": {
+            "speed": 0.4
+          }
+        },
+        {
+          "id": "bg_flow",
+          "preset": "gradient-flow",
+          "start": 0,
+          "duration": 6,
+          "params": {
+            "axis": "diagonal",
+            "cycles": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "blob_a",
+      "name": "Blob A",
+      "type": "shape",
+      "shape": "ellipse",
+      "fill": "linear-gradient(135deg, #ff4ecd, #5c7cff)",
+      "opacity": 0.9,
+      "box": {
+        "x": 32,
+        "y": 44,
+        "w": 20,
+        "ratio": 1,
+        "anchor": "center"
+      },
+      "clips": [
+        {
+          "id": "a_in",
+          "preset": "fade",
+          "start": 0,
+          "duration": 0.3,
+          "ease": "power3.inOut",
+          "params": {
+            "direction": "in",
+            "y": 6,
+            "blur": 0.6
+          },
+          "sound": {
+            "name": "swell",
+            "at": "start",
+            "volume": 0.6
+          }
+        },
+        {
+          "id": "a_liquid",
+          "preset": "liquid",
+          "start": 0,
+          "duration": 3,
+          "params": {
+            "speed": 0.7
+          }
+        },
+        {
+          "id": "a_drift",
+          "preset": "keyframes",
+          "start": 0.3,
+          "duration": 2.3,
+          "params": {
+            "frames": [
+              {
+                "t": 0,
+                "x": 0,
+                "y": 0,
+                "ease": "power3.inOut"
+              },
+              {
+                "t": 2.3,
+                "x": 55,
+                "y": 12,
+                "ease": "power3.inOut"
+              }
+            ]
+          }
+        },
+        {
+          "id": "a_out",
+          "preset": "fade",
+          "start": 2.7,
+          "duration": 0.6,
+          "ease": "power3.in",
+          "params": {
+            "direction": "out",
+            "blur": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "id": "blob_c",
+      "name": "Blob C",
+      "type": "shape",
+      "shape": "ellipse",
+      "fill": "linear-gradient(200deg, #ff4ecd, #7a3cff)",
+      "opacity": 0.9,
+      "box": {
+        "x": 50,
+        "y": 60,
+        "w": 16,
+        "ratio": 1,
+        "anchor": "center"
+      },
+      "clips": [
+        {
+          "id": "c_in",
+          "preset": "fade",
+          "start": 0.2,
+          "duration": 0.3,
+          "ease": "power3.inOut",
+          "params": {
+            "direction": "in",
+            "y": 6,
+            "blur": 0.6
+          }
+        },
+        {
+          "id": "c_liquid",
+          "preset": "liquid",
+          "start": 0.2,
+          "duration": 2.8,
+          "params": {
+            "speed": 0.6
+          }
+        },
+        {
+          "id": "c_drift",
+          "preset": "keyframes",
+          "start": 0.5,
+          "duration": 2.1,
+          "params": {
+            "frames": [
+              {
+                "t": 0,
+                "x": 0,
+                "y": 0,
+                "ease": "power3.inOut"
+              },
+              {
+                "t": 2.1,
+                "x": 0,
+                "y": -22,
+                "ease": "power3.inOut"
+              }
+            ]
+          }
+        },
+        {
+          "id": "c_out",
+          "preset": "fade",
+          "start": 2.7,
+          "duration": 0.6,
+          "ease": "power3.in",
+          "params": {
+            "direction": "out",
+            "blur": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "id": "blob_b",
+      "name": "Blob B (morphs to wordmark)",
+      "type": "shape",
+      "shape": "ellipse",
+      "fill": "radial-gradient(circle at 40% 35%, #5c7cff, #ff4ecd)",
+      "opacity": 0.95,
+      "box": {
+        "x": 64,
+        "y": 50,
+        "w": 24,
+        "ratio": 1.1,
+        "anchor": "center"
+      },
+      "clips": [
+        {
+          "id": "b_in",
+          "preset": "zoom",
+          "start": 0.1,
+          "duration": 0.5,
+          "ease": "glide",
+          "params": {
+            "direction": "in",
+            "scale": 1.2
+          }
+        },
+        {
+          "id": "b_liquid",
+          "preset": "liquid",
+          "start": 0.1,
+          "duration": 2.5,
+          "params": {
+            "speed": 0.6
+          }
+        },
+        {
+          "id": "b_morph",
+          "preset": "morph",
+          "start": 2.6,
+          "duration": 1,
+          "ease": "power3.inOut",
+          "params": {
+            "to": "flux",
+            "fade": 0.4
+          },
+          "sound": {
+            "name": "reveal",
+            "at": "start",
+            "volume": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": "flux",
+      "name": "FLUX wordmark",
+      "type": "text",
+      "text": "FLUX",
+      "style": {
+        "fontFamily": "Syne",
+        "fontSize": 18,
+        "fontWeight": 800,
+        "lineHeight": 1,
+        "letterSpacing": 0.02,
+        "color": "#ffffff",
+        "align": "center",
+        "uppercase": true
+      },
+      "box": {
+        "x": 50,
+        "y": 42,
+        "anchor": "center"
+      },
+      "clips": [
+        {
+          "id": "flux_grad",
+          "preset": "text-gradient",
+          "start": 3.4,
+          "duration": 2.6,
+          "params": {
+            "from": "#ffffff",
+            "to": "#ff4ecd",
+            "angle": 100
+          }
+        },
+        {
+          "id": "flux_float",
+          "preset": "float",
+          "start": 3.7,
+          "duration": 2.3,
+          "params": {
+            "height": 2.5,
+            "cycles": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "tagline",
+      "name": "Tagline",
+      "type": "text",
+      "text": "MOTION STUDIO",
+      "style": {
+        "fontFamily": "Syne",
+        "fontSize": 4.5,
+        "fontWeight": 500,
+        "lineHeight": 1,
+        "letterSpacing": 0.3,
+        "color": "#cbb8e6",
+        "align": "center",
+        "uppercase": true
+      },
+      "box": {
+        "x": 50,
+        "y": 66,
+        "anchor": "center"
+      },
+      "start": 3.9,
+      "clips": [
+        {
+          "id": "tag_in",
+          "preset": "fade",
+          "start": 3.9,
+          "duration": 0.7,
+          "ease": "power3.inOut",
+          "params": {
+            "direction": "in",
+            "y": 10,
+            "blur": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

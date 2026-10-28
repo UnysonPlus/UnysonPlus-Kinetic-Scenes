@@ -1,6 +1,6 @@
 # Presets
 
-Generated from the Studio 0.1.1. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.1.6. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text
@@ -22,6 +22,10 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `knockout` | **Knockout.** The words are cut out of a solid block that wipes on, so the footage (or whatever is behind) shows through the letters. Knockout captions: big, heavy words over a talking head. | text | 0.5 s | `direction`: `in` / `out`; `fill`: color; `padding`: number 0 to 1 em |
 | `odometer` | **Odometer.** The number in the text rolls into place like a car's odometer: every digit turns, and each only moves on when the one to its right passes 9. Write the final number in the text. | text | 1.6 s | `from`: number |
 | `timecode` | **Running timecode.** A timecode in the text (00:00:00:00, hours to frames) runs while the clip plays, like a camera or an editor. Write a timecode in the text; the clip sets how long it runs. | text | 3 s | `from`: number 0 to … s; `fps`: number 1 to 60 |
+| `text-outline` | **Outline.** The fill drains out of the letters, leaving their outline (in the text colour, or one you choose). | text | 0.6 s | `direction`: `in` / `out`; `width`: number 0.03 to 0.6 cqw; `color`: color |
+| `text-3d` | **3D offset.** Solid layers stack up under the letters, growing out diagonally as if the type were extruded. | text | 0.7 s | `direction`: `in` / `out`; `depth`: number 1 to 14; `step`: number 0.04 to 0.5 cqw; `color`: color |
+| `text-gradient` | **Gradient letters.** A gradient fills the letters and travels slowly through them while the clip plays. | text | 3 s | `from`: color; `to`: color; `angle`: number 0 to 360 ° |
+| `text-skew` | **Skew.** The letters lean into the motion (or straighten up again, out). | text | 0.5 s | `direction`: `in` / `out`; `angle`: number -30 to 30 ° |
 
 ## Emphasis
 
@@ -44,6 +48,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `sticker` | **Sticker outline.** A white outline grows round the shape with a soft shadow and a slight pop, like a cut-out sticker: a person cut out of footage on a coloured backdrop (paper cut-out), a logo, an icon. | video, image, shape, text, model, group | 0.4 s | `direction`: `in` / `out`; `width`: number 0.1 to 3 su; `color`: color |
 | `sheen` | **Sheen.** A band of light sweeps across once. Best after the layer has settled. | shape, image, video | 0.9 s | `angle`: number 0 to 360 °; `width`: number 5 to 60 %; `strength`: number 0 to 1; `color`: color |
 | `select-box` | **Select box.** Draws a coloured box with square corner handles around one word (or a few) of the text, like a selected object in a design tool, and tints the word to match. The key word of a headline. | text | 0.6 s | `direction`: `in` / `out`; `word`: number 1 to 200; `words`: number 1 to 20; `color`: color; `tint`: boolean; `handles`: boolean; `padding`: number 0 to 1 em; `stroke`: number 0.05 to 1 |
+| `halftone` | **Risograph.** Risograph print: halftone dots over the layer and a second ink printed slightly out of register. | image, video, shape, text, group | 0.6 s | `direction`: `in` / `out`; `dot`: number 0.4 to 4 cqw; `ink`: color; `offset`: number 0 to 2 cqw |
 
 ## Reveal and exit
 
@@ -60,6 +65,8 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `receipt` | **Receipt printer.** Prints out of a slot at the top of its box in short jerky feeds, like a receipt or a ticket: good for a slip, a card or a list arriving. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 1.2 s | `direction`: `in` / `out`; `steps`: number 2 to 20 |
 | `soft-wipe` | **Soft wipe.** A wipe with a feathered edge: the layer fades in (or out) along a moving soft line. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.7 s | `direction`: `in` / `out`; `from`: `left` / `right` / `top` / `bottom`; `feather`: number 1 to 80 % |
 | `blinds` | **Blinds.** Revealed (or hidden) in strips, one after another, like a stair wipe. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.8 s | `direction`: `in` / `out`; `from`: `top` / `bottom` / `left` / `right`; `count`: number 2 to 24; `stagger`: number 0 to 0.9 |
+| `pixelate` | **Pixelate.** Pixel art: the layer resolves out of big square pixels (or breaks up into them, out). | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.8 s | `direction`: `in` / `out`; `size`: number 2 to 80 px |
+| `brush` | **Brush strokes.** Watercolour and ink: the layer paints on in a few brush strokes, row after row, each with a ragged end. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 1.2 s | `direction`: `in` / `out`; `strokes`: number 1 to 8; `from`: `left` / `right` |
 
 ## Move and scale
 
@@ -92,6 +99,9 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `drift` | **Drift.** A slow, steady move and scale creep that keeps a held frame alive. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 3 s | `x`: number -100 to 100 %; `y`: number -100 to 100 %; `scale`: number 0.5 to 2; `rotate`: number -45 to 45 ° |
 | `gradient-flow` | **Gradient flow.** A shape’s gradient fill flows across it and back. Give the shape a gradient fill. | shape | 4 s | `axis`: `x` / `y` / `diagonal`; `cycles`: number 1 to 10 |
 | `particles` | **Particles.** A field of small dots rising, falling or drifting inside the shape. Clear the shape’s fill to show the particles on their own. | shape | 4 s | `count`: number 1 to 150; `size`: number 0.2 to 10 %; `speed`: number 0 to 2 /s; `direction`: `up` / `down` / `drift`; `color`: color; `twinkle`: boolean |
+| `boil` | **Line boil.** Hand-drawn cel animation: the outlines wobble a little on every drawing, redrawn a few times a second, for as long as the clip lasts. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 3 s | `amount`: number 0.5 to 10; `fps`: number 2 to 24 |
+| `liquid` | **Liquid blob.** The shape flows from one organic blob into the next, as if it were poured: liquid and morph styles. | shape, image, video | 4 s | `speed`: number 0.2 to 4 |
+| `scanlines` | **VHS / CRT.** An old tape or tube for as long as the clip lasts: scanlines, colour bleeding into red and blue fringes, a vignette, a jittering frame and a tracking band rolling down. | image, video, shape, text, group | 3 s | `bleed`: number 0 to 1.5; `jitter`: number 0 to 1; `tracking`: boolean |
 
 ## Cursor and tours
 

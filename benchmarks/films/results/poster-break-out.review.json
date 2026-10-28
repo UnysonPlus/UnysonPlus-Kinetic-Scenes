@@ -1,0 +1,24 @@
+{
+  "brief": "An 8-second piece where a concert poster for \"Night Market, 12 June\" comes alive and its elements break out of the poster frame before settling back into place.",
+  "style": "Collage",
+  "seconds": 444,
+  "scores": {
+    "style": 4,
+    "idea": 4,
+    "motion": 3,
+    "design": 2,
+    "finish": 2,
+    "sound": 3,
+    "technical": 2
+  },
+  "notes": "The headline (cream, ~23 units wide) overflowed its w:21 accent block in every settled frame and read as near-invisible cream-on-cream; I widened the block to w:26 so it fully backs the headline, killing the measured crossing and giving the headline a blue ground for contrast. The date was measured at 9 px, so I raised it from 2.6 to 3.4 (~12 px). The sub line was measured at 5 px and can't grow on one line inside the poster, so I split 'LIVE MUSIC / STREET FOOD' onto two lines and raised it from 1.3 to 3.0 (~10 px) within a widened w:26 box; I left the deliberate break-out crossings at 3.68 s alone since they are the requested effect.",
+  "frames": [
+    0.8,
+    2.24,
+    3.68,
+    5.12,
+    6.56,
+    7,
+    7.68
+  ]
+}

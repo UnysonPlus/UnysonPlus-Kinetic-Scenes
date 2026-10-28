@@ -782,6 +782,77 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [{ key: 'code', label: 'Code', type: 'code' }],
     aiExcluded: true,
   },
+  // ---- Looks for motion-design styles (hand-drawn, liquid, pixel art, paint, print, VHS, text looks) ----
+  {
+    id: 'boil', label: 'Line boil', category: 'ambient', appliesTo: ALL,
+    description: 'Hand-drawn cel animation: the outlines wobble a little on every drawing, redrawn a few times a second, for as long as the clip lasts.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { amount: 2.5, fps: 8 },
+    fields: [{ key: 'amount', label: 'Wobble', type: 'number', min: 0.5, max: 10, step: 0.5 }, { key: 'fps', label: 'Drawings per second', type: 'number', min: 2, max: 24, step: 1 }],
+  },
+  {
+    id: 'liquid', label: 'Liquid blob', category: 'ambient', appliesTo: ['shape', 'image', 'video'],
+    description: 'The shape flows from one organic blob into the next, as if it were poured: liquid and morph styles.',
+    defaultEase: 'none', defaultDuration: 4,
+    defaults: { speed: 1 },
+    fields: [{ key: 'speed', label: 'Speed', type: 'number', min: 0.2, max: 4, step: 0.1 }],
+  },
+  {
+    id: 'pixelate', label: 'Pixelate', category: 'reveal', appliesTo: ALL,
+    description: 'Pixel art: the layer resolves out of big square pixels (or breaks up into them, out).',
+    defaultEase: 'steps(8)', defaultDuration: 0.8,
+    defaults: { direction: 'in', size: 24 },
+    fields: [DIRECTION, { key: 'size', label: 'Biggest pixel', type: 'number', min: 2, max: 80, step: 1, unit: 'px' }],
+  },
+  {
+    id: 'brush', label: 'Brush strokes', category: 'reveal', appliesTo: ALL,
+    description: 'Watercolour and ink: the layer paints on in a few brush strokes, row after row, each with a ragged end.',
+    defaultEase: 'power1.inOut', defaultDuration: 1.2,
+    defaults: { direction: 'in', strokes: 4, from: 'left' },
+    fields: [DIRECTION, { key: 'strokes', label: 'Strokes', type: 'number', min: 1, max: 8, step: 1 }, { key: 'from', label: 'From', type: 'select', options: [{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }] }],
+  },
+  {
+    id: 'halftone', label: 'Risograph', category: 'emphasis', appliesTo: ['image', 'video', 'shape', 'text', 'group'],
+    description: 'Risograph print: halftone dots over the layer and a second ink printed slightly out of register.',
+    defaultEase: 'power2.out', defaultDuration: 0.6,
+    defaults: { direction: 'in', dot: 1.2, ink: '#ff4f8b', offset: 0.5 },
+    fields: [DIRECTION, { key: 'dot', label: 'Dot size', type: 'number', min: 0.4, max: 4, step: 0.1, unit: 'cqw' }, { key: 'ink', label: 'Second ink', type: 'color' }, { key: 'offset', label: 'Misregistration', type: 'number', min: 0, max: 2, step: 0.05, unit: 'cqw' }],
+  },
+  {
+    id: 'scanlines', label: 'VHS / CRT', category: 'ambient', appliesTo: ['image', 'video', 'shape', 'text', 'group'],
+    description: 'An old tape or tube for as long as the clip lasts: scanlines, colour bleeding into red and blue fringes, a vignette, a jittering frame and a tracking band rolling down.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { bleed: 0.35, jitter: 0.25, tracking: true },
+    fields: [{ key: 'bleed', label: 'Colour bleed', type: 'number', min: 0, max: 1.5, step: 0.05 }, { key: 'jitter', label: 'Jitter', type: 'number', min: 0, max: 1, step: 0.05 }, { key: 'tracking', label: 'Tracking band', type: 'boolean' }],
+  },
+  {
+    id: 'text-outline', label: 'Outline', category: 'text', appliesTo: ['text'],
+    description: 'The fill drains out of the letters, leaving their outline (in the text colour, or one you choose).',
+    defaultEase: 'power2.out', defaultDuration: 0.6,
+    defaults: { direction: 'in', width: 0.12, color: '' },
+    fields: [DIRECTION, { key: 'width', label: 'Line', type: 'number', min: 0.03, max: 0.6, step: 0.01, unit: 'cqw' }, { key: 'color', label: 'Colour', type: 'color' }],
+  },
+  {
+    id: 'text-3d', label: '3D offset', category: 'text', appliesTo: ['text'],
+    description: 'Solid layers stack up under the letters, growing out diagonally as if the type were extruded.',
+    defaultEase: 'power3.out', defaultDuration: 0.7,
+    defaults: { direction: 'in', depth: 6, step: 0.12, color: '' },
+    fields: [DIRECTION, { key: 'depth', label: 'Depth', type: 'number', min: 1, max: 14, step: 1 }, { key: 'step', label: 'Step', type: 'number', min: 0.04, max: 0.5, step: 0.01, unit: 'cqw' }, { key: 'color', label: 'Shadow colour', type: 'color' }],
+  },
+  {
+    id: 'text-gradient', label: 'Gradient letters', category: 'text', appliesTo: ['text'],
+    description: 'A gradient fills the letters and travels slowly through them while the clip plays.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { from: '#ff5f6d', to: '#ffc371', angle: 90 },
+    fields: [{ key: 'from', label: 'From', type: 'color' }, { key: 'to', label: 'To', type: 'color' }, { key: 'angle', label: 'Angle', type: 'number', min: 0, max: 360, step: 5, unit: '°' }],
+  },
+  {
+    id: 'text-skew', label: 'Skew', category: 'text', appliesTo: ['text'],
+    description: 'The letters lean into the motion (or straighten up again, out).',
+    defaultEase: 'power3.out', defaultDuration: 0.5,
+    defaults: { direction: 'in', angle: -12 },
+    fields: [DIRECTION, { key: 'angle', label: 'Lean', type: 'number', min: -30, max: 30, step: 1, unit: '°' }],
+  },
 ];
 
 export const PRESET_IDS = PRESET_CATALOG.map((p) => p.id);

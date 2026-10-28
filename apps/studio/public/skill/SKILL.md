@@ -8,14 +8,16 @@ description: Make motion-graphics scenes for Unyson+ Kinetic Scenes (animated we
 Kinetic Scenes (https://kinetic-scenes.unysonplus.com/) plays **scene files**: JSON data with a stage, layers and
 clips (presets placed on a timeline). You write data, never code, so whatever you make lands in the Studio as
 ordinary layers and clips the person can keep editing. This skill is generated from the Studio's own code
-(version 0.1.2), so the presets, settings and rules here are exactly what the player understands.
+(version 0.1.6), so the presets, settings and rules here are exactly what the player understands.
 
 ## Read first
 
 - [The scene file](reference/scene-format.md): every field and layer type.
 - [Presets](reference/presets.md): every preset, what it does, what it applies to and its settings.
 - [Motion rules](reference/motion-rules.md): timing, layout, sound and craft rules the Studio's own AI follows.
-- [Styles](reference/styles.md): the built-in looks (colours, fonts, motion) a scene can be made in.
+- [Styles](reference/styles.md): the built-in looks (colours, fonts, motion) a scene can be made in, including about twenty
+  named motion-design styles (synthwave, line art, Swiss grid, risograph, VHS, pixel art…) with what makes each recognisable
+  and how to build it.
 - [Sounds](reference/sounds.md): the built-in sound effects.
 
 ## How to work
@@ -66,3 +68,8 @@ ordinary layers and clips the person can keep editing. This skill is generated f
 - Sound sparse and tied to what is seen (3 to 6 sounds per 10 s); landing sounds at "end".
 - Real content only: never invent statistics, claims, names or addresses the request did not give.
 - `posterTime` on a settled moment with every word in place.
+- The film's shape: something happens in the first half-second, one hero moment about two-thirds through, and a composed
+  end frame held about a second with gentle movement. Plan those key frames as stills first, then the motion.
+- A named style shows in every frame (its palette, type, texture and way of moving), not only in the title.
+- Review like a jury: score style, idea, motion, design, finish, sound and technical from frames across the whole scene, fix
+  the weakest first with a moment and numbers, and never leave a problem Check scene measured.

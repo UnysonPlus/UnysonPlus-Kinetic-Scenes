@@ -1,5 +1,6 @@
 import { NAMED_EASES } from '@unysonplus/scene-player/eases';
 import { SFX_CATALOG } from '@unysonplus/scene-player/sfx';
+import { MOTION_STYLES } from './motionStyles';
 
 /**
  * The motion rules the AI follows, sent with every request (they ship with the Studio, so the AI Dev
@@ -161,10 +162,52 @@ Interface pieces (build from layers like the Pieces library): comment CTA / comm
   the footage with frame phone; B-roll overlay = a picture or footage with frame browser over the speaker; video card =
   footage with frame card.
 
+THE FILM'S SHAPE (plan every scene this way before building it)
+- Hook: something visibly happens in the first half-second (a word lands, a shape moves, a cut); never open on an empty or still frame.
+- One hero moment, about two-thirds of the way through: the single most striking thing in the scene (the reveal, the biggest type, the product, the payoff number). Build up to it, give it the strongest move and, with sound, the biggest hit; nothing else competes with it.
+- A composed end frame: the last arrangement is designed as a still (logo, line, call to action placed with care) and held about a second or more with only gentle movement (a drift or float), not cut off mid-move.
+- Decide the key frames first (the hook, the hero moment, the end frame, one per act) as still layouts that already look good, then add the motion between them.
+- Sound hits sit on the same cue times as the picture: a hit lands when the move lands, not near it.
+
+COMPOSITION
+- One focal point per frame: the eye goes to one thing first. Size, contrast, colour and motion all point at it; the rest is quieter.
+- Use the frame: balance the weight across it, leave generous margins (at least the safe area) and real empty space; don't line everything up in the dead centre unless the style calls for it.
+- Align to a grid: things that belong together share an edge or a centre, and gaps repeat.
+- Contrast carries hierarchy: a few sizes far apart (a headline 2-4 times the text), one accent colour on what matters.
+
+CUTTING TO THE BEAT
+- Change scenes (a new act, a transition, a cut in footage) on a beat or a strong moment of the music, or on the end of a spoken sentence, never in the middle of a word.
+- Let a part breathe before it cuts: the last thing to land is readable before the next part starts.
+- Vary the length of parts: a quick run of short beats, then a longer hold, reads as rhythm; equal lengths read as a slideshow.
+
+RESTRAINT
+- One idea per frame and one hero per scene. If two things fight for attention, cut one.
+- Two or three kinds of entrance per scene, used consistently; a style's motion personality beats variety.
+- Effects serve the message: a glow, a shake, a glitch or a grade is an accent at a moment, not the texture of the whole scene (a style's own signature look, such as VHS scanlines or line boil, is the exception).
+- When unsure, remove: fewer layers, fewer moves and longer holds usually look more professional.
+
+MISTAKES TO AVOID (found by benchmarking real film briefs)
+- Supporting text too small: on a 16:9 stage, a supporting line, date, caption or tagline is at least 2.6 (about 15 px at
+  1080p), never 2.2 or less; a headline 7-12. Keep the jump between them 2.5-4 times, not 6.
+- Two clips fighting on one layer: an ambient or looping clip (drift, float, text-gradient, liquid, boil, a keyframes
+  move) starts after that layer's entrance has ended and ends before its exit starts. Never let a fade and a drift share
+  the same seconds on one layer.
+- Stacked words colliding: give each line of a stack its own band. The gap between a big line and the line under it is
+  at least half the big line's font size; a rule or divider sits in that gap, never through the letters.
+- Words on a panel: the panel is at least the words' width plus 4 on each side, and its colour contrasts with the words.
+- The same entrance on everything, or a spring on everything: see STAGGER AND RHYTHM and TIMING. One spring per scene.
+- Dead stretches: no part of the scene sits still for more than about 1.5 s; a slow drift or float keeps it alive.
+
+STYLES
+- When the request names a motion-design style (synthwave, line art, Swiss grid, risograph…) or one is set in the brief, follow its "What makes it" and "How to build it" lines: someone should recognise the style from any single frame, so its signs (palette, type, texture, the way things move) are in every part of the scene, not only the title.
+
 AVOID
 - Two moving clips overlapping in time on the same layer (they fight over the same property).
 - Endless motion everywhere: pulse, shake and float are accents, not wallpaper.
 - Numbers, statistics or claims the request did not give.
+
+MOTION-DESIGN STYLES (when one is named: its signs, then how to build it here; use its palette and fonts from the Style library when set)
+${MOTION_STYLES.map((st) => `- ${st.name}: ${st.guide?.signs ?? st.description} BUILD: ${st.guide?.build ?? ''}`).join('\n')}
 
 SOUNDS (id: what it is)
 ${SFX_CATALOG.map((s) => `- ${s.id} (${s.length} s): ${s.description}`).join('\n')}
