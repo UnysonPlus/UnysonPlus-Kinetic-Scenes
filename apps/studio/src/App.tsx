@@ -35,6 +35,7 @@ import { AGENTS_GUIDE, ProjectsDialog } from './components/ProjectsDialog';
 import { NotesDialog } from './components/NotesDialog';
 import { StockDialog } from './components/StockDialog';
 import { BatchDialog } from './components/BatchDialog';
+import { HighlightsDialog } from './components/HighlightsDialog';
 import { fillScene, rowLabel } from './lib/batch';
 import type { Sheet } from './lib/batch';
 import { stockInStudio } from './lib/stock';
@@ -278,6 +279,7 @@ export function App() {
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState(false);
+  const [highlightsOpen, setHighlightsOpen] = useState(false);
   /** Bumped when the project's notes change in the folder (the agent added something). */
   const [notesChanged, setNotesChanged] = useState(0);
   const [projectSave, setProjectSave] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -947,6 +949,7 @@ export function App() {
       { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox, ACE-Step music and other tools the AI Dev Kit can use on this computer' },
       { label: 'Make music…', onSelect: () => setMusicOpen(true) },
       { label: 'Videos from a spreadsheet…', onSelect: () => setBatchOpen(true), hint: 'One design, a video per row: fill the {{placeholders}} in the scene from a CSV, preview each row, render them all' },
+      { label: 'Make a reel from a video…', onSelect: () => setHighlightsOpen(true), hint: 'The AI Dev Kit finds the best moments of a long video and cuts them together to the length you ask' },
       'sep',
       { label: 'Separate voice and music', disabled: !(selLayer?.type === 'video' || (selAudio && !selAudio.src.startsWith('sfx:'))),
         hint: 'Select footage or an audio clip first', onSelect: () => showLayerSection(selLayer?.type === 'video' ? 'Footage tools' : 'Voice and music') },
@@ -1353,6 +1356,8 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
+      <HighlightsDialog open={highlightsOpen} onClose={() => setHighlightsOpen(false)}
+        onScene={(s, note) => { commit(s); setSelection({ layerId: null, clipId: null }); setHighlightsOpen(false); setNotice(note); }} />
       <BatchDialog open={batchOpen} onClose={() => setBatchOpen(false)} scene={scene} sheet={sheet.sheet} files={sheet.files}
         onSheet={(s, files) => { setSheet({ sheet: s, files }); if (!s) setRowView(null); }}
         onPreview={(i) => { setRowView(i); setBatchOpen(false); }} />
