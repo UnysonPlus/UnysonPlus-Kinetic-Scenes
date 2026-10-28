@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { embedCode, exportHtml, hasModel, threeRuntime, hasCodeClips } from '../lib/documents';
 import { embedFonts } from '../lib/fonts';
+import { EditorSection } from './EditorSection';
 import { VideoSection } from './VideoSection';
 import { ShareSection } from './ShareSection';
 import { DownloadIcon } from './icons';
@@ -21,6 +22,7 @@ export function ExportDialog(props: {
   open: boolean;
   scene: Scene;
   fileName: string;
+  project?: string | null;
   onClose: () => void;
   onDone: (message: string) => void;
 }) {
@@ -152,6 +154,7 @@ export function ExportDialog(props: {
         </section>
 
         {props.scene.mode !== 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} />}
+        {props.scene.mode === 'video' && <EditorSection project={props.project ?? null} onDone={props.onDone} />}
 
         {error && <p className="export-error" role="alert">{error}</p>}
       </div>

@@ -1363,7 +1363,7 @@ export function App() {
         </aside>
       </main>
 
-      <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} onClose={() => setExporting(false)} onDone={setNotice} />
+      <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} project={project?.id ?? null} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
       <ShortcutsDialog open={keysOpen} onClose={() => setKeysOpen(false)} />
       <HighlightsDialog open={highlightsOpen} onClose={() => setHighlightsOpen(false)}
