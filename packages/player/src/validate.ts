@@ -268,6 +268,8 @@ export function validateScene(input: unknown): ValidationResult {
           if ((m.kind === 'svg' || m.kind === 'gltf') && (typeof m.src !== 'string' || !m.src)) fail(`${lp}.model.src`, 'is required');
           if (m.depth !== undefined && (!isNum(m.depth) || m.depth < 0.01 || m.depth > 4)) fail(`${lp}.model.depth`, 'must be 0.01 to 4');
           if (m.bevel !== undefined && (!isNum(m.bevel) || m.bevel < 0 || m.bevel > 1)) fail(`${lp}.model.bevel`, 'must be 0 to 1');
+          const an = layer.animation;
+          if (an !== undefined && (!isObj(an) || (an.speed !== undefined && (!isNum(an.speed) || an.speed <= 0 || an.speed > 8)) || (an.loop !== undefined && typeof an.loop !== 'boolean') || (an.clip !== undefined && typeof an.clip !== 'string'))) fail(`${lp}.animation`, 'must be { clip?: name, speed?: up to 8, loop?: true or false }');
         }
         if (layer.material !== undefined && !isObj(layer.material)) fail(`${lp}.material`, 'must be an object');
         if (layer.pose !== undefined && !isObj(layer.pose)) fail(`${lp}.pose`, 'must be an object');

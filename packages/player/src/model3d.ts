@@ -31,6 +31,10 @@ export interface Runtime3D {
   dispose(): void;
   /** Resolves once the object is built (models and SVGs load asynchronously). */
   ready: Promise<void>;
+  /** Animated models: shows the animation at this many seconds of the layer's own time (and redraws). */
+  time?(seconds: number): void;
+  /** Animated models: the longest animation clip, in seconds (0 when it has none). */
+  animationLength?(): number;
 }
 
 export interface Module3D {

@@ -1,5 +1,6 @@
 import { kitBase } from '../lib/ai';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { gltfAnimations } from '../lib/gltfInfo';
 import type { ModelLayer } from '@unysonplus/scene-player/types';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 
@@ -49,6 +50,15 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
     } catch (e) { setNote((e as Error).message); }
     setMaking('');
   };
+
+  // The model's own animations (Blender and the like), listed so one can be chosen.
+  const [anims, setAnims] = useState<string[]>([]);
+  useEffect(() => {
+    let live = true;
+    if (m.kind !== 'gltf' || !m.src) { setAnims([]); return; }
+    gltfAnimations(m.src).then((a) => { if (live) setAnims(a); }).catch(() => { if (live) setAnims([]); });
+    return () => { live = false; };
+  }, [m.kind, m.src]);
 
   const upload = (file: File) => {
     if (file.size > MAX_UPLOAD) {
@@ -105,6 +115,16 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
 
       <Section title="Material and light">
         {m.kind === 'gltf' && <CheckField label="Keep the model's own materials" checked={mat.original !== false} onChange={(v) => setMat({ original: v })} />}
+        {m.kind === 'gltf' && !!anims.length && (
+          <>
+            <SelectField label="Animation" value={layer.animation?.clip ?? 'all'}
+              options={[{ value: 'all', label: anims.length > 1 ? 'All of them' : anims[0] }, ...(anims.length > 1 ? anims.map((n) => ({ value: n, label: n })) : [])]}
+              onChange={(v) => set({ animation: { ...layer.animation, clip: v === 'all' ? undefined : v } })} />
+            <NumberField label="Animation speed" value={layer.animation?.speed ?? 1} min={0.1} max={8} step={0.1} onCommit={(v) => set({ animation: { ...layer.animation, speed: v ?? 1 } })} />
+            <CheckField label="Loop the animation (off: play once, then hold)" checked={layer.animation?.loop ?? true} onChange={(v) => set({ animation: { ...layer.animation, loop: v } })} />
+            <p className="field-hint wide">The model's own animation plays on the scene's clock from the layer's start, so it scrubs and renders exactly. Presets still turn and move the whole object.</p>
+          </>
+        )}
         {(m.kind !== 'gltf' || mat.original === false) && (
           <>
             <ColorField label="Colour" value={mat.color} placeholder={m.kind === 'svg' ? "The SVG's own colours" : '#2ad38b'} onCommit={(v) => setMat({ color: v || undefined })} />

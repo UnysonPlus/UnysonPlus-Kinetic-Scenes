@@ -98,6 +98,8 @@ async function buildObject(layer: ModelLayer): Promise<THREE.Object3D> {
   } else {
     const gltf = await new GLTFLoader().loadAsync(m.src ?? '');
     obj = gltf.scene;
+    // Its animations (made in Blender and the like) play on the scene's clock: see time() below.
+    obj.userData.clips = gltf.animations ?? [];
     if (layer.material?.original === false) {
       const mat = makeMaterial(layer.material);
       obj.traverse((o) => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = mat; });
@@ -113,6 +115,8 @@ async function buildObject(layer: ModelLayer): Promise<THREE.Object3D> {
   obj.position.sub(center);
   const k = 1 / Math.max(size.x, size.y, size.z, 1e-6);
   wrap.scale.setScalar(k);
+  // The animations go with the wrapper the rest of the runtime works with.
+  wrap.userData.clips = obj.userData.clips ?? [];
   return wrap;
 }
 
@@ -149,6 +153,9 @@ function create(host: HTMLElement, layer: ModelLayer): Runtime3D {
   posed.scale.setScalar(pose.scale ?? 1);
 
   let last: State3D | null = null;
+  let mixer: THREE.AnimationMixer | null = null;
+  let clipLength = 0;
+  let animAt = -1;
   let disposed = false;
   let w = 0;
   let h = 0;
@@ -205,6 +212,16 @@ function create(host: HTMLElement, layer: ModelLayer): Runtime3D {
     probe.updateMatrixWorld(true);
     new THREE.Box3().setFromObject(probe).getSize(half).multiplyScalar(0.5);
     posed.add(obj);
+    // Animated models: every clip (or the one the layer names), set to the scene's moment by time().
+    const clips: THREE.AnimationClip[] = obj.userData.clips ?? [];
+    const want = layer.animation?.clip;
+    const chosen = want && want !== 'all' ? clips.filter((c) => c.name === want) : clips;
+    if (chosen.length) {
+      mixer = new THREE.AnimationMixer(obj);
+      for (const c of chosen) mixer.clipAction(c).play();
+      clipLength = Math.max(...chosen.map((c) => c.duration));
+      mixer.setTime(0);
+    }
     if (last) draw(last);
   }).catch((e) => {
     console.warn('[Unyson+ scene] 3D layer "' + layer.id + '" could not be built:', e);
@@ -212,6 +229,17 @@ function create(host: HTMLElement, layer: ModelLayer): Runtime3D {
 
   return {
     ready,
+    animationLength: () => clipLength,
+    time(sec) {
+      if (!mixer || disposed) return;
+      const loop = layer.animation?.loop ?? true;
+      const t = Math.max(0, sec) * (layer.animation?.speed ?? 1);
+      const at = clipLength > 0 ? (loop ? t % clipLength : Math.min(t, clipLength - 1e-4)) : 0;
+      if (Math.abs(at - animAt) < 1e-6) return;
+      animAt = at;
+      mixer.setTime(at);
+      if (last) draw(last);
+    },
     render(s) {
       last = { ...s };
       draw(last);

@@ -441,6 +441,11 @@ export interface ModelLayer extends LayerBase {
   light?: number;
   /** Describes the object for screen readers ("" if it is decorative). */
   alt?: string;
+  /**
+   * gltf models with animations (from Blender and the like): they play on the scene's clock from the layer's start.
+   * clip: one animation by name, or "all" (the default); speed (1 = as made); loop (default true; false: play once, hold).
+   */
+  animation?: { clip?: string; speed?: number; loop?: boolean };
 }
 
 /**
