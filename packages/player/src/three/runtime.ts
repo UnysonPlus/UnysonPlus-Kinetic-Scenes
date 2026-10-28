@@ -258,6 +258,9 @@ function create(host: HTMLElement, layer: ModelLayer): Runtime3D {
       env.dispose();
       pmrem.dispose();
       renderer.dispose();
+      // Give the WebGL context back too: a disposed renderer keeps it, and the page then keeps paying for it
+      // (another scene mounted afterwards ran at a fraction of its speed).
+      renderer.forceContextLoss();
       canvas.remove();
     },
   };
