@@ -939,3 +939,4 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .cap-pack-karaoke { color: #00e0b0; background: rgba(0,0,0,.6); }
 .cap-pack-boxed { background: #000; }
 .cap-pack-giant { text-transform: uppercase; font-size: 16px; }
+.stack-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }

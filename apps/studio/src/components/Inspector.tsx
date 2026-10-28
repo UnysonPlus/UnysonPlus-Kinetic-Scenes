@@ -1,4 +1,5 @@
 import type { Anchor, Breakpoint, Layer, Scene } from '@unysonplus/scene-player/types';
+import { StacksSection } from './StacksSection';
 import { BehindSection } from './BehindSection';
 import { SAFE_HREF } from '@unysonplus/scene-player/types';
 import { PRESET_CATALOG, defaultEaseFor, presetMeta, type PresetField } from '@unysonplus/scene-player/catalog';
@@ -517,7 +518,7 @@ function MultiInspector(props: Props & { ids: string[] }) {
 
 /* ------------------------------------------------------------------ layer */
 
-function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlignTo, onAlign }: Props & { layer: Layer }) {
+function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlignTo, onAlign, time }: Props & { layer: Layer }) {
   const override = editsOverride(scene, layer, bp);
   const hasOverride = !!(bp && layer.overrides?.[bp]);
   const o = (bp && layer.overrides?.[bp]) || {};
@@ -600,6 +601,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'cursor' && <CursorSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'repeat' && <RepeatSection layer={layer} set={(p) => props(p as Record<string, unknown>)} onUnpack={() => onCommit(repeatToGroup(scene, layer.id))} />}
       {layer.type === 'text' && <BehindSection scene={scene} layer={layer} onCommit={onCommit} />}
+      <StacksSection scene={scene} layer={layer} time={time} onCommit={onCommit} />
       {layer.type === 'captions' && <CaptionsSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} onCommit={onCommit} />}
       {layer.type === 'code' && <CodeSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'diagram' && <DiagramSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
