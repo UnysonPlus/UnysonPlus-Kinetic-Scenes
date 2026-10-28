@@ -156,9 +156,31 @@ export async function renderInBrowser(input: Scene, opts: BrowserRenderOptions, 
   document.body.appendChild(wrap);
   const g = canvas.getContext('2d') as CanvasRenderingContext2D & { drawElementImage: (el: Element, x: number, y: number, w?: number, h?: number) => void };
   const c = canvas as HTMLCanvasElement & { requestPaint: () => void; onpaint: (() => void) | null };
+  // 3D layers draw on a canvas that spills past their box (so a turning object is never clipped); the browser's
+  // element drawing places such a canvas wrongly. They are left out of the element picture and drawn on top here,
+  // where they really are, at their layers' opacity.
+  const gl3d = () => [...host.querySelectorAll<HTMLCanvasElement>('canvas[aria-hidden="true"]')].filter((cv) => cv.style.left.startsWith('-'));
+  const opacityOf = (el: Element) => { let o = 1; for (let e: Element | null = el; e && e !== host; e = e.parentElement) o *= Number(getComputedStyle(e).opacity) || 0; return o; };
   const paint = () => new Promise<void>((ok, bad) => {
     const t = setTimeout(() => bad(new Error('The browser stopped drawing the scene.')), 5000);
-    c.onpaint = () => { clearTimeout(t); try { g.clearRect(0, 0, W, H); g.drawElementImage(host, 0, 0, W, H); ok(); } catch (e) { bad(e as Error); } };
+    const three = gl3d();
+    three.forEach((cv) => { cv.style.visibility = 'hidden'; });
+    c.onpaint = () => {
+      clearTimeout(t);
+      try {
+        g.clearRect(0, 0, W, H);
+        g.drawElementImage(host, 0, 0, W, H);
+        const hr = host.getBoundingClientRect(), k = W / (hr.width || W);
+        for (const cv of three) {
+          const r = cv.getBoundingClientRect(), o = opacityOf(cv.parentElement!);
+          if (o <= 0 || !r.width) continue;
+          g.globalAlpha = Math.min(1, o);
+          g.drawImage(cv, (r.left - hr.left) * k, (r.top - hr.top) * k, r.width * k, r.height * k);
+          g.globalAlpha = 1;
+        }
+        ok();
+      } catch (e) { bad(e as Error); } finally { three.forEach((cv) => { cv.style.visibility = ''; }); }
+    };
     c.requestPaint();
   });
 
