@@ -41,8 +41,8 @@ async function post(path: string, body: unknown, signal?: AbortSignal) {
 
 interface MatteResult { src?: string; track?: VideoLayer['track'] }
 
-/** How the person is cut out: fast (a body outline), fine (fine edges, the default), rvm (Robust Video Matting). */
-export type CutoutMethod = 'fine' | 'fast' | 'rvm';
+/** How the person is cut out: fast (a body outline), fine (fine edges, the default), rvm (Robust Video Matting), hold (the person and what they hold, clicked on the first frame). */
+export type CutoutMethod = 'fine' | 'fast' | 'rvm' | 'hold';
 export interface MethodInfo { ready: boolean; note: string; downloaded?: boolean }
 
 /** Which cut-out methods the kit has, and a line on each (sam2 is listed but not available yet). */
@@ -54,10 +54,10 @@ export async function cutoutMethods(): Promise<Record<string, MethodInfo> | null
   } catch { return null; }
 }
 
-async function matte(layer: VideoLayer, opts: { cutout: boolean; faces: boolean; quality?: CutoutMethod; onStep: (s: string) => void; signal?: AbortSignal }): Promise<MatteResult> {
+async function matte(layer: VideoLayer, opts: { cutout: boolean; faces: boolean; quality?: CutoutMethod; points?: { x: number; y: number }[]; onStep: (s: string) => void; signal?: AbortSignal }): Promise<MatteResult> {
   const src = await footageData(layer.src);
   const b = await kit();
-  const { id } = await post('/studio/matte', { src, cutout: opts.cutout, faces: opts.faces, quality: opts.quality }, opts.signal);
+  const { id } = await post('/studio/matte', { src, cutout: opts.cutout, faces: opts.faces, quality: opts.quality, points: opts.points }, opts.signal);
   for (;;) {
     await new Promise((r) => setTimeout(r, 1200));
     if (opts.signal?.aborted) throw Object.assign(new Error('Stopped.'), { name: 'AbortError' });
@@ -85,10 +85,10 @@ function containerOf(scene: Scene, id: string): string | null {
  * Cuts the person out: a see-through copy of the footage, in step with it (same timing, place and frame), at the
  * top of its group so the graphics go behind the person. Also keeps the face path on the footage.
  */
-export async function cutOutPerson(scene: Scene, layerId: string, quality: CutoutMethod, onStep: (s: string) => void, signal?: AbortSignal): Promise<{ scene: Scene; id: string }> {
+export async function cutOutPerson(scene: Scene, layerId: string, quality: CutoutMethod, onStep: (s: string) => void, signal?: AbortSignal, points?: { x: number; y: number }[]): Promise<{ scene: Scene; id: string }> {
   const layer = findLayer(scene, layerId) as VideoLayer | undefined;
   if (!layer || layer.type !== 'video') throw new Error('Select a footage layer.');
-  const r = await matte(layer, { cutout: true, faces: true, quality, onStep, signal });
+  const r = await matte(layer, { cutout: true, faces: true, quality, points, onStep, signal });
   if (!r.src) throw new Error('The cut-out came back empty.');
   const blob = await (await fetch(r.src)).blob();
   const local = await putFootage(blob);

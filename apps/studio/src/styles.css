@@ -966,3 +966,10 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .batch-table th { position: sticky; top: 0; background: var(--panel, #15181c); }
 .row-bar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; margin-bottom: 6px; border-radius: 8px; background: rgba(0, 178, 149, .14); font-size: 12px; }
 .row-bar span { flex: 1; }
+
+/* Footage tools › Person and what they hold: clicking the first frame */
+.picker-dialog .export-inner { max-width: 760px; }
+.picker-frame { position: relative; cursor: crosshair; border-radius: 8px; overflow: hidden; background: #000; line-height: 0; }
+.picker-frame video { width: 100%; height: min(60vh, 420px); object-fit: contain; pointer-events: none; }
+.picker-dot { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: #00B295; color: #fff; font: 700 12px/24px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0,0,0,.5); pointer-events: none; }
+.picker-dot.is-held { background: #f59e0b; }

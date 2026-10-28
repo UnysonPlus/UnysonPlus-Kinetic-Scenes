@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Scene, VideoFormat, VideoLayer, VideoSettings } from '@unysonplus/scene-player/types';
 import { cutOutPerson, cutoutMethods, followFace, useFootageSound } from '../lib/footageKit';
 import type { CutoutMethod, MethodInfo } from '../lib/footageKit';
+import { PointPicker } from './PointPicker';
+import type { PickedPoint } from './PointPicker';
 import { separateFootage } from '../lib/separate';
 import { footageAspect, frameAspect, reframe } from '../lib/reframe';
 import { PLATFORM_LIMITS, VIDEO_FORMATS } from '@unysonplus/scene-player/video';
@@ -107,27 +109,32 @@ export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCo
     try { setNote(await job(ctl.signal)); } catch (e) { setNote((e as Error).name === 'AbortError' ? 'Stopped.' : (e as Error).message); } finally { setBusy(null); abort.current = null; }
   };
   const tracked = !!props.layer.track?.length;
+  // Person and what they hold: the clicks come from the first frame (PointPicker) before the cut-out runs.
+  const [picking, setPicking] = useState(false);
+  const cutOut = (points?: PickedPoint[]) => run(points && points.length > 1 ? 'Cutting out the person and what they hold' : 'Cutting out the person', async (signal) => {
+    const r = await cutOutPerson(props.scene, props.layer.id, quality, (s) => setBusy(s), signal, points);
+    props.onCommit(r.scene);
+    return 'Added the person, cut out, as the top layer: put words and graphics between it and the footage, swap the background, or give it a Sticker outline.';
+  });
   // Reframing is for a frame narrower than wide footage: a tall or square scene.
   const wide = frameAspect(props.scene) < 1.3;
   return (
     <Section title="Footage tools">
+      <PointPicker open={picking} src={props.layer.src} onCancel={() => setPicking(false)} onDone={(pts) => { setPicking(false); cutOut(pts); }} />
       <SelectField label="Cut-out method" value={quality} options={[
         { value: 'fine', label: 'Standard: fine edges (hair)' },
         { value: 'fast', label: 'Fast: the body only, for drafts' },
         { value: 'rvm', label: `Robust Video Matting: fast and steady${methods && !methods.rvm?.ready ? ' (not installed)' : ''}` },
+        { value: 'hold', label: `Person and what they hold${methods && !methods.hold?.ready ? ' (not installed)' : ''}` },
       ]} onChange={(v) => setQuality(v as CutoutMethod)} />
       <p className="field-hint wide">
-        {quality === 'rvm' ? (methods?.rvm?.note ?? 'Very fast and steady from frame to frame; downloads a 15 MB model (GPL-3.0) the first time.')
+        {quality === 'hold' ? (methods?.hold?.note ?? 'Click the person and what they hold on the first frame; both are followed through the video. The slowest method; downloads 170 MB of models the first time.')
+          : quality === 'rvm' ? (methods?.rvm?.note ?? 'Very fast and steady from frame to frame; downloads a 15 MB model (GPL-3.0) the first time.')
           : quality === 'fast' ? 'A quick outline of the body: good for trying a layout, rough at the hair.'
           : 'Fine edges, hair included: the best looking, about a second a frame without a graphics card.'}
-        {' '}Person and what they hold (click both, followed through the video) is coming later.
       </p>
       <div className="insp-start wide">
-        <button type="button" className="btn small" disabled={!!busy} onClick={() => run('Cutting out the person', async (signal) => {
-          const r = await cutOutPerson(props.scene, props.layer.id, quality, (s) => setBusy(s), signal);
-          props.onCommit(r.scene);
-          return 'Added the person, cut out, as the top layer: put words and graphics between it and the footage, swap the background, or give it a Sticker outline.';
-        })} title="A see-through copy of the person, above the graphics: words behind them, a new background, paper cut-out, frame break">Cut out the person</button>
+        <button type="button" className="btn small" disabled={!!busy} onClick={() => (quality === 'hold' ? setPicking(true) : cutOut())} title="A see-through copy of the person, above the graphics: words behind them, a new background, paper cut-out, frame break">Cut out the person</button>
         <button type="button" className="btn small" disabled={!!busy} onClick={() => run('Finding the face', async (signal) => {
           props.onCommit(await followFace(props.scene, props.layer.id, (s) => setBusy(s), signal));
           return 'Found the face in every frame. Give any layer the Follow the face preset to keep it there (a circle round the face, a label above the head).';
