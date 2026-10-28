@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-28",
+  "studio": "https://kinetic-scenes.unysonplus.com/",
+  "player": "0.0.48",
+  "rows": [
+    {
+      "profile": "Chrome / Edge (Chromium)",
+      "version": "149.0.7827.55",
+      "studio": "ok",
+      "demoFps": 52,
+      "bigFps": 59,
+      "looks": "ok (61 fps)"
+    },
+    {
+      "profile": "Firefox",
+      "version": "151.0",
+      "studio": "ok",
+      "demoFps": 112,
+      "bigFps": 119,
+      "looks": "ok (120 fps)"
+    },
+    {
+      "profile": "Safari (WebKit)",
+      "version": "26.5",
+      "studio": "errors: /localhost:8787/studio/status due to access control checks.",
+      "demoFps": 44,
+      "bigFps": 64,
+      "looks": "ok (59 fps)"
+    },
+    {
+      "profile": "iPhone 13 (WebKit)",
+      "version": "26.5",
+      "studio": "errors: /localhost:8787/studio/status due to access control checks.",
+      "demoFps": 23,
+      "bigFps": 41,
+      "looks": "ok (32 fps)"
+    },
+    {
+      "profile": "Mid-range Android (Chromium, CPU 4x slower)",
+      "version": "149.0.7827.55",
+      "studio": "ok",
+      "demoFps": 41,
+      "bigFps": 11,
+      "looks": "ok (60 fps)"
+    }
+  ]
+}

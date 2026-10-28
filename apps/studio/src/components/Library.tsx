@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { mount, type ScenePlayer } from '@unysonplus/scene-player';
 import { CATEGORY_LABELS, PRESET_CATALOG, type PresetCategory, type PresetMeta } from '@unysonplus/scene-player/catalog';
 import type { Layer, Scene } from '@unysonplus/scene-player/types';
+import { PRESET_GOALS } from '../lib/presetGoals';
+import { Segmented } from './Segmented';
 
 export const PRESET_MIME = 'application/x-upw-preset';
 
@@ -120,12 +122,19 @@ export function Library(props: {
   useEffect(() => { if (props.show) setKind(props.show.kind); }, [props.show]);
   const [query, setQuery] = useState('');
   const [hot, setHot] = useState<string | null>(null);
+  // Browse by technique (the catalogue's groups) or by goal ("make a headline land"); remembered in this browser.
+  const [by, setBy] = useState<'goal' | 'technique'>(() => { try { return localStorage.getItem('upw-presets-by') === 'goal' ? 'goal' : 'technique'; } catch { return 'technique'; } });
+  const chooseBy = (v: 'goal' | 'technique') => { setBy(v); try { localStorage.setItem('upw-presets-by', v); } catch { /* private window */ } };
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = PRESET_CATALOG.filter((p) => !q || p.label.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    if (by === 'goal') {
+      const byId = new Map(list.map((p) => [p.id, p]));
+      return PRESET_GOALS.map((g) => ({ c: g.id, title: g.label, hint: g.hint, items: g.presets.map((id) => byId.get(id)).filter((p): p is PresetMeta => !!p) })).filter((g) => g.items.length);
+    }
     const order: PresetCategory[] = ['text', 'reveal', 'motion', 'emphasis', 'tour', 'transition', 'ambient', 'code', '3d'];
-    return order.map((c) => ({ c, items: list.filter((p) => p.category === c) })).filter((g) => g.items.length);
-  }, [query]);
+    return order.map((c) => ({ c, title: CATEGORY_LABELS[c], hint: '', items: list.filter((p) => p.category === c) })).filter((g) => g.items.length);
+  }, [query, by]);
 
   return (
     <aside className="library" aria-label="Library">
@@ -139,6 +148,10 @@ export function Library(props: {
       {kind === 'sounds' ? props.sounds : kind === 'styles' ? props.styles : kind === 'pieces' ? props.pieces : <>
       <div className="lib-head">
         <input type="search" className="lib-search" placeholder="Search presets" aria-label="Search presets" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Segmented legend="Browse presets" value={by} onChange={chooseBy} options={[
+          { value: 'goal', label: 'By goal', hint: 'Grouped by what you want to do: make a headline land, reveal a picture, change scenes…' },
+          { value: 'technique', label: 'By technique', hint: 'Grouped by kind of move: text, reveal, motion, emphasis…' },
+        ]} />
         <p className="lib-help">
           {props.count > 1
             ? `Click a preset to add it at the playhead to each of the ${props.count} selected layers it suits.`
@@ -150,7 +163,8 @@ export function Library(props: {
       <div className="lib-scroll">
         {groups.map((g) => (
           <section key={g.c} className="lib-group">
-            <h3>{CATEGORY_LABELS[g.c]}</h3>
+            <h3>{g.title}</h3>
+            {g.hint && <p className="lib-goal-hint">{g.hint}</p>}
             <ul>
               {g.items.map((p) => {
                 const fits = props.count > 1 || !props.layerType || p.appliesTo.includes(props.layerType);

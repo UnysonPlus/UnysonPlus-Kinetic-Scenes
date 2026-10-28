@@ -38,6 +38,9 @@ import { BatchDialog } from './components/BatchDialog';
 import { HighlightsDialog } from './components/HighlightsDialog';
 import { LikeThisDialog } from './components/LikeThisDialog';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
+import { TemplatesDialog } from './components/TemplatesDialog';
+import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
+import { templateScene } from './lib/templates';
 import { fillScene, rowLabel } from './lib/batch';
 import type { Sheet } from './lib/batch';
 import { stockInStudio } from './lib/stock';
@@ -283,6 +286,8 @@ export function App() {
   const [stockOpen, setStockOpen] = useState(false);
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [firstRunOpen, setFirstRunOpen] = useState(() => shouldShowFirstRun());
   const [likeOpen, setLikeOpen] = useState(false);
   /** Bumped when the project's notes change in the folder (the agent added something). */
   const [notesChanged, setNotesChanged] = useState(0);
@@ -890,6 +895,7 @@ export function App() {
       { label: 'Project notes…', onSelect: () => setNotesOpen(true), disabled: !project, hint: project ? 'The plan, what was decided and what is left, shared with your AI agent' : 'Open a project first (File › Projects)' },
       'sep',
       { label: 'New', onSelect: startNew, hint: 'An empty scene (same screen sizes and fonts). Undo brings back the current one.' },
+      { label: 'New from template…', onSelect: () => setTemplatesOpen(true), hint: 'A finished scene by goal (website hero, product reveal, pricing, explainer…) in the style you pick' },
       { label: 'Open…', onSelect: () => openRef.current?.click() },
       { label: 'New from a screencast…', onSelect: () => screencastRef.current?.click(), hint: 'Pick a recording\'s video.mp4 and actions.json (AI Dev Kit: studio-cli record): a scene that zooms to each step' },
       { label: 'Save', shortcut: `${mod}S`, onSelect: saveProject, hint: project ? 'Into the project folder (it also saves as you work)' : 'Downloads the scene file (open a project to keep it in a folder)' },
@@ -970,6 +976,7 @@ export function App() {
     { label: 'Help', items: [
       { label: 'The manual', onSelect: link(DOCS) },
       { label: 'Connect your AI agent', onSelect: link(AGENTS_GUIDE) },
+      { label: 'Your first scene (guide)', onSelect: () => setFirstRunOpen(true) },
       { label: 'Keyboard shortcuts', onSelect: () => setKeysOpen(true) },
       { label: 'What is new', onSelect: link(`${DOCS}/roadmap`) },
     ] },
@@ -1372,6 +1379,17 @@ export function App() {
       <LikeThisDialog open={likeOpen} onClose={() => setLikeOpen(false)}
         onBrief={(r) => { setLikeOpen(false); setQueued({ text: r.about, brief: r.brief, context: r.context, scope: 'new' }); openAssist(true); setNotice(`How the video is made: ${r.summary} AI assist is making yours.`); }} />
       <ShortcutsDialog open={keysOpen} onClose={() => setKeysOpen(false)} />
+      <FirstRun open={firstRunOpen} onClose={() => setFirstRunOpen(false)} onTemplates={() => setTemplatesOpen(true)} />
+      <TemplatesDialog open={templatesOpen} styles={allStyles} onClose={() => setTemplatesOpen(false)} onPick={(id, style) => {
+        setTemplatesOpen(false);
+        const next = templateScene(id, style);
+        commit(next);
+        setScope(null);
+        setSelection({ layerId: null, clipId: null });
+        // Open on the still frame, with every word in place, so the words can be clicked and changed straight away.
+        post({ type: 'seek', time: next.playback.posterTime ?? 0 });
+        setNotice('New scene from a template. Change the words and pictures, or ask AI assist to build on it. Undo brings back the one you had.');
+      }} />
       <HighlightsDialog open={highlightsOpen} onClose={() => setHighlightsOpen(false)}
         onScene={(s, note) => { commit(s); setSelection({ layerId: null, clipId: null }); setHighlightsOpen(false); setNotice(note); }} />
       <BatchDialog open={batchOpen} onClose={() => setBatchOpen(false)} scene={scene} sheet={sheet.sheet} files={sheet.files}
