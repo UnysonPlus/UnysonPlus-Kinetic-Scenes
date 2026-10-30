@@ -609,8 +609,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     }
     for (const r of flatRefs(layers)) {
       if (r.layer.type === 'text') {
-        const { text } = resolveLayer(r.layer, current?.id ?? null);
-        buildText(doc, r, text ?? '');
+        const { text, style } = resolveLayer(r.layer, current?.id ?? null);
+        buildText(doc, r, text ?? '', style?.accent);
       }
     }
     fitPins();

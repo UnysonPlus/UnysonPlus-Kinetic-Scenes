@@ -575,6 +575,8 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
             onChange={(v) => layout({ style: { align: v } })}
           />
           <ColorField label="Colour" value={style.color} onCommit={(v) => layout({ style: { color: v || undefined } })} />
+          <ColorField label="Marked words" value={style.accent} placeholder="None" onCommit={(v) => layout({ style: { accent: v || undefined } })} />
+          {style.accent && <p className="field-hint wide">Wrap words in asterisks to draw them in this colour: looks *clean* and *super smooth*.</p>}
           <CheckField label="Capitals" checked={!!style.uppercase} onChange={(v) => layout({ style: { uppercase: v || undefined } })} />
           <CheckField label="Italic" checked={!!style.italic} onChange={(v) => layout({ style: { italic: v || undefined } })} />
           <CheckField label="Pill around it" checked={!!layer.pill} onChange={(v) => props({ pill: v ? { stroke: style.color ?? '#ffffff' } : undefined })} />

@@ -274,6 +274,11 @@ export interface TextStyle {
   align?: 'left' | 'center' | 'right';
   uppercase?: boolean;
   italic?: boolean;
+  /**
+   * A colour for the words that matter: with it set, words wrapped in asterisks in the text ("looks *clean* and
+   * *super smooth*") are drawn in it, and the asterisks are not shown.
+   */
+  accent?: string;
 }
 
 export interface LayerOverride {

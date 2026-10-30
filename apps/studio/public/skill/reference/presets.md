@@ -1,19 +1,19 @@
 # Presets
 
-Generated from the Studio 0.1.16. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.1.17. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text
 
 | id | what it does | applies to | default length | settings |
 | --- | --- | --- | --- | --- |
-| `text-rise` | **Rise.** Letters or words rise into place one after another, from behind an invisible mask. | text | 0.9 s | `direction`: `in` / `out`; `by`: `chars` / `words`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even`; `distance`: number 0 to 400 %; `mask`: boolean |
+| `text-rise` | **Rise.** Letters or words rise into place one after another, from behind an invisible mask. | text | 0.9 s | `direction`: `in` / `out`; `by`: `chars` / `words`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even` / `spoken`; `distance`: number 0 to 400 %; `mask`: boolean |
 | `text-slam` | **Slam.** Lands from a large, blurred scale, as if thrown at the screen. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.8 s | `direction`: `in` / `out`; `scale`: number 1 to 8; `blur`: number 0 to 5 |
-| `text-stretch` | **Stretch.** Letters grow out of a line, squashed, then spring to full size. | text | 0.9 s | `direction`: `in` / `out`; `axis`: `y` / `x`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even`; `squash`: number 1 to 4 |
+| `text-stretch` | **Stretch.** Letters grow out of a line, squashed, then spring to full size. | text | 0.9 s | `direction`: `in` / `out`; `axis`: `y` / `x`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even` / `spoken`; `squash`: number 1 to 4 |
 | `text-scramble` | **Scramble.** Letters flicker through random characters and settle on the real text, left to right. | text | 1.1 s | `charset`: text; `fps`: number 1 to 60 /s |
 | `text-typewriter` | **Typewriter.** Letters appear one at a time, as if being typed. Caret adds a typing cursor that blinks once the line is done (a prompt box, a search field). | text | 1.2 s | `direction`: `in` / `out`; `caret`: boolean |
-| `text-blur` | **Blur in.** Letters or words sharpen out of a soft blur, one after another. | text | 1 s | `direction`: `in` / `out`; `by`: `chars` / `words`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even`; `blur`: number 0 to 4 |
-| `text-flip` | **Flip.** Letters or words flip up into place in 3D, like a departure board. | text | 0.9 s | `direction`: `in` / `out`; `by`: `chars` / `words`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even` |
+| `text-blur` | **Blur in.** Letters or words sharpen out of a soft blur, one after another. | text | 1 s | `direction`: `in` / `out`; `by`: `chars` / `words`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even` / `spoken`; `blur`: number 0 to 4 |
+| `text-flip` | **Flip.** Letters or words flip up into place in 3D, like a departure board. | text | 0.9 s | `direction`: `in` / `out`; `by`: `chars` / `words`; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even` / `spoken` |
 | `text-tracking` | **Tracking.** Letter spacing opens out (or closes in) as the text fades in. | text | 1.2 s | `direction`: `in` / `out`; `from`: number -1 to 2 em |
 | `text-count` | **Count up.** The number in the text counts up to its value, keeping any prefix, separators and suffix ("$12,500+"). A clock ("0:45") counts in minutes and seconds. | text | 1.6 s | `from`: number |
 | `text-swap` | **Change text.** Swaps the words for new ones on cue ("booting" to "ready in 45 s", "1 / 10" to "2 / 10"): the old text leaves as the new one arrives. Chain several on one layer to step through a sequence; each starts from the text the one before it left. | text | 0.5 s | `to`: text; `style`: `roll` / `slide` / `fade` / `blur` |
@@ -31,7 +31,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 
 | id | what it does | applies to | default length | settings |
 | --- | --- | --- | --- | --- |
-| `text-wave` | **Wave.** A ripple runs through the letters: each one hops and settles. | text | 1 s | `height`: number 0 to 200 %; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even` |
+| `text-wave` | **Wave.** A ripple runs through the letters: each one hops and settles. | text | 1 s | `height`: number 0 to 200 %; `stagger`: number 0 to 1 s; `rhythm`: `natural` / `even` / `spoken` |
 | `pulse` | **Pulse.** Swells and settles, a set number of times. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 1.2 s | `scale`: number 1 to 2; `times`: number 1 to 12 |
 | `shake` | **Shake.** A quick, jittery side-to-side shake that dies away. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.6 s | `strength`: number 0 to 40 % |
 | `float` | **Float.** Drifts gently up and down, like it is floating. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 3 s | `height`: number 0 to 100 %; `cycles`: number 1 to 10 |

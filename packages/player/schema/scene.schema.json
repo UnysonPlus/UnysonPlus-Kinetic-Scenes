@@ -357,6 +357,10 @@
         },
         "italic": {
           "type": "boolean"
+        },
+        "accent": {
+          "type": "string",
+          "description": "A colour for the words that matter: words wrapped in asterisks in the text are drawn in it."
         }
       }
     },

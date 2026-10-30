@@ -60,7 +60,7 @@ const LOOK_OPTIONS = [
 const STAGGER: PresetField = { key: 'stagger', label: 'Stagger', type: 'number', min: 0, max: 1, step: 0.005, unit: 's' };
 const RHYTHM: PresetField = {
   key: 'rhythm', label: 'Rhythm', type: 'select',
-  options: [{ value: 'natural', label: 'Natural (uneven gaps)' }, { value: 'even', label: 'Even' }],
+  options: [{ value: 'natural', label: 'Natural (uneven gaps)' }, { value: 'even', label: 'Even' }, { value: 'spoken', label: 'Spoken (each word when the voice-over says it)' }],
 };
 const BY: PresetField = {
   key: 'by', label: 'Animate by', type: 'select',

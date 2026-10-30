@@ -111,8 +111,53 @@ function rhythm(ctx: PresetContext, count: number, each: number): number | ((i: 
   return (i: number) => starts[i] ?? 0;
 }
 
+const norm = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * "spoken" rhythm: each word arrives when the voice-over says it. The layer's words are matched in order to the
+ * transcribed words of a voice clip, starting near the clip's start (a word the voice skips keeps the pace of its
+ * neighbours). Times are on the scene's clock, so it is meant for layers that are not inside a group.
+ */
+function spokenStarts(ctx: PresetContext, targets: HTMLElement[]): number[] | null {
+  if (ctx.params.rhythm !== 'spoken' || targets.length < 2 || targets[0] === ctx.el) return null;
+  const said: Array<{ n: string; t: number }> = [];
+  for (const a of ctx.sceneAudio) {
+    if (a.role !== 'voice' || !a.words?.length) continue;
+    for (const w of a.words) said.push({ n: norm(w.w), t: (a.start ?? 0) + w.t - (a.offset ?? 0) });
+  }
+  said.sort((a, b) => a.t - b.t);
+  const want = targets.map((t) => norm(t.textContent ?? ''));
+  let k = said.findIndex((w) => w.t >= ctx.at - 0.6 && w.t <= ctx.at + 4 && w.n === want[0]);
+  if (k < 0) return null;
+  const at: Array<number | null> = [];
+  for (const w of want) {
+    let hit = -1;
+    for (let j = k; j < Math.min(said.length, k + 4); j++) if (said[j].n === w) { hit = j; break; }
+    if (hit >= 0) { at.push(said[hit].t - ctx.at); k = hit + 1; } else at.push(null);
+  }
+  if (at.filter((v) => v !== null).length < Math.ceil(want.length / 2)) return null;
+  // Words the voice did not say (or the matcher missed) sit between their neighbours.
+  for (let i = 0; i < at.length; i++) {
+    if (at[i] !== null) continue;
+    let j = i + 1;
+    while (j < at.length && at[j] === null) j++;
+    const prev = i > 0 ? (at[i - 1] as number) : 0;
+    const next = j < at.length ? (at[j] as number) : prev + 0.25 * (j - i + 1);
+    for (let q = i; q < j; q++) at[q] = prev + ((next - prev) * (q - i + 1)) / (j - i + 1);
+    i = j - 1;
+  }
+  return at.map((v) => Math.max(0, v as number));
+}
+
 /** Staggered in/out over letters or words. */
 function inOutStaggered(ctx: PresetContext, targets: HTMLElement[], hidden: Vars, shown: Vars, each: number, hiddenOut?: Vars) {
+  const spoken = spokenStarts(ctx, targets);
+  if (spoken) {
+    const [from, to] = isOut(ctx.params) ? [shown, hiddenOut ?? hidden] : [hidden, shown];
+    const item = Math.max(0.12, Math.min(0.45, ctx.duration * 0.25));
+    ctx.tl.fromTo(targets, from, { ...to, duration: item, ease: ctx.ease, stagger: (i: number) => spoken[i] ?? 0, immediateRender: ctx.first }, ctx.at);
+    return;
+  }
   const s = staggered(ctx.duration, targets.length, each);
   const [from, to] = isOut(ctx.params) ? [shown, hiddenOut ?? hidden] : [hidden, shown];
   ctx.tl.fromTo(targets, from, { ...to, duration: s.itemDuration, ease: ctx.ease, stagger: rhythm(ctx, targets.length, s.each), immediateRender: ctx.first }, ctx.at);

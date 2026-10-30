@@ -220,16 +220,18 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
  * Splits text into words and characters. Screen readers get the plain sentence from a visually hidden
  * copy; the split version is hidden from them, so it is never read out letter by letter.
  */
-export function buildText(doc: Document, refs: LayerRefs, text: string) {
+export function buildText(doc: Document, refs: LayerRefs, text: string, accent?: string) {
   const { inner } = refs;
   inner.textContent = '';
   refs.words = [];
   refs.chars = [];
   refs.builtText = text;
+  // With an accent colour, *marked words* are drawn in it (a mark may span several words).
+  let marked = false;
 
   const sr = doc.createElement('span');
   sr.className = 'upw-sr';
-  sr.textContent = text;
+  sr.textContent = accent ? text.replace(/\*/g, '') : text;
   inner.appendChild(sr);
 
   const vis = doc.createElement('span');
@@ -239,10 +241,19 @@ export function buildText(doc: Document, refs: LayerRefs, text: string) {
 
   text.split('\n').forEach((line, li) => {
     if (li > 0) vis.appendChild(doc.createElement('br'));
-    line.split(/ +/).filter(Boolean).forEach((word, wi) => {
+    line.split(/ +/).filter(Boolean).forEach((raw, wi) => {
+      let word = raw;
+      let lit = marked;
+      if (accent) {
+        if (word.startsWith('*')) { lit = true; marked = true; }
+        if (word.replace(/[.,!?;:'")]+$/, '').endsWith('*') && word.length > 1) marked = false;
+        word = word.replace(/\*/g, '');
+        if (!word) return;
+      }
       if (wi > 0) vis.appendChild(doc.createTextNode(' '));
       const w = doc.createElement('span');
       w.className = 'upw-w';
+      if (accent && lit) w.style.color = accent;
       const wInner = doc.createElement('span');
       wInner.className = 'upw-wi';
       for (const ch of Array.from(word)) {
