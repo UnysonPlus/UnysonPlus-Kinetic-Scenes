@@ -2,8 +2,8 @@ import type { PresetContext } from './index';
 import { clamp01, drive, isOut, num, pick } from './more';
 
 /**
- * Tour presets that point at a layer: Spotlight (everything else dims) and Callout (a labelled pill beside
- * it). Each draws on an overlay above the stage, placed from where the layer is on screen after every
+ * Tour presets that point at a layer: Spotlight (everything else dims), Callout (a labelled pill beside
+ * it) and Magnify (it comes forward, larger). The first two draw on an overlay above the stage, placed from where the layer is on screen after every
  * update, so it follows the layer through camera moves. An In and an Out on the same layer share one
  * overlay: the In shows it, the Out takes it away.
  */
@@ -100,5 +100,26 @@ export const TOUR_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
       pill.style.left = `${px.toFixed(1)}px`;
       pill.style.top = `${py.toFixed(1)}px`;
     });
+  },
+
+  lift(ctx) {
+    // Magnify: the layer comes forward, larger, on a soft shadow (and a ring when given a colour), and stays
+    // until an Out clip. It uses the separate scale property, so it adds to whatever moves the layer.
+    const p = ctx.params;
+    const out = isOut(p);
+    const k = Math.max(1, Math.min(3, num(p, 'scale', 1.25)));
+    const shadow = p.shadow !== false;
+    const ring = color(p, 'ring', '');
+    const el = ctx.el;
+    drive(ctx, (e) => {
+      const v = clamp01(out ? 1 - e : e);
+      if (v <= 0.001) { el.style.scale = ''; el.style.boxShadow = ''; el.style.outline = ''; el.style.zIndex = ''; return; }
+      el.style.scale = (1 + (k - 1) * v).toFixed(4);
+      el.style.zIndex = '7000';
+      const parts: string[] = [];
+      if (shadow) parts.push(`0 ${(1.2 * v).toFixed(2)}cqw ${(3.2 * v).toFixed(2)}cqw rgba(0,0,0,${(0.45 * v).toFixed(3)})`);
+      if (ring) parts.push(`0 0 0 ${(0.3 * v).toFixed(3)}cqw ${ring}`);
+      el.style.boxShadow = parts.join(', ');
+    }, { always: !out });
   },
 };

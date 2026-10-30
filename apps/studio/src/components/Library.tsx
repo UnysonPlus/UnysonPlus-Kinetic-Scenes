@@ -71,7 +71,7 @@ function sampleScene(p: PresetMeta): Scene {
         { id: 's', type: 'cursor', box: { x: p.id === 'cursor-move' ? 96 : 50, y: p.id === 'cursor-move' ? 92 : 52, w: 12, ratio: 0.7 }, clips: p.id === 'cursor-move'
           ? [{ id: 'c', preset: 'cursor-move', start: 0.15, duration: d, params: { to: 'b' } }]
           : [{ id: 'c', preset: 'cursor-click', start: 0.3, duration: 0.4 }] }]
-      : p.id === 'spotlight' || p.id === 'callout'
+      : p.id === 'spotlight' || p.id === 'callout' || p.id === 'lift'
       ? [{ id: 'bg', type: 'shape', shape: 'rect', fill: '#e9edf2', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [] },
         { id: 's', type: 'shape', shape: 'rect', fill: '#2271b1', radius: 2, box: { x: 50, y: p.id === 'callout' ? 66 : 50, w: 30, h: 18 }, clips: [{ id: 'c', preset: p.id, start: 0.15, duration: d, params: p.id === 'callout' ? { text: 'Save', size: 6, gap: 6 } : undefined }] }]
       : p.id === 'image-swap'

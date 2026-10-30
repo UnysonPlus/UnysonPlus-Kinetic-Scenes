@@ -12,7 +12,7 @@ const GOALS: PresetGoal[] = [
   { id: 'reveal', label: 'Reveal a picture', hint: 'Bring in a photo, screenshot or footage: wipes and masks feel deliberate, fades feel soft.',
     presets: ['wipe', 'soft-wipe', 'iris', 'blinds', 'slide', 'zoom', 'strip-in', 'brush', 'pixelate', 'image-swap'] },
   { id: 'attention', label: 'Draw attention', hint: 'Point at one thing that matters, once. Too many of these and nothing stands out.',
-    presets: ['spotlight', 'callout', 'glow', 'pulse', 'sheen', 'select-box', 'strike', 'jiggle', 'shake'] },
+    presets: ['spotlight', 'callout', 'lift', 'glow', 'pulse', 'sheen', 'select-box', 'strike', 'jiggle', 'shake'] },
   { id: 'change', label: 'Change scenes', hint: 'Move from one part to the next: put it on a beat or at the end of a sentence.',
     presets: ['tr-slash', 'tr-whip', 'tr-zoom', 'tr-streak', 'tr-dip', 'tr-flash', 'tr-glitch', 'morph', 'portal'] },
   { id: 'numbers', label: 'Show numbers and data', hint: 'Counts, progress and charts: a number counting up is more convincing than one appearing.',

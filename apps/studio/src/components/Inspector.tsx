@@ -19,7 +19,7 @@ import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
 import { CameraPath } from './CameraPath';
 import { LottieSection } from './LottieSection';
-import { CaptionsSection, CodeSection, CursorSection, CutOutSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, ScriptVoiceSection, SplitImageSection, StepsSection } from './VectorSections';
+import { CaptionsSection, CodeSection, CursorSection, CutOutSection, LiveShotSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, ScriptVoiceSection, SplitImageSection, StepsSection } from './VectorSections';
 import { focusCamera } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
 import { TransitionSection } from './TransitionSection';
@@ -624,6 +624,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'image' && (
         <SplitImageSection scene={scene} layer={layer} onCommit={onCommit} />
       )}
+      {layer.type === 'image' && <LiveShotSection scene={scene} layer={layer} onCommit={onCommit} onSelect={(id) => onSelect({ layerId: id, clipId: null })} />}
       {layer.type === 'image' && <CutOutSection scene={scene} layer={layer} onCommit={onCommit} onSelect={(id) => onSelect({ layerId: id, clipId: null })} />}
 
       {layer.type !== 'flow' && layer.type !== 'repeat' && <Section title="Position and size">

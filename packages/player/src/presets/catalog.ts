@@ -402,6 +402,13 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [DIRECTION, { key: 'pad', label: 'Room around it', type: 'number', min: 0, max: 20, step: 0.1, unit: 'su' }, { key: 'radius', label: 'Corners', type: 'number', min: 0, max: 30, step: 0.1, unit: 'su' }, { key: 'dim', label: 'Shade', type: 'number', min: 0, max: 1, step: 0.05 }],
   },
   {
+    id: 'lift', label: 'Magnify', category: 'tour', appliesTo: ALL,
+    description: 'The layer comes forward, larger, on a soft shadow (with a coloured ring if you give one), and stays that way until an Out clip. Made for a piece cut out of a screenshot: the option being talked about lifts off the screen.',
+    defaultEase: 'power3.out', defaultDuration: 0.45,
+    defaults: { direction: 'in', scale: 1.25, shadow: true, ring: '' },
+    fields: [DIRECTION, { key: 'scale', label: 'Size', type: 'number', min: 1, max: 3, step: 0.05 }, { key: 'shadow', label: 'Shadow', type: 'boolean' }, { key: 'ring', label: 'Ring colour', type: 'color' }],
+  },
+  {
     id: 'callout', label: 'Callout', category: 'tour', appliesTo: ALL,
     description: 'A labelled pill beside this layer, joined to it by a short line, saying what it is ("Save your changes here"). Stays until an Out clip.',
     defaultEase: 'power3.out', defaultDuration: 0.45,

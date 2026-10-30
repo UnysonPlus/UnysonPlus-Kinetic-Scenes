@@ -68,16 +68,26 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Cuts one region (in % of the image layer's box) out into its own layer: see cutOutMany. */
+export async function cutOut(scene: Scene, layerId: string, region: Region, name = 'Cut-out'): Promise<{ scene: Scene; id: string }> {
+  const r = await cutOutMany(scene, layerId, [region], [name]);
+  return { scene: r.scene, id: r.ids[0] };
+}
+
+/** A region of a picture, in % of the image layer's box. */
+export interface Region { x: number; y: number; w: number; h: number }
+
 /**
- * Cuts a region (in % of the image layer's box) out into its own layer in exactly the same place, and fills
- * the gap it leaves from the region's edges (interface screenshots are mostly flat, so blending the border
- * across the hole hides it).
+ * Cuts several regions (in % of the image layer's box) out into their own layers, each in exactly the same
+ * place, and fills the gaps they leave from the regions' edges (interface screenshots are mostly flat, so
+ * blending the border across a hole hides it). The pieces go above the picture in the order given.
  */
-export async function cutOut(scene: Scene, layerId: string, region: { x: number; y: number; w: number; h: number }, name = 'Cut-out'): Promise<{ scene: Scene; id: string }> {
+export async function cutOutMany(scene: Scene, layerId: string, regions: Region[], names: string[] = []): Promise<{ scene: Scene; ids: string[] }> {
   const layer = findLayer(scene, layerId) as ImageLayer | undefined;
   if (!layer || layer.type !== 'image') throw new Error('choose an image layer');
   const rect = layerRect(scene, layer);
   if (!rect) throw new Error('the layer has no size');
+  if (!regions.length) throw new Error('mark at least one piece');
   const img = await loadImage(layer.src);
   const W = img.naturalWidth, H = img.naturalHeight;
   // Where the box's region falls on the picture (object-fit cover or contain).
@@ -89,52 +99,76 @@ export async function cutOut(scene: Scene, layerId: string, region: { x: number;
   let sw: number, sh: number;
   if (cover === imgAspect > boxAspect) { sh = H; sw = H * boxAspect; } else { sw = W; sh = W / boxAspect; }
   const ox = (W - sw) / 2, oy = (H - sh) / 2;
-  const px = Math.round(ox + (region.x / 100) * sw), py = Math.round(oy + (region.y / 100) * sh);
-  const pw = Math.max(1, Math.round((region.w / 100) * sw)), ph = Math.max(1, Math.round((region.h / 100) * sh));
   const full = document.createElement('canvas');
   full.width = W; full.height = H;
   const g = full.getContext('2d')!;
   g.drawImage(img, 0, 0);
-  const piece = document.createElement('canvas');
-  piece.width = pw; piece.height = ph;
-  piece.getContext('2d')!.drawImage(full, px, py, pw, ph, 0, 0, pw, ph);
-  // The hole: each pixel blends the border pixels across from it (left/right and top/bottom), weighted by distance.
-  const x0 = Math.max(0, px - 1), y0 = Math.max(0, py - 1), x1 = Math.min(W - 1, px + pw), y1 = Math.min(H - 1, py + ph);
+  // Every piece is cut from the untouched picture first, then every hole is filled.
+  const pixels = regions.map((region) => {
+    const px = Math.max(0, Math.round(ox + (region.x / 100) * sw)), py = Math.max(0, Math.round(oy + (region.y / 100) * sh));
+    const pw = Math.max(1, Math.min(W - px, Math.round((region.w / 100) * sw))), ph = Math.max(1, Math.min(H - py, Math.round((region.h / 100) * sh)));
+    const piece = document.createElement('canvas');
+    piece.width = pw; piece.height = ph;
+    piece.getContext('2d')!.drawImage(full, px, py, pw, ph, 0, 0, pw, ph);
+    return { px, py, pw, ph, src: piece.toDataURL('image/png') };
+  });
   const data = g.getImageData(0, 0, W, H);
   const d = data.data;
   const at = (x: number, y: number) => (y * W + x) * 4;
-  for (let y = py; y < py + ph && y < H; y++) {
-    for (let x = px; x < px + pw && x < W; x++) {
-      const fx = (x - x0) / Math.max(1, x1 - x0), fy = (y - y0) / Math.max(1, y1 - y0);
-      const l = at(x0, y), r = at(x1, y), t = at(x, y0), b = at(x, y1);
-      const wx = 1 - Math.abs(fx - 0.5) * 2, wy = 1 - Math.abs(fy - 0.5) * 2;
-      // Nearer edges count more: the direction across the shorter span wins.
-      const kx = wy + 0.001, ky = wx + 0.001;
-      for (let c = 0; c < 3; c++) {
-        const hv = d[l + c] * (1 - fx) + d[r + c] * fx;
-        const vv = d[t + c] * (1 - fy) + d[b + c] * fy;
-        d[at(x, y) + c] = (hv * kx + vv * ky) / (kx + ky);
+  for (const { px, py, pw, ph } of pixels) {
+    const x0 = Math.max(0, px - 1), y0 = Math.max(0, py - 1), x1 = Math.min(W - 1, px + pw), y1 = Math.min(H - 1, py + ph);
+    // An interface's background is mostly one flat colour: when most of the border is one colour, the hole is
+    // filled with it (blending would smear a selected card's coloured edge across the gap).
+    const counts = new Map<number, number>();
+    let total = 0;
+    const tally = (x: number, y: number) => { const i = at(x, y); const k = ((d[i] >> 3) << 10) | ((d[i + 1] >> 3) << 5) | (d[i + 2] >> 3); counts.set(k, (counts.get(k) ?? 0) + 1); total++; };
+    for (let x = x0; x <= x1; x++) { tally(x, y0); tally(x, y1); }
+    for (let y = y0 + 1; y < y1; y++) { tally(x0, y); tally(x1, y); }
+    let top = 0, topN = 0;
+    counts.forEach((n, k) => { if (n > topN) { topN = n; top = k; } });
+    if (topN >= total * 0.6) {
+      const rgb = [((top >> 10) & 31) * 8 + 4, ((top >> 5) & 31) * 8 + 4, (top & 31) * 8 + 4];
+      // The exact colour: the first border pixel in that bucket.
+      for (let x = x0; x <= x1; x++) { const i = at(x, y0); if ((((d[i] >> 3) << 10) | ((d[i + 1] >> 3) << 5) | (d[i + 2] >> 3)) === top) { rgb[0] = d[i]; rgb[1] = d[i + 1]; rgb[2] = d[i + 2]; break; } }
+      for (let y = py; y < py + ph && y < H; y++) for (let x = px; x < px + pw && x < W; x++) { const i = at(x, y); d[i] = rgb[0]; d[i + 1] = rgb[1]; d[i + 2] = rgb[2]; d[i + 3] = 255; }
+      continue;
+    }
+    // Otherwise each pixel blends the border pixels across from it (left/right and top/bottom), weighted by distance.
+    for (let y = py; y < py + ph && y < H; y++) {
+      for (let x = px; x < px + pw && x < W; x++) {
+        const fx = (x - x0) / Math.max(1, x1 - x0), fy = (y - y0) / Math.max(1, y1 - y0);
+        const l = at(x0, y), r = at(x1, y), t = at(x, y0), b = at(x, y1);
+        const wx = 1 - Math.abs(fx - 0.5) * 2, wy = 1 - Math.abs(fy - 0.5) * 2;
+        // Nearer edges count more: the direction across the shorter span wins.
+        const kx = wy + 0.001, ky = wx + 0.001;
+        for (let c = 0; c < 3; c++) {
+          const hv = d[l + c] * (1 - fx) + d[r + c] * fx;
+          const vv = d[t + c] * (1 - fy) + d[b + c] * fy;
+          d[at(x, y) + c] = (hv * kx + vv * ky) / (kx + ky);
+        }
+        d[at(x, y) + 3] = 255;
       }
-      d[at(x, y) + 3] = 255;
     }
   }
   g.putImageData(data, 0, 0);
   const filled = full.toDataURL('image/png');
-  const cut = piece.toDataURL('image/png');
-  // The piece's box on the stage: the same region of the layer's rectangle.
-  const box = { x: r2(rect.l + (region.x / 100) * rect.w), y: r2(rect.t + (region.y / 100) * rect.h), w: r2((region.w / 100) * rect.w), h: r2((region.h / 100) * rect.h), anchor: 'top-left' as Anchor };
-  let n = 1;
   const taken = new Set<string>();
   const collect = (list: Layer[]) => list.forEach((l) => { taken.add(l.id); if (l.type === 'group') collect(l.layers); });
   collect(scene.layers);
-  while (taken.has(`${layerId}-cut${n}`)) n++;
-  const id = `${layerId}-cut${n}`;
-  const newLayer: Layer = { id, type: 'image', name, src: cut, alt: '', fit: 'cover', box, clips: [] };
+  let n = 1;
+  const pieces: Layer[] = regions.map((region, i) => {
+    while (taken.has(`${layerId}-cut${n}`)) n++;
+    const id = `${layerId}-cut${n}`;
+    taken.add(id);
+    // The piece's box on the stage: the same region of the layer's rectangle.
+    const box = { x: r2(rect.l + (region.x / 100) * rect.w), y: r2(rect.t + (region.y / 100) * rect.h), w: r2((region.w / 100) * rect.w), h: r2((region.h / 100) * rect.h), anchor: 'top-left' as Anchor };
+    return { id, type: 'image', name: names[i] || (regions.length > 1 ? `Piece ${i + 1}` : 'Cut-out'), src: pixels[i].src, alt: '', fit: 'cover', box, clips: [] } as Layer;
+  });
   const place = (list: Layer[]): Layer[] => list.flatMap((l) => {
-    if (l.id === layerId) return [{ ...l, src: filled } as Layer, newLayer];
+    if (l.id === layerId) return [{ ...l, src: filled } as Layer, ...pieces];
     return l.type === 'group' ? [{ ...l, layers: place(l.layers) }] : [l];
   });
-  return { scene: { ...scene, layers: place(scene.layers) }, id };
+  return { scene: { ...scene, layers: place(scene.layers) }, ids: pieces.map((p) => p.id) };
 }
 
 /* ------------------------------------------------------------------ steps */

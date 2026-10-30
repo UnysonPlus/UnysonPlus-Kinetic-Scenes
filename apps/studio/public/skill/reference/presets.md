@@ -1,6 +1,6 @@
 # Presets
 
-Generated from the Studio 0.1.15. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.1.16. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text
@@ -111,6 +111,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `cursor-click` | **Click.** The cursor presses: it dips, a ring ripples out from the tip and the layer under it dips too, all on the same frame. Give it a click sound, and start what the click causes on its last frame. | cursor | 0.35 s | `dip`: boolean |
 | `image-swap` | **Before and after.** A second picture of the same screen takes over (the menu opened, the setting saved): cut on the frame a click lands, or a quick fade or wipe. Several on one picture step through screens. | image | 0.25 s | `src`: text; `style`: `cut` / `fade` / `wipe` |
 | `spotlight` | **Spotlight.** Everything but this layer dims, with a rounded window around it, and stays that way until an Out clip. Follows the layer through camera moves. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.5 s | `direction`: `in` / `out`; `pad`: number 0 to 20 su; `radius`: number 0 to 30 su; `dim`: number 0 to 1 |
+| `lift` | **Magnify.** The layer comes forward, larger, on a soft shadow (with a coloured ring if you give one), and stays that way until an Out clip. Made for a piece cut out of a screenshot: the option being talked about lifts off the screen. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.45 s | `direction`: `in` / `out`; `scale`: number 1 to 3; `shadow`: boolean; `ring`: color |
 | `callout` | **Callout.** A labelled pill beside this layer, joined to it by a short line, saying what it is ("Save your changes here"). Stays until an Out clip. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.45 s | `direction`: `in` / `out`; `text`: text; `side`: `top` / `right` / `bottom` / `left`; `gap`: number 0 to 30 su; `color`: color; `size`: number 0.5 to 6 su |
 
 ## Code

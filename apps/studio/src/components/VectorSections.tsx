@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { CAPTION_PACKS, applyCaptionPack, copyCaptionStyle, countCaptions } from '../lib/captionStyles';
 import type { CaptionsLayer, CodeLayer, CursorLayer, DiagramLayer, FlowLayer, Layer, PathLayer, RepeatLayer, Scene } from '@unysonplus/scene-player/types';
-import { applySteps, cutOut } from '../lib/tour';
+import { applySteps, cutOut, type Region } from '../lib/tour';
+import { animateScreenshot, findRows, picturePixels, type Entrance, type Focus } from '../lib/liveShot';
 import { installVoice, speak, voiceStatus, withVoice } from '../lib/voice';
 import { useVoices } from '../lib/voices';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
@@ -392,6 +393,130 @@ export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scen
         ? 'Speaks each line in your Voicebox voice (Voicebox must be open; the first line can take a few minutes while it loads), then times every word. Only use a voice you have the right to use.'
         : 'No microphone needed: a free voice runs on your computer through the AI Dev Kit (downloaded once, about 60 MB), and every word is timed, so scenes and captions follow it exactly. Changing one line remakes only that line. Your own voice: connect Voicebox under Add-ons.'}</p>
       {note && <p className="field-hint wide" role="status">{note}</p>}
+    </Section>
+  );
+}
+
+/** Rows the kit measured in the real page (screenshot --rows): { rows: [{ x, y, w, h, label? }] } or a plain list, in % of the picture. */
+function parseRows(text: string): Array<Region & { label?: string }> {
+  const j = JSON.parse(text);
+  const list = Array.isArray(j) ? j : Array.isArray(j?.rows) ? j.rows : null;
+  if (!list) throw new Error('expected a list of rows, or { "rows": [...] }');
+  return list.filter((r: Record<string, unknown>) => r && [r.x, r.y, r.w, r.h].every((v) => typeof v === 'number') && (r.w as number) > 0 && (r.h as number) > 0);
+}
+
+/** The picture, small, with each row drawn on it and numbered. */
+async function rowsSketch(src: string, rows: Region[]): Promise<string> {
+  const img = await new Promise<HTMLImageElement>((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = src; });
+  const k = 300 / img.naturalWidth;
+  const c = document.createElement('canvas');
+  c.width = 300; c.height = Math.round(img.naturalHeight * k);
+  const g = c.getContext('2d')!;
+  g.drawImage(img, 0, 0, c.width, c.height);
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 0, c.width, c.height);
+  g.lineWidth = 2; g.font = 'bold 11px system-ui, sans-serif';
+  rows.forEach((r, i) => {
+    const x = (r.x / 100) * c.width, y = (r.y / 100) * c.height, w = (r.w / 100) * c.width, h = (r.h / 100) * c.height;
+    g.strokeStyle = '#2ad38b'; g.strokeRect(x, y, w, h);
+    g.fillStyle = '#2ad38b'; g.fillRect(x, y, 16, 13);
+    g.fillStyle = '#0a0d11'; g.fillText(String(i + 1), x + 3, y + 10);
+  });
+  return c.toDataURL('image/png');
+}
+
+async function naturalSize(src: string) {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  return { width: img.naturalWidth, height: img.naturalHeight };
+}
+
+export function LiveShotSection(props: { scene: Scene; layer: Layer; onCommit: (scene: Scene) => void; onSelect: (id: string) => void }) {
+  const { scene, layer } = props;
+  const [rows, setRows] = useState<Array<Region & { label?: string }>>([]);
+  const [natural, setNatural] = useState<{ width: number; height: number } | null>(null);
+  const [sketch, setSketch] = useState<string | null>(null);
+  const [join, setJoin] = useState(1.2);
+  const [entrance, setEntrance] = useState<Entrance>('stagger');
+  const [gap, setGap] = useState(0.12);
+  const [start, setStart] = useState(0.4);
+  const [focus, setFocus] = useState(0);
+  const [effect, setEffect] = useState<Focus>('both');
+  const [label, setLabel] = useState('');
+  const [hold, setHold] = useState(2);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  if (layer.type !== 'image') return null;
+  const show = async (list: Array<Region & { label?: string }>) => {
+    setRows(list);
+    setSketch(list.length ? await rowsSketch(layer.src, list) : null);
+    setNote(list.length ? null : 'No rows found. Try a larger "Rows closer than" value, or paste the rows the kit measured.');
+  };
+  const find = async () => {
+    setBusy(true);
+    setNote(null);
+    try {
+      setNatural(await naturalSize(layer.src));
+      await show(findRows(await picturePixels(layer.src), { join }));
+    } catch (e) {
+      setNote(`Could not read the picture: ${(e as Error).message}.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const paste = async (text: string) => {
+    if (!text.trim()) return;
+    try {
+      setNatural(await naturalSize(layer.src));
+      const list = parseRows(text);
+      await show(list);
+      const named = list.find((r) => r.label);
+      if (named && !label) setLabel(named.label ?? '');
+    } catch (e) {
+      setNote(`Could not read those rows: ${(e as Error).message}.`);
+    }
+  };
+  const run = async () => {
+    if (!rows.length || !natural) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const out = await animateScreenshot(scene, layer.id, rows, natural, { start, entrance, gap, focus: focus > 0 ? focus - 1 : undefined, focusEffect: effect, label: label.trim() || undefined, hold });
+      props.onCommit(out.scene);
+      props.onSelect(out.ids[Math.max(0, focus - 1)] ?? out.ids[0]);
+      setRows([]);
+      setSketch(null);
+    } catch (e) {
+      setNote(`Could not animate it: ${(e as Error).message}.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Section title="Animate this screenshot">
+      <p className="field-hint wide">The screenshot comes alive: its rows (the options of a settings screen, the items of a list) become their own layers in exactly the same place, build in one after another, and the one you are talking about lifts off the screen.</p>
+      <NumberField label="Rows closer than" value={join} step={0.2} min={0.2} max={6} unit="%" onCommit={(v) => v !== undefined && setJoin(v)} />
+      <div className="insp-start"><button type="button" className="btn small" disabled={busy || !layer.src} onClick={find}>{busy ? 'Looking…' : 'Find the rows'}</button></div>
+      <TextField label="Or paste the rows the kit measured" value="" multiline mono placeholder='{ "rows": [{ "x": 5, "y": 12, "w": 90, "h": 6 }] }' onCommit={paste} />
+      {sketch && <img src={sketch} alt={`${rows.length} rows marked on the screenshot`} style={{ width: '100%', borderRadius: 6, gridColumn: '1 / -1' }} />}
+      {rows.length > 0 && (
+        <>
+          <p className="field-hint wide">{rows.length} rows, numbered in the order they arrive.</p>
+          <SelectField<Entrance> label="They arrive" value={entrance} options={[{ value: 'stagger', label: 'One after another, sliding up' }, { value: 'stack', label: 'One after another, landing like cards' }, { value: 'none', label: 'Already there' }]} onChange={setEntrance} />
+          <NumberField label="Starts at" value={start} step={0.1} min={0} unit="s" onCommit={(v) => v !== undefined && setStart(v)} />
+          {entrance !== 'none' && <NumberField label="Between rows" value={gap} step={0.02} min={0} max={1} unit="s" onCommit={(v) => v !== undefined && setGap(v)} />}
+          <NumberField label="Row to focus (0 = none)" value={focus} step={1} min={0} max={rows.length} onCommit={(v) => v !== undefined && setFocus(Math.round(v))} />
+          {focus > 0 && (
+            <>
+              <SelectField<Focus> label="Focus with" value={effect} options={[{ value: 'both', label: 'Magnify and spotlight' }, { value: 'magnify', label: 'Magnify' }, { value: 'spotlight', label: 'Spotlight' }, { value: 'none', label: 'Only the label' }]} onChange={setEffect} />
+              <TextField label="Label beside it" value={label} placeholder="e.g. Pick your fonts here" onCommit={setLabel} />
+              <NumberField label="Hold for (0 = to the end)" value={hold} step={0.5} min={0} unit="s" onCommit={(v) => v !== undefined && setHold(v)} />
+            </>
+          )}
+          <div className="insp-start"><button type="button" className="btn small primary" disabled={busy} onClick={run}>{busy ? 'Working…' : 'Animate it'}</button></div>
+        </>
+      )}
+      {note && <p className="field-hint wide" role="alert">{note}</p>}
     </Section>
   );
 }
