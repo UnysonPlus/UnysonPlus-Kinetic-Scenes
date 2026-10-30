@@ -40,10 +40,13 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 const enc = (id: string) => encodeURIComponent(id);
 const post = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
+/** Fields that hold words, never a file: a code window titled "promo.json" or a caption about "logo.png" stay as written. */
+const WORDS = new Set(['title', 'text', 'name', 'label', 'alt', 'code', 'sub', 'description', 'to']);
+
 function mapStrings<T>(v: T, fn: (s: string) => string): T {
   if (typeof v === 'string') return fn(v) as T;
   if (Array.isArray(v)) return v.map((x) => mapStrings(x, fn)) as T;
-  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, mapStrings(x, fn)])) as T;
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, WORDS.has(k) && typeof x === 'string' ? x : mapStrings(x, fn)])) as T;
   return v;
 }
 
