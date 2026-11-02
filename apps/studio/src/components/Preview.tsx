@@ -22,8 +22,8 @@ export const DEVICES: Device[] = [
  * Because the scene runs in a real viewport of that size, the stage's breakpoints and height modes
  * behave exactly as they will on a visitor's screen.
  */
-export const Preview = forwardRef<HTMLIFrameElement, { device: Device; srcDoc: string; label: string; onScale?: (scale: number) => void; zones?: Zone[]; checker?: boolean }>(
-  function Preview({ device, srcDoc, label, onScale, zones, checker }, ref) {
+export const Preview = forwardRef<HTMLIFrameElement, { device: Device; srcDoc: string; label: string; onScale?: (scale: number) => void; zones?: Zone[]; checker?: boolean; onEmptyClick?: () => void }>(
+  function Preview({ device, srcDoc, label, onScale, zones, checker, onEmptyClick }, ref) {
     const areaRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0.5);
 
@@ -47,7 +47,8 @@ export const Preview = forwardRef<HTMLIFrameElement, { device: Device; srcDoc: s
     const h = Math.round(device.height * scale);
 
     return (
-      <div className="preview-area" ref={areaRef}>
+      // A click on the empty area around the stage clears the selection (the stage itself is inside the frame).
+      <div className="preview-area" ref={areaRef} onPointerDown={(e) => { if (!(e.target as HTMLElement).closest('.device-screen')) onEmptyClick?.(); }}>
         <div className="device" style={{ width: w }}>
           <div className="device-meta">
             <span>{device.label}</span>

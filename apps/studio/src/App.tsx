@@ -1280,7 +1280,7 @@ export function App() {
                 <button type="button" className="btn small" onClick={() => setRowView(null)}>Back to the design</button>
               </div>
             )}
-            <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} zones={zones} checker={seeThrough} />
+            <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} zones={zones} checker={seeThrough} onEmptyClick={() => setSelection({ layerId: null, clipId: null })} />
             <AiAssist
               project={project?.id ?? null}
               onMakeMusic={() => setMusicOpen(true)}

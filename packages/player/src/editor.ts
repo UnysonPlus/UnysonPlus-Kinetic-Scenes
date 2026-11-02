@@ -320,7 +320,26 @@ function start() {
    * The topmost unlocked layer under a point, at the current scope: for a hit deep inside groups,
    * the ancestor that sits directly in the scope (so at the top, a group's contents pick the group).
    */
+  /** A layer that covers (almost) the whole stage: a background, a glow, a particle field. */
+  function isBackdrop(id: string): boolean {
+    const el = player.root.querySelector<HTMLElement>(`.upw-layer[data-layer="${window.CSS.escape(id)}"]`);
+    const stage = player.root.querySelector<HTMLElement>('.upw-stage') ?? player.root;
+    if (!el) return false;
+    const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
+    return r.width >= s.width * 0.95 && r.height >= s.height * 0.95;
+  }
+
+  /**
+   * The layer under the pointer. Full-stage backdrops (a background, a glow, often an invisible particle field on top of
+   * everything) are passed over, so they never block clicks to what is under them, and a click where only they are acts
+   * as a click on empty space: it clears the selection. Select a backdrop from the timeline.
+   */
   function layerAt(x: number, y: number): string | null {
+    return layersAt(x, y).find((id) => !isBackdrop(id)) ?? null;
+  }
+
+  function layersAt(x: number, y: number): string[] {
+    const found: string[] = [];
     for (const node of document.elementsFromPoint(x, y)) {
       const el = node as HTMLElement;
       const first = el.closest?.('.upw-layer') as HTMLElement | null;
@@ -332,16 +351,16 @@ function start() {
           const up = cur.parentElement?.closest('.upw-layer') as HTMLElement | null;
           const parentId = up && player.root.contains(up) ? up.dataset.layer ?? null : null;
           if (parentId === scope) {
-            if (id && !isLocked(id)) return id;
+            if (id && !isLocked(id) && !found.includes(id)) found.push(id);
             break;
           }
           cur = up && player.root.contains(up) ? up : null;
         }
         continue;
       }
-      if (el.classList?.contains('upw-stage')) return null;
+      if (el.classList?.contains('upw-stage')) break;
     }
-    return null;
+    return found;
   }
 
   /** Marks the open group and its ancestors, so everything outside it is dimmed and inert. */
