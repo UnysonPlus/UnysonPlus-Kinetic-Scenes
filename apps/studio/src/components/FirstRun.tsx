@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 /**
  * Your first scene in two minutes: a guided first run for new visitors. A small card walks through four steps (pick a
  * starting point, change the words, watch it play, export) and outlines the part of the Studio each step is about.
- * Shown once per browser; Help › "Your first scene" opens it again.
+ * Shown until "Don’t show again" or Done; the × closes it for now (it comes back next visit). Help › "Your first scene"
+ * opens it again.
  */
 const KEY = 'upw-first-run-done';
 
@@ -33,6 +34,7 @@ export function FirstRun(props: { open: boolean; onClose: () => void; onTemplate
   const step = STEPS[i];
   return (
     <section className="first-run" role="dialog" aria-modal="false" aria-labelledby="first-run-title">
+      <button type="button" className="first-run-x" aria-label="Close for now" title="Close for now" onClick={props.onClose}>×</button>
       <p className="first-run-count">Your first scene · step {i + 1} of {STEPS.length}</p>
       <h2 id="first-run-title">{step.title}</h2>
       <p>{step.body}</p>
