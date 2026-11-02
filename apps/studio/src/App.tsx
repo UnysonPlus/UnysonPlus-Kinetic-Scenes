@@ -1005,11 +1005,7 @@ export function App() {
               <a className="brand-link" href="https://kinetic-scenes.unysonplus.com/" target="_blank" rel="noopener" title="Kinetic Scenes (opens in a new tab)">Kinetic Scenes</a>
               <button type="button" className="stage-tag" {...{ popovertarget: 'stage-info' }} aria-describedby="stage-info">Beta</button>
             </h1>
-            <p className="brand-sub">Unyson+ · {__STUDIO_VERSION__}{project && (
-              <> · <button type="button" className="project-tag" onClick={() => setProjectsOpen(true)} title="Projects">
-                {project.id}<span className={`project-state is-${projectSave}`}>{projectSave === 'saving' ? ' · saving' : projectSave === 'error' ? ' · not saved' : ' · saved'}</span>
-              </button></>
-            )}</p>
+            <p className="brand-sub">Unyson+ · {__STUDIO_VERSION__}</p>
             <div id="stage-info" className="stage-info" {...{ popover: 'auto' }} role="note">
               <strong>Beta: feature-complete, still being polished</strong>
               <p>Everything on the roadmap is built. You may still meet rough edges, and the scene file format can still change between versions.</p>
@@ -1019,6 +1015,12 @@ export function App() {
         </div>
         <MenuBar menus={menus} />
         <div className="top-actions">
+          {/* The open project sits here, beside Undo, so a long name never pushes the menus along. */}
+          {project && (
+            <button type="button" className="project-tag" onClick={() => setProjectsOpen(true)} title={`Projects: ${project.id}`}>
+              <span className="project-name">{project.id}</span><span className={`project-state is-${projectSave}`}>{projectSave === 'saving' ? '· saving' : projectSave === 'error' ? '· not saved' : '· saved'}</span>
+            </button>
+          )}
           <div className="btn-group" role="group" aria-label="History">
             <button type="button" className="icon-btn" onClick={history.undo} disabled={!history.canUndo} aria-label="Undo" title="Undo (Ctrl+Z)"><UndoIcon /></button>
             <button type="button" className="icon-btn" onClick={history.redo} disabled={!history.canRedo} aria-label="Redo" title="Redo (Ctrl+Shift+Z)"><RedoIcon /></button>

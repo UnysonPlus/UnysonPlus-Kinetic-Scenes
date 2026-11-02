@@ -920,7 +920,10 @@ h1, h2, p { margin: 0; }
 .project-root code { display: block; word-break: break-all; font-size: 12px; margin-top: 2px; }
 .project-root p { margin: 0; }
 .project-new input { width: 100%; }
-.project-tag { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted; }
+.project-tag { display: inline-flex; align-items: center; max-width: 340px; height: 32px; padding: 0 12px; border: 1px solid var(--border-soft); border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; }
+.project-tag:hover, .project-tag:focus-visible { color: var(--text, #e6eaee); border-color: var(--border, #2c3540); }
+.project-tag .project-name { overflow: hidden; text-overflow: ellipsis; color: var(--text, #e6eaee); }
+.project-tag .project-state { flex: none; margin-left: 6px; }
 .project-state.is-error { color: #ff7a7a; }
 .agent-connected { display: flex; gap: 8px; align-items: baseline; margin: 0; font-size: 12.5px; line-height: 1.45; opacity: .85; }
 .assist-panel .agent-connected { margin: 8px 12px 0; }
