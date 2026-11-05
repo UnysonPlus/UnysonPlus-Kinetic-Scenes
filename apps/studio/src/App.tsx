@@ -41,7 +41,8 @@ import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { TemplatesDialog } from './components/TemplatesDialog';
 import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
 import { StartDialog } from './components/StartDialog';
-import { shouldShowStart, type StartFormat, type startRequest } from './lib/start';
+import { shouldShowStart, startProjectName, type StartFormat, type startRequest } from './lib/start';
+import { buildAvailable } from './lib/agent';
 import { toVideo } from './lib/videoMode';
 import { templateScene } from './lib/templates';
 import { fillScene, rowLabel } from './lib/batch';
@@ -406,8 +407,8 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.id]);
 
-  const newFolderProject = useCallback(async (name: string) => {
-    const sc = { ...latest.current.scene, title: name };
+  const newFolderProject = useCallback(async (name: string, from: Scene = latest.current.scene) => {
+    const sc = { ...from, title: name };
     commit(sc);
     synced.current = sc;
     const p = await createProject(name, sc);
@@ -914,17 +915,24 @@ export function App() {
     }
     setNotice(`Added ${name} from ${r.source}${r.credit ? `. Credit needed: ${r.credit} (in the project notes)` : ''}.`);
   };
-  const startWithAi = (request: ReturnType<typeof startRequest>, format: StartFormat, styleId: string | null) => {
+  const startWithAi = async ({ voice, music, ...request }: ReturnType<typeof startRequest>, format: StartFormat, styleId: string | null) => {
     fromStart.current = true;
     leaveForNew();
     setStartOpen(false);
     const blank = blankScene(latest.current.scene);
-    commit(format.video ? toVideo(blank, format.video) : blank);
+    const next = format.video ? toVideo(blank, format.video) : blank;
+    commit(next);
     setScope(null);
     setSelection({ layerId: null, clipId: null });
     setAiStyle(styleId);
-    setQueued(request);
     openAssist(true);
+    // With the project agent, Create is the one approval: a new project, and the agent builds it there.
+    let agent = false;
+    if (canUseAgent) {
+      try { await newFolderProject(startProjectName(request.text, request.url), next); agent = true; }
+      catch (e) { setNotice(`The project could not be made, so AI assist builds it here instead: ${(e as Error).message}`); }
+    }
+    setQueued(agent ? { ...request, agent: { create: true, url: request.url, voice, music } } : request);
   };
   const copySceneFile = () => {
     const text = JSON.stringify(latest.current.scene, null, 2);
@@ -932,6 +940,7 @@ export function App() {
       .then(() => setNotice(`Copied the scene file (${Math.round(text.length / 1024)} KB).${text.length > 65536 ? ' It is long because of pictures or sound kept in it: attach the saved file instead (File › Save).' : ''}`))
       .catch(() => setNotice('The browser did not allow copying. Use File › Save and attach the file instead.'));
   };
+  const canUseAgent = kit.state === 'ready' && buildAvailable();
   const menus: Menu[] = [
     { label: 'File', items: [
       { label: 'Projects…', onSelect: () => setProjectsOpen(true), hint: 'Project folders on this computer (AI Dev Kit), shared with your AI agent' },
@@ -1427,7 +1436,7 @@ export function App() {
       <LikeThisDialog open={likeOpen} onClose={() => { fromStart.current = false; setLikeOpen(false); }}
         onBrief={(r) => { leaveForNew(); setLikeOpen(false); setQueued({ text: r.about, brief: r.brief, context: r.context, scope: 'new' }); openAssist(true); setNotice(`How the video is made: ${r.summary} AI assist is making yours.`); }} />
       <ShortcutsDialog open={keysOpen} onClose={() => setKeysOpen(false)} />
-      <StartDialog open={startOpen} onClose={() => setStartOpen(false)} status={kit} styles={allStyles} styleId={aiStyle}
+      <StartDialog open={startOpen} onClose={() => setStartOpen(false)} status={kit} agent={canUseAgent} styles={allStyles} styleId={aiStyle}
         currentTitle={scene === DEMO || !scene.layers.length ? '' : scene.title || 'This scene'} projectOpen={!!project}
         onAi={startWithAi} onProject={(id) => { setStartOpen(false); openFolderProject(id); }}
         onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }}

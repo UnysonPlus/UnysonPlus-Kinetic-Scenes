@@ -4,7 +4,7 @@ import { changedFields, pointContext, setField } from '../lib/pointEdit';
 import type { PointField } from '../lib/pointEdit';
 import { findLayer } from '../lib/sceneOps';
 import { AgentCard } from './ProjectsDialog';
-import { cancelSteps, startSteps, stepsAvailable, stepsJob } from '../lib/agent';
+import { cancelSteps, startSteps, stepsAvailable, stepsJob, type StepsCreate } from '../lib/agent';
 import { applySteps } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
 import { musicCues } from '../lib/beats';
@@ -44,6 +44,8 @@ export type QueuedRequest = string | {
   text: string;
   /** Make it from this website: its words, colours, fonts and screenshots are read first. */
   url?: string;
+  /** Build it with the project agent, in the project just made for it: one approval covers the run. */
+  agent?: StepsCreate;
   /** Instructions added to the rules for this request. */
   brief?: string;
   /** Data for the request (a voice-over's timed words). */
@@ -222,6 +224,8 @@ export function AiAssist(props: {
   const [planText, setPlanText] = useState('');
   const [phase, setPhase] = useState('');
   const [quickUrl, setQuickUrl] = useState('');
+  /** The project agent is building a whole video: it takes longer than a change. */
+  const [building, setBuilding] = useState(false);
 
   // Follow the selection: picking layers aims the next request at them.
   useEffect(() => {
@@ -244,6 +248,7 @@ export function AiAssist(props: {
 
   const send = async (text: string, useScope: Scope = scope, extra: Exclude<QueuedRequest, string> | null = null) => {
     const ask = text.trim();
+    setBuilding(!!(typeof extra === 'object' && extra?.agent));
     if (!ask || busy) return;
     if (status.state !== 'ready') { props.onRecheck(); return; }
     setPrompt('');
@@ -255,10 +260,12 @@ export function AiAssist(props: {
     const before = scene;
     try {
       // In steps: the agent edits the project's scene.json (the Studio follows the file); here we show its steps.
-      if (canSteps && inSteps && useScope !== 'new' && !extra) {
+      if ((canSteps && inSteps && useScope !== 'new' && !extra) || (extra?.agent && props.project)) {
         setPhase('Working in steps');
         const only = useScope === 'selection' && props.selection.length ? `\n\nChange only these layers: ${props.selection.join(', ')}.` : '';
-        const { id } = await startSteps(props.project!, ask + only);
+        const stepStyle = extra?.agent ? props.styles.find((s) => s.id === props.styleId) : null;
+        const request = [ask + only, extra?.brief, stepStyle ? styleBrief(stepStyle) : ''].filter(Boolean).join('\n\n');
+        const { id } = await startSteps(props.project!, request, extra?.agent);
         ctl.signal.addEventListener('abort', () => { cancelSteps(id); });
         const msg = nextId.current++;
         props.onMessages((list) => [...list, { id: msg, role: 'ai' as const, text: 'Starting…' }].slice(-40));
@@ -512,12 +519,13 @@ export function AiAssist(props: {
     // Waits until the AI is connected, so a queued request is never dropped.
     if (!props.queued || busy || !props.open || status.state !== 'ready') return;
     const q = props.queued;
+    if (typeof q !== 'string' && q.agent && !props.project) return;
     props.onQueuedTaken();
     if (typeof q === 'string') send(q, 'scene');
-    else if (q.url) fromWebsite(q.url, q);
+    else if (q.url && !q.agent) fromWebsite(q.url, q);
     else send(q.text, q.scope ?? 'scene', q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.queued, props.open, busy, status.state]);
+  }, [props.queued, props.open, props.project, busy, status.state]);
 
   const ready = status.state === 'ready';
   const ideas = scope === 'new' ? START_IDEAS : scope === 'selection' ? SELECTION_IDEAS : REFINE_IDEAS;
@@ -679,7 +687,7 @@ export function AiAssist(props: {
             )}
             {busy && (
               <div className="assist-msg is-ai is-working">
-                <p><span className="assist-pulse" aria-hidden="true" /> {phase || 'Working'}… {elapsed}s <span className="assist-faint">(usually one to three minutes)</span></p>
+                <p><span className="assist-pulse" aria-hidden="true" /> {phase || 'Working'}… {elapsed}s <span className="assist-faint">({building ? 'a whole video takes about 10 to 20 minutes' : 'usually one to three minutes'})</span></p>
                 <button type="button" className="link-btn" onClick={() => abort.current?.abort()}>Stop</button>
               </div>
             )}

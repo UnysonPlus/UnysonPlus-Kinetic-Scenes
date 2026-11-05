@@ -1,7 +1,7 @@
 // The start screen: when it opens, what counts as a web address, and the request a choice makes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { START_FORMATS, shouldShowStart, startRequest, startUrl } from '../src/lib/start.ts';
+import { START_FORMATS, shouldShowStart, startProjectName, startRequest, startUrl } from '../src/lib/start.ts';
 
 const reel = START_FORMATS[0], web = START_FORMATS.find((f) => f.id === 'web')!;
 
@@ -34,4 +34,17 @@ test('a website carries its address and any focus; a web animation has no video 
   const plain = startRequest({ text: '', url: 'https://example.com/', format: web, seconds: 0 });
   assert.equal(plain.text, 'https://example.com/');
   assert.equal('brief' in plain, false);
+});
+
+test('a project is named from the idea or the website', () => {
+  assert.equal(startProjectName('A reel about booking an appointment in two taps.'), 'A reel about booking an appointment');
+  assert.equal(startProjectName('', 'https://www.example.com/pricing'), 'example.com');
+  assert.equal(startProjectName('   '), 'New video');
+});
+
+test('voice and music are asked for only when chosen', () => {
+  const none = startRequest({ text: 'An idea', format: reel, seconds: 0 });
+  assert.equal(none.voice, false);
+  assert.equal(none.music, false);
+  assert.equal(startRequest({ text: 'An idea', format: reel, seconds: 0, voice: true }).voice, true);
 });

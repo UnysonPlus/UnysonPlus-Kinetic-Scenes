@@ -1096,6 +1096,8 @@ dialog.start-dialog.is-step { width: min(660px, calc(100vw - 32px)); }
 .start-pair label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 200px; }
 .start-pair select { height: 36px; padding: 0 8px; font-weight: 400; color: var(--ink); border: 1px solid var(--border); border-radius: var(--radius); background: var(--well); }
 .start-form textarea { flex: none; height: auto; min-height: 0; resize: vertical; }
+.start-sound { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 8px; font-size: 13px; }
+.start-sound label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
 .start-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
 @media (max-width: 760px) {
   .start-dialog .export-inner { padding: 16px; }

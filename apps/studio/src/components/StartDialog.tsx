@@ -58,6 +58,8 @@ export function StartDialog(props: {
   /** The scene in the Studio, to carry on with. Empty when it is only the demo or nothing. */
   currentTitle: string;
   projectOpen: boolean;
+  /** The project agent can build it (Claude Code, through the AI Dev Kit): voice and music can be asked for too. */
+  agent: boolean;
   styles: SceneStyle[];
   styleId: string | null;
   onAi: (request: ReturnType<typeof startRequest>, format: StartFormat, styleId: string | null) => void;
@@ -72,6 +74,8 @@ export function StartDialog(props: {
   const [formatId, setFormatId] = useState(START_FORMATS[0].id);
   const [seconds, setSeconds] = useState(30);
   const [styleId, setStyleId] = useState<string | null>(props.styleId);
+  const [voice, setVoice] = useState(false);
+  const [music, setMusic] = useState(false);
   const [projects, setProjects] = useState<ProjectInfo[] | null>(null);
   const [hidden, setHidden] = useState(startHidden);
 
@@ -100,7 +104,7 @@ export function StartDialog(props: {
   const canCreate = step === 'website' ? !!goodUrl : !!text.trim();
   const create = () => {
     if (!canCreate) return;
-    props.onAi(startRequest({ text, url: step === 'website' ? goodUrl! : undefined, format, seconds: format.video ? seconds : 0 }), format, styleId);
+    props.onAi(startRequest({ text, url: step === 'website' ? goodUrl! : undefined, format, seconds: format.video ? seconds : 0, voice: props.agent && !!format.video && voice, music: props.agent && !!format.video && music }), format, styleId);
     setText('');
     setUrl('');
   };
@@ -211,6 +215,13 @@ export function StartDialog(props: {
                 </select>
               </label>
             </div>
+            {props.agent && format.video && (
+              <div className="start-sound">
+                <label><input type="checkbox" checked={voice} onChange={(e) => setVoice(e.target.checked)} /> Add a voice-over</label>
+                <label><input type="checkbox" checked={music} onChange={(e) => setMusic(e.target.checked)} /> Add music</label>
+              </div>
+            )}
+            {props.agent && <p className="start-note">Create makes a new project and your AI agent builds it there, step by step. You can stop it at any time, and it never renders a video.</p>}
             {aiNeed && <p className="start-need">{aiNeed}. AI assist shows how to connect it, and your request waits there.</p>}
             <div className="start-actions">
               <button type="button" className="btn" onClick={() => setStep('pick')}>Back</button>

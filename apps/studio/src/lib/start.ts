@@ -46,6 +46,16 @@ export interface StartChoice {
   format: StartFormat;
   /** Seconds; 0 leaves the length to the AI. */
   seconds: number;
+  /** Add these (the project agent only). */
+  voice?: boolean;
+  music?: boolean;
+}
+
+/** A project's name from what the person asked for: a website's address, or the first words of the idea. */
+export function startProjectName(text: string, url?: string): string {
+  if (url) return new URL(url).hostname.replace(/^www\./, '');
+  const words = text.trim().split(/\s+/).slice(0, 6).join(' ').replace(/[.,;:!?]+$/, '');
+  return words || 'New video';
 }
 
 /** The request AI assist takes from the start screen. */
@@ -56,5 +66,5 @@ export function startRequest(c: StartChoice) {
     c.seconds ? `LENGTH: about ${c.seconds} seconds.` : '',
     c.url && about ? `FOCUS: ${about}` : '',
   ].filter(Boolean).join('\n');
-  return { text: about || (c.url ?? ''), scope: 'new' as const, ...(c.url ? { url: c.url } : {}), ...(brief ? { brief } : {}) };
+  return { text: about || (c.url ?? ''), scope: 'new' as const, voice: !!c.voice, music: !!c.music, ...(c.url ? { url: c.url } : {}), ...(brief ? { brief } : {}) };
 }

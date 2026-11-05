@@ -9,6 +9,8 @@ export interface AgentJob { state: 'running' | 'done' | 'error' | 'cancelled'; s
 
 /** Whether the running kit can work in steps (Claude Code is on this computer). */
 export const stepsAvailable = () => kitHas('agent');
+/** Whether it can also build a new scene (an older kit would ignore what the start screen sends). */
+export const buildAvailable = () => kitHas('agent-create');
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const b = await kitBase();
@@ -19,7 +21,10 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return j as T;
 }
 
-export const startSteps = (project: string, prompt: string) =>
-  call<{ id: string }>('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project, prompt }) });
+/** A new scene from the start screen: what the agent reads first, and the sound it adds. */
+export interface StepsCreate { create: true; url?: string; voice?: boolean; music?: boolean }
+
+export const startSteps = (project: string, prompt: string, create?: StepsCreate) =>
+  call<{ id: string }>('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project, prompt, ...create }) });
 export const stepsJob = (id: string) => call<AgentJob>(`/${encodeURIComponent(id)}`);
 export const cancelSteps = (id: string) => call<{ ok: boolean }>(`/${encodeURIComponent(id)}/cancel`, { method: 'POST' }).catch(() => ({ ok: false }));

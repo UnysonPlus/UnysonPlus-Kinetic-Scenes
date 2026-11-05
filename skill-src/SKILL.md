@@ -56,7 +56,8 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    person wants changes. Stills for your own review are fine; the final video is made when they ask (or they export
    it themselves with Export › Video). When they ask, the render checks the finished video (every voice line heard,
    black frames, loudness, clipping; `video_check`): fix what it reports and render again before handing it over.
-   For several takes of a voice line use `voice_best_take`; for recorded speech, `footage_cleanup`.
+   To speak a script with the kit's voice engine use `voice_over`; for several takes of a line, `voice_best_take`; for
+   recorded speech, `footage_cleanup`.
 
 ## Checklist
 
