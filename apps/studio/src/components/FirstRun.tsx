@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react';
 /**
  * Your first scene in two minutes: a guided first run for new visitors. A small card walks through four steps (pick a
  * starting point, change the words, watch it play, export) and outlines the part of the Studio a step is about (the
- * first needs none: its button opens the templates).
- * Shown until "Don’t show again" or Done; the × closes it for now (it comes back next visit). Help › "Your first scene"
+ * first needs none: its button opens the start screen).
+ * It follows the first scene made from the start screen, from step two. Shown until "Don’t show again" or Done; the × closes it for now (it comes back next visit). Help › "Your first scene"
  * opens it again.
  */
 const KEY = 'upw-first-run-done';
 
-const STEPS: Array<{ title: string; body: string; target?: string; action?: 'templates' }> = [
-  { title: 'Pick a starting point', body: 'Start from a template: a website hero, a product reveal, pricing, a social promo or an explainer, in the style you like.', action: 'templates' },
+const STEPS: Array<{ title: string; body: string; target?: string; action?: 'start' }> = [
+  { title: 'Pick a starting point', body: 'Describe what you want, give a website or a video, or start from a template in the style you like.', action: 'start' },
   { title: 'Change the words', body: 'Click any text on the stage, then type your own words in the Inspector on the right. Pictures change the same way.', target: '.stagecol' },
   { title: 'Watch it play', body: 'Press play (or the Space bar). The timeline below shows when each part arrives; drag a clip to change its timing.', target: 'button.icon-btn.play' },
   { title: 'Export it', body: 'Export gives you plain HTML for a web page, or a video for Reels, TikTok, Shorts or YouTube. No account needed.', target: 'button.btn.primary' },
@@ -20,9 +20,9 @@ export function shouldShowFirstRun(): boolean {
   try { return !localStorage.getItem(KEY); } catch { return false; }
 }
 
-export function FirstRun(props: { open: boolean; onClose: () => void; onTemplates: () => void }) {
+export function FirstRun(props: { open: boolean; from?: number; onClose: () => void; onStart: () => void }) {
   const [i, setI] = useState(0);
-  useEffect(() => { if (props.open) setI(0); }, [props.open]);
+  useEffect(() => { if (props.open) setI(props.from ?? 0); }, [props.open, props.from]);
   // Outline the part of the Studio this step is about.
   useEffect(() => {
     if (!props.open) return;
@@ -42,7 +42,7 @@ export function FirstRun(props: { open: boolean; onClose: () => void; onTemplate
       <h2 id="first-run-title">{step.title}</h2>
       <p>{step.body}</p>
       <div className="first-run-actions">
-        {step.action === 'templates' && <button type="button" className="btn primary" onClick={() => { props.onTemplates(); setI(1); }}>Choose a template</button>}
+        {step.action === 'start' && <button type="button" className="btn primary" onClick={props.onStart}>Choose a start</button>}
         {i > 0 && <button type="button" className="btn" onClick={() => setI(i - 1)}>Back</button>}
         {i < STEPS.length - 1 ? <button type="button" className="btn" onClick={() => setI(i + 1)}>{step.action ? 'Skip' : 'Next'}</button>
           : <button type="button" className="btn primary" onClick={done}>Done</button>}

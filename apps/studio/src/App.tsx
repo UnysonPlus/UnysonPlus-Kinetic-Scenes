@@ -40,6 +40,9 @@ import { LikeThisDialog } from './components/LikeThisDialog';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { TemplatesDialog } from './components/TemplatesDialog';
 import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
+import { StartDialog } from './components/StartDialog';
+import { shouldShowStart, type StartFormat, type startRequest } from './lib/start';
+import { toVideo } from './lib/videoMode';
 import { templateScene } from './lib/templates';
 import { fillScene, rowLabel } from './lib/batch';
 import type { Sheet } from './lib/batch';
@@ -293,7 +296,11 @@ export function App() {
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
-  const [firstRunOpen, setFirstRunOpen] = useState(() => shouldShowFirstRun());
+  const [firstRunOpen, setFirstRunOpen] = useState(false);
+  const [firstRunStep, setFirstRunStep] = useState(0);
+  const [startOpen, setStartOpen] = useState(() => shouldShowStart(location.search));
+  /** A new scene is on its way from the start screen: it must not land in the project reopened from last time. */
+  const fromStart = useRef(false);
   const [likeOpen, setLikeOpen] = useState(false);
   /** Bumped when the project's notes change in the folder (the agent added something). */
   const [notesChanged, setNotesChanged] = useState(0);
@@ -793,6 +800,20 @@ export function App() {
     }
   }, [post]);
   const problems = issues.filter((i) => i.severity === 'warn').length;
+  // ---- the start screen ----
+  /** Whatever the start screen makes is a new piece of work: leave the open project first, so it is not overwritten. */
+  const leaveForNew = useCallback(() => {
+    if (!fromStart.current) return;
+    fromStart.current = false;
+    if (projectRef.current) closeFolderProject();
+  }, [closeFolderProject]);
+  /** The guide follows the first scene made here, from "Change the words". */
+  const guideFirstScene = useCallback(() => {
+    if (!shouldShowFirstRun()) return;
+    setFirstRunStep(1);
+    setFirstRunOpen(true);
+  }, []);
+
   const recheckKit = useCallback(() => { setKit({ state: 'checking' }); kitStatus().then(setKit); }, []);
   useEffect(recheckKit, [recheckKit]);
   const openAssist = useCallback((open: boolean) => {
@@ -893,6 +914,18 @@ export function App() {
     }
     setNotice(`Added ${name} from ${r.source}${r.credit ? `. Credit needed: ${r.credit} (in the project notes)` : ''}.`);
   };
+  const startWithAi = (request: ReturnType<typeof startRequest>, format: StartFormat, styleId: string | null) => {
+    fromStart.current = true;
+    leaveForNew();
+    setStartOpen(false);
+    const blank = blankScene(latest.current.scene);
+    commit(format.video ? toVideo(blank, format.video) : blank);
+    setScope(null);
+    setSelection({ layerId: null, clipId: null });
+    setAiStyle(styleId);
+    setQueued(request);
+    openAssist(true);
+  };
   const copySceneFile = () => {
     const text = JSON.stringify(latest.current.scene, null, 2);
     navigator.clipboard.writeText(text)
@@ -904,6 +937,7 @@ export function App() {
       { label: 'Projects…', onSelect: () => setProjectsOpen(true), hint: 'Project folders on this computer (AI Dev Kit), shared with your AI agent' },
       { label: 'Project notes…', onSelect: () => setNotesOpen(true), disabled: !project, hint: project ? 'The plan, what was decided and what is left, shared with your AI agent' : 'Open a project first (File › Projects)' },
       'sep',
+      { label: 'Start something new…', onSelect: () => { if (kit.state !== 'ready') recheckKit(); setStartOpen(true); }, hint: 'All the ways to begin: an idea, a website, a video, a template' },
       { label: 'New', onSelect: startNew, hint: 'An empty scene (same screen sizes and fonts). Undo brings back the current one.' },
       { label: 'New from template…', onSelect: () => setTemplatesOpen(true), hint: 'A finished scene by goal (website hero, product reveal, pricing, explainer…) in the style you pick' },
       { label: 'Open…', onSelect: () => openRef.current?.click() },
@@ -987,7 +1021,7 @@ export function App() {
     { label: 'Help', items: [
       { label: 'The manual', onSelect: link(DOCS) },
       { label: 'Connect your AI agent', onSelect: link(AGENTS_GUIDE) },
-      { label: 'Your first scene (guide)', onSelect: () => setFirstRunOpen(true) },
+      { label: 'Your first scene (guide)', onSelect: () => { setFirstRunStep(0); setFirstRunOpen(true); } },
       { label: 'Keyboard shortcuts', onSelect: () => setKeysOpen(true) },
       { label: 'What is new', onSelect: link(`${DOCS}/roadmap`) },
     ] },
@@ -1026,7 +1060,7 @@ export function App() {
             <button type="button" className="icon-btn" onClick={history.redo} disabled={!history.canRedo} aria-label="Redo" title="Redo (Ctrl+Shift+Z)"><RedoIcon /></button>
           </div>
           <button type="button" className="btn primary" onClick={() => setExporting(true)}><DownloadIcon /> Export</button>
-          <input ref={openRef} type="file" accept=".json,application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) openProject(f); e.target.value = ''; }} />
+          <input ref={openRef} type="file" accept=".json,application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) { leaveForNew(); openProject(f); } e.target.value = ''; }} />
           <input ref={screencastRef} type="file" accept="video/*,.json,application/json" multiple hidden onChange={async (e) => {
             // A recording from the AI Dev Kit: its video and its actions.json, picked together.
             const files = [...(e.target.files ?? [])];
@@ -1038,6 +1072,7 @@ export function App() {
             try { rec = JSON.parse(await json.text()); } catch { setNotice(`${json.name} could not be read.`); return; }
             if (!isRecording(rec)) { setNotice(`${json.name} is not a recording's actions file.`); return; }
             const src = await putFootage(video);
+            leaveForNew();
             const vertical = !(latest.current.scene.video?.formats?.[0] === '16x9');
             commit(screencastScene(rec, src, { vertical, title: video.name.replace(/\.[^.]+$/, '') }));
             setSelection({ layerId: null, clipId: null });
@@ -1389,12 +1424,29 @@ export function App() {
 
       <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} project={project?.id ?? null} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
-      <LikeThisDialog open={likeOpen} onClose={() => setLikeOpen(false)}
-        onBrief={(r) => { setLikeOpen(false); setQueued({ text: r.about, brief: r.brief, context: r.context, scope: 'new' }); openAssist(true); setNotice(`How the video is made: ${r.summary} AI assist is making yours.`); }} />
+      <LikeThisDialog open={likeOpen} onClose={() => { fromStart.current = false; setLikeOpen(false); }}
+        onBrief={(r) => { leaveForNew(); setLikeOpen(false); setQueued({ text: r.about, brief: r.brief, context: r.context, scope: 'new' }); openAssist(true); setNotice(`How the video is made: ${r.summary} AI assist is making yours.`); }} />
       <ShortcutsDialog open={keysOpen} onClose={() => setKeysOpen(false)} />
-      <FirstRun open={firstRunOpen} onClose={() => setFirstRunOpen(false)} onTemplates={() => setTemplatesOpen(true)} />
-      <TemplatesDialog open={templatesOpen} styles={allStyles} onClose={() => setTemplatesOpen(false)} onPick={(id, style) => {
+      <StartDialog open={startOpen} onClose={() => setStartOpen(false)} status={kit} styles={allStyles} styleId={aiStyle}
+        currentTitle={scene === DEMO || !scene.layers.length ? '' : scene.title || 'This scene'} projectOpen={!!project}
+        onAi={startWithAi} onProject={(id) => { setStartOpen(false); openFolderProject(id); }}
+        onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }}
+        onAction={(a) => {
+          setStartOpen(false);
+          fromStart.current = a !== 'sheet';
+          if (a === 'video') setHighlightsOpen(true);
+          else if (a === 'like') setLikeOpen(true);
+          else if (a === 'recording') screencastRef.current?.click();
+          else if (a === 'sheet') setBatchOpen(true);
+          else if (a === 'templates') setTemplatesOpen(true);
+          else if (a === 'file') openRef.current?.click();
+          else { leaveForNew(); startNew(); guideFirstScene(); }
+        }} />
+      <FirstRun open={firstRunOpen} from={firstRunStep} onClose={() => setFirstRunOpen(false)} onStart={() => { setFirstRunOpen(false); setStartOpen(true); }} />
+      <TemplatesDialog open={templatesOpen} styles={allStyles} onClose={() => { fromStart.current = false; setTemplatesOpen(false); }} onPick={(id, style) => {
+        leaveForNew();
         setTemplatesOpen(false);
+        guideFirstScene();
         const next = templateScene(id, style);
         commit(next);
         setScope(null);
@@ -1403,8 +1455,8 @@ export function App() {
         post({ type: 'seek', time: next.playback.posterTime ?? 0 });
         setNotice('New scene from a template. Change the words and pictures, or ask AI assist to build on it. Undo brings back the one you had.');
       }} />
-      <HighlightsDialog open={highlightsOpen} onClose={() => setHighlightsOpen(false)}
-        onScene={(s, note) => { commit(s); setSelection({ layerId: null, clipId: null }); setHighlightsOpen(false); setNotice(note); }} />
+      <HighlightsDialog open={highlightsOpen} onClose={() => { fromStart.current = false; setHighlightsOpen(false); }}
+        onScene={(s, note) => { leaveForNew(); commit(s); setSelection({ layerId: null, clipId: null }); setHighlightsOpen(false); setNotice(note); }} />
       <BatchDialog open={batchOpen} onClose={() => setBatchOpen(false)} scene={scene} sheet={sheet.sheet} files={sheet.files}
         onSheet={(s, files) => { setSheet({ sheet: s, files }); if (!s) setRowView(null); }}
         onPreview={(i) => { setRowView(i); setBatchOpen(false); }} />

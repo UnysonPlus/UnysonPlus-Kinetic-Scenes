@@ -42,6 +42,8 @@ export type Scope = 'new' | 'scene' | 'selection' | 'point';
 /** A request handed to AI assist from elsewhere in the Studio (Check scene, a voice-over). */
 export type QueuedRequest = string | {
   text: string;
+  /** Make it from this website: its words, colours, fonts and screenshots are read first. */
+  url?: string;
   /** Instructions added to the rules for this request. */
   brief?: string;
   /** Data for the request (a voice-over's timed words). */
@@ -107,6 +109,8 @@ export interface ChatMessage {
   /** Three directions to pick from, and the request they are for. */
   directions?: Direction[];
   directionsFor?: string;
+  /** What came with that request (a website's words and screenshots, a format): building a direction keeps it. */
+  directionsExtra?: Exclude<QueuedRequest, string> | null;
 }
 
 /** The pointed element's name, for the Point line. */
@@ -277,10 +281,10 @@ export function AiAssist(props: {
       // Three directions first: a new scene starts with three directions to pick from (each a palette, a font and a mood).
       if (mode === 'create' && kind === 'storyboard' && threeFirst && !extra?.direction && !extra?.approved && !extra?.base && pending === null) {
         setPhase('Thinking of three directions');
-        const r = await askForPlan({ prompt: ask, kind: 'storyboard', scene: before, signal: ctl.signal, context: extra?.context, brief: [DIRECTIONS_ASK, style ? styleBrief(style) : ''].filter(Boolean).join('\n\n') });
+        const r = await askForPlan({ prompt: ask, kind: 'storyboard', scene: before, signal: ctl.signal, context: extra?.context, brief: [DIRECTIONS_ASK, extra?.brief, style ? styleBrief(style) : ''].filter(Boolean).join('\n\n') });
         const dirs = parseDirections(r.plan || '');
         if (dirs.length >= 2) {
-          push({ role: 'ai', text: 'Three directions. Pick one to plan and build, or tell me what to change.', directions: dirs, directionsFor: ask });
+          push({ role: 'ai', text: 'Three directions. Pick one to plan and build, or tell me what to change.', directions: dirs, directionsFor: ask, directionsExtra: extra });
           return;
         }
         // An answer that was not three directions: carry on as before (plan or build) rather than stop.
@@ -292,7 +296,7 @@ export function AiAssist(props: {
         const plan = await askForPlan({
           prompt: revising ? `${pending!.prompt}\n\nChanges to the plan: ${ask}` : ask, kind, scene: before, signal: ctl.signal,
           context: [extra?.context, revising ? `THE PLAN SO FAR\n${planText}` : ''].filter(Boolean).join('\n\n') || undefined,
-          brief: [style ? styleBrief(style) : '', extra?.direction ? directionBrief(extra.direction) : ''].filter(Boolean).join('\n\n') || undefined,
+          brief: [extra?.brief, style ? styleBrief(style) : '', extra?.direction ? directionBrief(extra.direction) : ''].filter(Boolean).join('\n\n') || undefined,
         });
         setPending({ prompt: revising ? pending!.prompt : ask, extra: revising ? pending!.extra : extra });
         setPlanText(planAsText(plan));
@@ -481,8 +485,8 @@ export function AiAssist(props: {
   };
 
   /** A quick scene from a website: its real words, colours, fonts and screenshots. */
-  const fromWebsite = async () => {
-    const url = quickUrl.trim();
+  const fromWebsite = async (typed = quickUrl, ask?: Exclude<QueuedRequest, string>) => {
+    const url = typed.trim();
     if (!url || busy || status.state !== 'ready') return;
     setBusy(true);
     setPhase('Reading the website');
@@ -500,7 +504,7 @@ export function AiAssist(props: {
     }
     if (!q) return;
     const assets = new Map(q.shots.map((src, i) => [`shot:${i + 1}`, src]));
-    send(`A scene that shows ${url} in use, ending with its call to action.`, 'new', { text: url, brief: q.brief, context: q.context, assets });
+    send(`A scene that shows ${url} in use, ending with its call to action.`, 'new', { text: url, brief: [q.brief, ask?.brief].filter(Boolean).join('\n\n'), context: q.context, assets });
   };
 
   // "Fix with AI" from Check scene.
@@ -510,6 +514,7 @@ export function AiAssist(props: {
     const q = props.queued;
     props.onQueuedTaken();
     if (typeof q === 'string') send(q, 'scene');
+    else if (q.url) fromWebsite(q.url, q);
     else send(q.text, q.scope ?? 'scene', q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.queued, props.open, busy, status.state]);
@@ -606,7 +611,7 @@ export function AiAssist(props: {
                     <label htmlFor="assist-url">Or start from a website</label>
                     <div className="assist-quick-row">
                       <input id="assist-url" type="url" placeholder="https://your-product.com" value={quickUrl} disabled={busy} onChange={(e) => setQuickUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); fromWebsite(); } }} />
-                      <button type="button" className="btn small" disabled={!ready || busy || !/^https?:\/\//.test(quickUrl.trim())} onClick={fromWebsite}>Make a scene</button>
+                      <button type="button" className="btn small" disabled={!ready || busy || !/^https?:\/\//.test(quickUrl.trim())} onClick={() => fromWebsite()}>Make a scene</button>
                     </div>
                     <p className="assist-faint">The AI Dev Kit reads its real words, colours, fonts and screenshots; nothing is invented.</p>
                   </div>
@@ -638,7 +643,7 @@ export function AiAssist(props: {
                         </div>
                         <p><strong>{d.mood}</strong>. {d.pace}. {d.look}</p>
                         <p className="assist-faint">Opens on: {d.opening}</p>
-                        <button type="button" className="btn small" disabled={busy || !ready} onClick={() => send(m.directionsFor ?? '', 'new', { text: m.directionsFor ?? '', direction: d })}>Build this one</button>
+                        <button type="button" className="btn small" disabled={busy || !ready} onClick={() => send(m.directionsFor ?? '', 'new', { ...(m.directionsExtra ?? {}), text: m.directionsFor ?? '', direction: d })}>Build this one</button>
                       </div>
                     ))}
                   </div>

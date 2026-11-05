@@ -1049,3 +1049,62 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .sound-stretch:hover, .sound-stretch:focus-visible { background: var(--surface-2); outline: none; }
 .sound-time { min-width: 46px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+
+/* ---------- start screen ---------- */
+dialog.start-dialog { width: min(1000px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); }
+.start-dialog .export-inner { gap: 18px; padding: 20px 24px 18px; }
+.start-dialog .export-head h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+.start-body { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; }
+.start-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.start-describe label, .start-form > label, .start-formats legend, .start-pair label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.start-describe-row { display: flex; gap: 8px; margin-top: 6px; }
+.start-describe-row input, .start-form input[type="text"] { flex: 1; min-width: 0; height: 40px; padding: 0 12px; font-size: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--well); }
+.start-form input[type="text"] { flex: none; }
+.start-describe-row input::placeholder, .start-form input::placeholder, .start-form textarea::placeholder { color: var(--faint); }
+.start-describe-row .btn { height: 40px; padding: 0 16px; }
+.start-need { margin-top: 6px; font-size: 12px; color: var(--amber); }
+.start-group h3, .start-side h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.start-group ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
+.start-option { width: 100%; height: 100%; display: flex; gap: 11px; align-items: flex-start; padding: 10px 11px; text-align: left; cursor: pointer; border: 1px solid var(--border-soft); border-radius: var(--radius); background: var(--surface-2); transition: border-color 150ms var(--ease), background-color 150ms var(--ease); }
+.start-option:hover { border-color: var(--accent); background: var(--surface-3); }
+.start-icon { flex: none; margin-top: 1px; color: var(--accent); }
+.start-words { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.start-words strong { font-size: 13px; font-weight: 600; }
+.start-words span { font-size: 12px; line-height: 1.35; color: var(--muted); }
+.start-words em { font-size: 11px; font-style: normal; color: var(--amber); }
+.start-side { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding-left: 24px; border-left: 1px solid var(--border-soft); min-width: 0; }
+.start-side .link-btn { align-self: flex-start; margin-top: 4px; }
+.start-recent { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; text-align: left; cursor: pointer; border: 0; border-radius: var(--radius); background: transparent; transition: background-color 150ms var(--ease); }
+.start-recent:hover { background: var(--surface-2); }
+.start-recent strong { font-size: 13px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.start-recent span { font-size: 11px; color: var(--faint); }
+.start-note { font-size: 12px; line-height: 1.5; color: var(--muted); }
+.start-note a { color: var(--accent); }
+.start-again { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; font-size: 12px; color: var(--muted); cursor: pointer; }
+dialog.start-dialog.is-step { width: min(660px, calc(100vw - 32px)); }
+.start-form { display: flex; flex-direction: column; gap: 8px; }
+.start-form > label:not(:first-child) { margin-top: 8px; }
+.start-formats { margin: 8px 0 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 6px; }
+.start-formats legend { margin-bottom: 6px; padding: 0; }
+.start-formats label { display: flex; flex-direction: column; gap: 1px; padding: 9px 10px; cursor: pointer; border: 1px solid var(--border-soft); border-radius: var(--radius); background: var(--surface-2); transition: border-color 150ms var(--ease); }
+.start-formats label:hover { border-color: var(--border); }
+.start-formats label.on { border-color: var(--accent); }
+.start-formats label:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.start-formats strong { font-size: 13px; font-weight: 600; color: var(--ink); }
+.start-formats span { font-size: 11px; line-height: 1.35; font-weight: 400; color: var(--muted); }
+.start-pair { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; }
+.start-pair label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 200px; }
+.start-pair select { height: 36px; padding: 0 8px; font-weight: 400; color: var(--ink); border: 1px solid var(--border); border-radius: var(--radius); background: var(--well); }
+.start-form textarea { flex: none; height: auto; min-height: 0; resize: vertical; }
+.start-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+@media (max-width: 760px) {
+  .start-dialog .export-inner { padding: 16px; }
+  .start-dialog .export-head h2 { font-size: 18px; }
+  .start-body { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .start-side { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--border-soft); }
+  .start-describe-row { flex-wrap: wrap; }
+  .start-describe-row input { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-option, .start-recent, .start-formats label { transition: none; }
+}
