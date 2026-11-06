@@ -155,7 +155,7 @@ export function templateScene(id: string, style: SceneStyle = BUILT_IN_STYLES[0]
         [clip({ preset: 'stack-in', params: { lift: 30 } }, a, 0.35), clip({ preset: 'paper', params: { rough: 1.4, grain: 0.2, lift: 0.9 } }, a, b - a)], { start: a, end: b, pill: { fill: '#fbf7ee', padX: 1.1, padY: 0.5, radius: 0.2 } });
       banner('Banner', 'Your big idea', 0.2, CUT, pal.accent);
       tag('Caption', 'Say it as a small world.', 1.4, CUT);
-      add({ name: 'Page', type: 'shape', shape: 'rect', box: { x: 50, y: 50, w: 100, h: 100 }, fill: '#fbf7ee', start: CUT, end: END, clips: [clip({ preset: 'tr-tear', params: { direction: 'in' } }, CUT, 0.8)] } as never);
+      add({ name: 'Page', type: 'shape', shape: 'rect', box: { x: 50, y: 50, w: 130, h: 130 }, fill: '#fbf7ee', start: CUT, end: END, clips: [clip({ preset: 'tr-tear', params: { direction: 'in' } }, CUT, 0.8)] } as never);
       banner('Answer banner', 'The answer', CUT + 0.7, END, pal.accent2 ?? pal.accent);
       tag('Answer caption', 'Then land one clear point.', CUT + 1.1, END);
       break;

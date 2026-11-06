@@ -8,6 +8,10 @@ They are synthesised by the player: nothing to download.
 | `whoosh` | 0.55 s | Air rushing past: something flies in. |
 | `whoosh-out` | 0.5 s | Air falling away: something leaves. |
 | `swish` | 0.28 s | A quick, light swipe: wipes and slides. |
+| `paper-rustle` | 0.42 s | A sheet of paper shifting: cut-outs arriving. |
+| `paper-tear` | 0.5 s | A sheet ripping: paper tear transitions. |
+| `tape-pull` | 0.5 s | Tape peeled off: a sticky, crackling pull. |
+| `stamp` | 0.2 s | A stamp pressed on paper: a soft thump with a dry click. |
 | `slide` | 0.3 s | A soft upward glide. |
 | `spin` | 0.7 s | A turning flutter: spins and flips. |
 | `pop` | 0.14 s | A bright pop: things that appear with a bounce. |

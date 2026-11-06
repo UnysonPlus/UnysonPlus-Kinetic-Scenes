@@ -1,6 +1,6 @@
 # Motion rules
 
-The rules the Studio's own AI follows (Studio 0.1.23).
+The rules the Studio's own AI follows (Studio 0.1.24).
 
 ```text
 TIMING
@@ -45,7 +45,7 @@ CAMERA (the whole view)
 - Use it for the big gestures only: a slow push in on a held headline (zoom 1 to 1.1 over 2-4 s), a tilt reveal (tiltX 20-30 to 0 with softLand), a pan between two areas laid out side by side. Return to zoom 1 before content near the edges appears (zooming crops the stage's edges).
 
 SCENE TRANSITIONS (between groups: acts, slides, ideas)
-- The "transition" presets (tr-slash, tr-flash, tr-whip, tr-zoom, tr-glitch, tr-dip) act on a whole group. Use them as a matched pair: an "out" clip on the group that leaves and an "in" clip on the next group, with the SAME start and duration (the next group's start), and the leaving group still on stage until it ends.
+- The "transition" presets (tr-slash, tr-flash, tr-whip, tr-zoom, tr-glitch, tr-dip, and for paper scenes tr-tear, tr-page, tr-tape) act on a whole group. Use them as a matched pair: an "out" clip on the group that leaves and an "in" clip on the next group, with the SAME start and duration (the next group's start), and the leaving group still on stage until it ends.
 - When a group leaves through a transition, its own layers should not exit just before it: the transition carries them away.
 - One or two transition styles per scene, used for the big changes of idea; plain exits and entrances for the small ones.
 
@@ -204,6 +204,7 @@ AVOID
 - Numbers, statistics or claims the request did not give.
 
 MOTION-DESIGN STYLES (when one is named: its signs, then how to build it here; use its palette and fonts from the Style library when set)
+- Paper cut-out: Flat shapes of coloured paper stacked in layers with soft shadows between them, slightly rough cut edges, a visible grain, a small physical world (hills, a desk, a town) acting out the idea, a heavy banner headline and captions on torn paper tags. BUILD: Give every shape and picture a "paper" clip running from the layer's start to its end. Build the world back to front from shape layers (sky, far hills, near hills, then props) and give each a "depth" from -0.8 (far) to 0.6 (near), then add scene.camera keys with a slow pan so the layers slide past each other. Act the idea out as one physical metaphor. Captions are text layers with a pale pill and a "paper" clip with rough about 1.4 and grain 0.2, so the letters stay crisp. Change scenes with tr-tear, tr-page or tr-tape, a matched out and in pair on two groups. Use paper-rustle for arrivals, stamp for hits, paper-tear with tr-tear and tape-pull with tr-tape.
 - Flat vector: Solid fills, no gradients or shadows; simple geometric icons and people; 3-4 saturated colours on a light, warm background; everything overshoots slightly and settles. BUILD: Shapes (rect with radius, ellipse) with pop/stack-in entrances at back.out easing, 0.08-0.12 s staggers so moves overlap; a big rounded headline; icons as simple shapes; no grade, no blur.
 - Line art: Everything is an outline in one stroke weight, black (or one ink) on off-white; lines draw on from start to end; a single accent colour at most; a slight hand-drawn wobble. BUILD: Path and flow layers with the draw preset (power2.inOut, 1-1.6 s); shapes with a stroke and no fill; text-outline on big words; a long boil clip (amount 1.5-2.5, 8 fps) on the drawing group for the hand-drawn feel.
 - Isometric: Objects on a 30° grid with three shaded faces (light top, mid left, dark right); no perspective; small worlds on platforms; pieces drop or slide in along the grid axes. BUILD: Group three shapes per block (top/left/right faces) or use 3D models with an isometric camera; gravity-drop / stack-in entrances; keep motion along the grid diagonals; pastel faces from the palette with accent on one object.
@@ -229,6 +230,10 @@ SOUNDS (id: what it is)
 - whoosh (0.55 s): Air rushing past: something flies in.
 - whoosh-out (0.5 s): Air falling away: something leaves.
 - swish (0.28 s): A quick, light swipe: wipes and slides.
+- paper-rustle (0.42 s): A sheet of paper shifting: cut-outs arriving.
+- paper-tear (0.5 s): A sheet ripping: paper tear transitions.
+- tape-pull (0.5 s): Tape peeled off: a sticky, crackling pull.
+- stamp (0.2 s): A stamp pressed on paper: a soft thump with a dry click.
 - slide (0.3 s): A soft upward glide.
 - spin (0.7 s): A turning flutter: spins and flips.
 - pop (0.14 s): A bright pop: things that appear with a bounce.

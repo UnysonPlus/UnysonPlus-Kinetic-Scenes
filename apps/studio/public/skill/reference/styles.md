@@ -66,6 +66,16 @@ STYLE: "Luxe" (follow it unless the request says otherwise). Quiet luxury: an el
 - Motion: headlines enter with text-blur {"by":"chars","stagger":0.04}, other text with fade {"y":10}, shapes with grow {"axis":"x","origin":"center"}; exits use fade {"y":0,"blur":0.5}. Entrances ease "glide", exits "gentleIn". Pace calm: longer moves and more breathing room. Vary supporting entrances a little where it helps, but keep this personality.
 - Sounds: a few, only the key moments: entrances "swell", exits "whoosh-out", landings "sub-hit", accents "shimmer".
 
+## Paper cut-out
+
+STYLE: "Paper cut-out" (follow it unless the request says otherwise). Layered construction paper: a little world of cut shapes with depth, torn caption tags, and cuts that tear, turn or peel.
+- Stage background: #7fb6c9. Colours: text #1f2a37, secondary text #3d4b5c, accent #e4572e, second accent #2a9d8f. Use the accent sparingly, on what matters most.
+- Fonts: headlines "Archivo Black" weight 400 in capitals; other text "Fraunces" weight 700. Set stage.fonts to [{ "family": "Archivo Black", "href": "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" }].
+- Motion: headlines enter with pop {"from":0.7}, other text with stack-in, shapes with pop {"from":0.6}; exits use fade {"y":0}. Entrances ease "back.out(1.7)", exits "power2.in". Pace steady. Vary supporting entrances a little where it helps, but keep this personality.
+- Sounds: on the key moments: entrances "paper-rustle", exits "swish", landings "stamp", accents "tap".
+- What makes it Paper cut-out: Flat shapes of coloured paper stacked in layers with soft shadows between them, slightly rough cut edges, a visible grain, a small physical world (hills, a desk, a town) acting out the idea, a heavy banner headline and captions on torn paper tags. Someone should recognise the style from any single frame.
+- How to build it here: Give every shape and picture a "paper" clip running from the layer's start to its end. Build the world back to front from shape layers (sky, far hills, near hills, then props) and give each a "depth" from -0.8 (far) to 0.6 (near), then add scene.camera keys with a slow pan so the layers slide past each other. Act the idea out as one physical metaphor. Captions are text layers with a pale pill and a "paper" clip with rough about 1.4 and grain 0.2, so the letters stay crisp. Change scenes with tr-tear, tr-page or tr-tape, a matched out and in pair on two groups. Use paper-rustle for arrivals, stamp for hits, paper-tear with tr-tear and tape-pull with tr-tape. Its signature effect is the "paper" preset.
+
 ## Flat vector
 
 STYLE: "Flat vector" (follow it unless the request says otherwise). Explainer-video flat: solid shapes, no shadows, a friendly rounded font and bouncy, overlapping moves.

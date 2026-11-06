@@ -1,6 +1,6 @@
 # Presets
 
-Generated from the Studio 0.1.23. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.1.24. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text
@@ -99,6 +99,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `drift` | **Drift.** A slow, steady move and scale creep that keeps a held frame alive. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 3 s | `x`: number -100 to 100 %; `y`: number -100 to 100 %; `scale`: number 0.5 to 2; `rotate`: number -45 to 45 ° |
 | `gradient-flow` | **Gradient flow.** A shape’s gradient fill flows across it and back. Give the shape a gradient fill. | shape | 4 s | `axis`: `x` / `y` / `diagonal`; `cycles`: number 1 to 10 |
 | `particles` | **Particles.** A field of small dots rising, falling or drifting inside the shape. Clear the shape’s fill to show the particles on their own. | shape | 4 s | `count`: number 1 to 150; `size`: number 0.2 to 10 %; `speed`: number 0 to 2 /s; `direction`: `up` / `down` / `drift`; `color`: color; `twinkle`: boolean |
+| `paper` | **Cut paper.** Construction paper: a hand-cut edge, a fine grain and a shadow lifting it off the layer below. It holds for the rest of the layer. On text with a pill it makes a torn paper tag. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 3 s | `rough`: number 0 to 12; `grain`: number 0 to 1; `lift`: number 0 to 4; `fps`: number 0 to 12 |
 | `boil` | **Line boil.** Hand-drawn cel animation: the outlines wobble a little on every drawing, redrawn a few times a second, for as long as the clip lasts. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 3 s | `amount`: number 0.5 to 10; `fps`: number 2 to 24 |
 | `liquid` | **Liquid blob.** The shape flows from one organic blob into the next, as if it were poured: liquid and morph styles. | shape, image, video | 4 s | `speed`: number 0.2 to 4 |
 | `scanlines` | **VHS / CRT.** An old tape or tube for as long as the clip lasts: scanlines, colour bleeding into red and blue fringes, a vignette, a jittering frame and a tracking band rolling down. | image, video, shape, text, group | 3 s | `bleed`: number 0 to 1.5; `jitter`: number 0 to 1; `tracking`: boolean |
@@ -129,6 +130,9 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | id | what it does | applies to | default length | settings |
 | --- | --- | --- | --- | --- |
 | `shatter` | **Shatter.** The picture cracks from a point and breaks into shards that fly apart and fall (out), or fly together into place (in). With the person cut out above it, the background breaks while they stay: a frame break. | video, image | 1 s | `direction`: `in` / `out`; `x`: number 0 to 100 %; `y`: number 0 to 100 % |
+| `tr-tear` | **Paper tear.** The sheet tears across the stage with a pale ragged edge; the next scene is revealed behind the rip. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.7 s | `direction`: `in` / `out`; `rough`: number 0.5 to 8; `edge`: boolean; `color`: color |
+| `tr-page` | **Page turn.** The scene turns like a page from its left edge, with a soft shadow, uncovering the next one. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.8 s | `direction`: `in` / `out` |
+| `tr-tape` | **Tape pull.** A strip of masking tape is pulled across the stage, taking the old picture with it. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.6 s | `direction`: `in` / `out`; `color`: color |
 | `tr-slash` | **Slash.** A glowing diagonal line sweeps across the stage; the scene appears (or disappears) behind it. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.6 s | `direction`: `in` / `out`; `angle`: number -60 to 60 °; `color`: color; `glow`: boolean |
 | `tr-flash` | **Flash.** A burst of light: the scene cuts at its brightest moment. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.5 s | `direction`: `in` / `out`; `color`: color; `strength`: number 10 to 100 % |
 | `tr-dip` | **Dip to colour.** The screen fills with a colour, holds a beat, and opens on the next scene. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.8 s | `direction`: `in` / `out`; `color`: color |
