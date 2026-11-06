@@ -812,6 +812,13 @@ export const PRESET_CATALOG: PresetMeta[] = [
   },
   // ---- Looks for motion-design styles (hand-drawn, liquid, pixel art, paint, print, VHS, text looks) ----
   {
+    id: 'sketch', label: 'Hand-drawn', category: 'ambient', appliesTo: ['shape'],
+    description: 'The shape is redrawn with wobbly pencil lines and a scribbled fill. It holds for the rest of the layer; each shape keeps its own scribble, on every play and export.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { style: 'hachure', roughness: 1.4, bowing: 1, weight: 1.6, gap: 6, angle: -41, fps: 0 },
+    fields: [{ key: 'style', label: 'Fill', type: 'select', options: [{ value: 'hachure', label: 'Scribble' }, { value: 'cross-hatch', label: 'Cross-hatch' }, { value: 'zigzag', label: 'Zigzag' }, { value: 'dots', label: 'Dots' }, { value: 'solid', label: 'Solid' }, { value: 'none', label: 'Outline only' }] }, { key: 'roughness', label: 'Roughness', type: 'number', min: 0, max: 5, step: 0.1 }, { key: 'bowing', label: 'Bowing', type: 'number', min: 0, max: 5, step: 0.1 }, { key: 'weight', label: 'Line weight', type: 'number', min: 0.5, max: 6, step: 0.1 }, { key: 'gap', label: 'Scribble gap', type: 'number', min: 2, max: 20, step: 0.5 }, { key: 'angle', label: 'Scribble angle', type: 'number', min: -90, max: 90, step: 1, unit: '°' }, { key: 'color', label: 'Line colour', type: 'color' }, { key: 'fill', label: 'Fill colour', type: 'color' }, { key: 'fps', label: 'Redraws per second', type: 'number', min: 0, max: 12, step: 1 }],
+  },
+  {
     id: 'paper', label: 'Cut paper', category: 'ambient', appliesTo: ALL,
     description: 'Construction paper: a hand-cut edge, a fine grain and a shadow lifting it off the layer below. It holds for the rest of the layer. On text with a pill it makes a torn paper tag.',
     defaultEase: 'none', defaultDuration: 3,

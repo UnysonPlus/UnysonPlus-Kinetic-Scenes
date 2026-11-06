@@ -41,6 +41,7 @@ import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { TemplatesDialog } from './components/TemplatesDialog';
 import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
 import { StartDialog } from './components/StartDialog';
+import { PhysicsDialog } from './components/PhysicsDialog';
 import { shouldShowStart, startProjectName, type StartFormat, type startRequest } from './lib/start';
 import { buildAvailable } from './lib/agent';
 import { toVideo } from './lib/videoMode';
@@ -300,6 +301,7 @@ export function App() {
   const [firstRunOpen, setFirstRunOpen] = useState(false);
   const [firstRunStep, setFirstRunStep] = useState(0);
   const [startOpen, setStartOpen] = useState(() => shouldShowStart(location.search));
+  const [physicsOpen, setPhysicsOpen] = useState(false);
   /** A new scene is on its way from the start screen: it must not land in the project reopened from last time. */
   const fromStart = useRef(false);
   const [likeOpen, setLikeOpen] = useState(false);
@@ -1021,6 +1023,7 @@ export function App() {
       { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox, ACE-Step music and other tools the AI Dev Kit can use on this computer' },
       { label: 'Make music…', onSelect: () => setMusicOpen(true) },
       { label: 'Videos from a spreadsheet…', onSelect: () => setBatchOpen(true), hint: 'One design, a video per row: fill the {{placeholders}} in the scene from a CSV, preview each row, render them all' },
+      { label: 'Drop with physics…', onSelect: () => setPhysicsOpen(true), hint: 'The selected layers fall, bounce and settle as real objects, written as keyframes you can edit' },
       { label: 'Make a reel from a video…', onSelect: () => setHighlightsOpen(true), hint: 'The AI Dev Kit finds the best moments of a long video and cuts them together to the length you ask' },
       'sep',
       { label: 'Separate voice and music', disabled: !(selLayer?.type === 'video' || (selAudio && !selAudio.src.startsWith('sfx:'))),
@@ -1460,6 +1463,8 @@ export function App() {
           }
           else { leaveForNew(); startNew(); guideFirstScene(); }
         }} />
+      <PhysicsDialog open={physicsOpen} scene={scene} ids={selectedIds(selection)} at={+state.time.toFixed(2)} onClose={() => setPhysicsOpen(false)}
+        onScene={(s, note) => { commit(s); setPhysicsOpen(false); setNotice(note); post({ type: 'seek', time: state.time }); }} />
       <FirstRun open={firstRunOpen} from={firstRunStep} onClose={() => setFirstRunOpen(false)} onStart={() => { setFirstRunOpen(false); setStartOpen(true); }} />
       <TemplatesDialog open={templatesOpen} styles={allStyles} onClose={() => { fromStart.current = false; setTemplatesOpen(false); }} onPick={(id, style) => {
         leaveForNew();

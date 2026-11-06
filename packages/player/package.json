@@ -1,6 +1,6 @@
 {
   "name": "@unysonplus/scene-player",
-  "version": "0.0.56",
+  "version": "0.0.57",
   "private": true,
   "description": "Plays Unyson+ Kinetic Scenes scene files in any web page.",
   "type": "module",
@@ -31,6 +31,7 @@
   "dependencies": {
     "gsap": "3.13.0",
     "lottie-web": "5.12.2",
+    "roughjs": "4.6.6",
     "three": "0.186.0"
   },
   "devDependencies": {

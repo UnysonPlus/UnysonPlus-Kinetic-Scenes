@@ -18,7 +18,7 @@ const normal = (s) => s.replace(/\r\n/g, '\n');
 const asciiOnly = (s) => s.replace(/[\u0080-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
 
 const files = [
-  { from: 'scene-player.iife.js', to: 'scene-player.js', banner: `/*! Unyson+ scene player ${version} | https://github.com/UnysonPlus/UnysonPlus-Kinetic-Scenes */\n` },
+  { from: 'scene-player.iife.js', to: 'scene-player.js', banner: `/*! Unyson+ scene player ${version} | https://github.com/UnysonPlus/UnysonPlus-Kinetic-Scenes | Rough.js (MIT, (c) Preet Shihn) */\n` },
   {
     from: 'scene-3d.iife.js', to: 'scene-3d.js',
     banner: `/*! Unyson+ scene player ${version}, 3D runtime | three.js (MIT, © three.js authors) | 3D text font: Inter (SIL OFL 1.1, © The Inter Project Authors) */\n`,

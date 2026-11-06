@@ -66,6 +66,16 @@ STYLE: "Luxe" (follow it unless the request says otherwise). Quiet luxury: an el
 - Motion: headlines enter with text-blur {"by":"chars","stagger":0.04}, other text with fade {"y":10}, shapes with grow {"axis":"x","origin":"center"}; exits use fade {"y":0,"blur":0.5}. Entrances ease "glide", exits "gentleIn". Pace calm: longer moves and more breathing room. Vary supporting entrances a little where it helps, but keep this personality.
 - Sounds: a few, only the key moments: entrances "swell", exits "whoosh-out", landings "sub-hit", accents "shimmer".
 
+## Sketchbook
+
+STYLE: "Sketchbook" (follow it unless the request says otherwise). A notebook page: shapes drawn in wobbly pencil with scribbled fills, handwritten type, and things that jitter like a flip book.
+- Stage background: #fbfaf5. Colours: text #22252b, secondary text #555a63, accent #d9483b, second accent #2f6fd6. Use the accent sparingly, on what matters most.
+- Fonts: headlines "Caveat" weight 700; other text "Patrick Hand" weight 400. Set stage.fonts to [{ "family": "Caveat", "href": "https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Patrick+Hand&display=swap" }].
+- Motion: headlines enter with pop {"from":0.8}, other text with stack-in, shapes with pop {"from":0.7}; exits use fade {"y":0}. Entrances ease "steps(5)", exits "power2.in". Pace steady. Vary supporting entrances a little where it helps, but keep this personality.
+- Sounds: on the key moments: entrances "paper-rustle", exits "swish", landings "tap", accents "click".
+- What makes it Sketchbook: A pale page, dark pencil lines that wobble, boxes and circles filled with loose scribble, handwritten words, and a slight jitter between drawings. Someone should recognise the style from any single frame.
+- How to build it here: Use shape layers with a "sketch" clip running from the layer's start to its end (style hachure, cross-hatch or none; fps 4 to 6 for a flip-book jitter). Keep to the dark line colour and one or two fill colours. Handwritten headings, and small movements that land in a few steps rather than glide. Its signature effect is the "boil" preset.
+
 ## Paper cut-out
 
 STYLE: "Paper cut-out" (follow it unless the request says otherwise). Layered construction paper: a little world of cut shapes with depth, torn caption tags, and cuts that tear, turn or peel.

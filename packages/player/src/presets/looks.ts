@@ -1,5 +1,6 @@
 import type { PresetContext } from './index';
 import { clamp01, drive, isOut, num, owned, pick } from './more';
+import { RoughGenerator } from 'roughjs/bin/generator';
 
 /**
  * Looks for motion-design styles the other presets can't make: hand-drawn line boil, a liquid blob, pixel art,
@@ -40,7 +41,67 @@ const target = (el: HTMLElement) => el.querySelector<HTMLElement>(':scope > vide
 /** The visible letters of a text layer (its own transform stays free for the other presets). */
 const letters = (el: HTMLElement) => el.querySelector<HTMLElement>('.upw-txt') ?? el;
 
+/** A rounded rectangle as an SVG path, for the sketch look. */
+const roundedRect = (x: number, y: number, w: number, h: number, r: number) => `M${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h - r}Q${x + w} ${y + h} ${x + w - r} ${y + h}H${x + r}Q${x} ${y + h} ${x} ${y + h - r}V${y + r}Q${x} ${y} ${x + r} ${y}Z`;
+/** The first plain colour in a CSS background (a gradient's first stop), or null. */
+const firstColour = (fill: unknown) => (typeof fill === 'string' ? /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/i.exec(fill)?.[0] ?? (/^[a-z]+$/i.test(fill) ? fill : null) : null);
+/** A steady number from a layer's id, so each shape has its own scribble and keeps it. */
+const seedOf = (id: string) => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 99991, 7) + 1;
+
 export const LOOK_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
+  sketch(ctx) {
+    // Hand-drawn: the shape is redrawn with wobbly pencil lines and a scribbled fill (Rough.js). The seed fixes every line,
+    // so a frame is the same on every play and export; "fps" redraws it a few times a second, like a flip book. It holds
+    // for the rest of the layer.
+    const p = ctx.params;
+    const layer = ctx.layer as unknown as { shape?: string; fill?: string; stroke?: string; radius?: number };
+    const fps = Math.max(0, Math.min(12, num(p, 'fps', 0)));
+    const fillStyle = pick(p, 'style', ['hachure', 'solid', 'zigzag', 'cross-hatch', 'dots', 'none'] as const, 'hachure');
+    const color = typeof p.color === 'string' && p.color ? p.color : layer.stroke || '#1c1e22';
+    const fill = fillStyle === 'none' ? undefined : (typeof p.fill === 'string' && p.fill ? p.fill : firstColour(layer.fill) ?? '#2ad38b');
+    const seed = Math.max(1, Math.round(num(p, 'seed', 0)) || seedOf(ctx.layer.id));
+    const host = owned(ctx, 'upw-sketch');
+    Object.assign(host.style, { position: 'absolute', inset: '0', pointerEvents: 'none', overflow: 'visible' });
+    const NS = SVG_NS;
+    const doc = ctx.el.ownerDocument;
+    const svg = (host.querySelector('svg') ?? host.appendChild(doc.createElementNS(NS, 'svg'))) as SVGSVGElement;
+    Object.assign(svg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'visible' });
+    let drawn = '';
+    drive(ctx, (raw) => {
+      const w = ctx.el.clientWidth, h = ctx.el.clientHeight;
+      if (!w || !h) return;
+      const take = fps ? Math.floor(raw * ctx.duration * fps) % 4 : 0;
+      const key = `${w}x${h}:${take}`;
+      ctx.el.style.background = 'transparent';
+      ctx.el.style.border = '0';
+      if (key === drawn) return;
+      drawn = key;
+      // Sizes follow the stage, so a preview and a 1080 px export draw the same picture.
+      const k = (ctx.el.closest<HTMLElement>('.upw-canvas')?.clientWidth || 640) / 640;
+      const g = new RoughGenerator({ options: { seed: seed + take } } as never);
+      const o = {
+        seed: seed + take, roughness: num(p, 'roughness', 1.4), bowing: num(p, 'bowing', 1), stroke: color, strokeWidth: num(p, 'weight', 1.6) * k,
+        maxRandomnessOffset: 2 * k, ...(fill ? { fill, fillStyle, fillWeight: num(p, 'weight', 1.6) * k * 0.6, hachureGap: num(p, 'gap', 6) * k, hachureAngle: num(p, 'angle', -41) } : {}),
+      };
+      const inset = 2 * k;
+      const r = layer.radius ? Math.min((layer.radius / 100) * (w / k / 640) * 640 * k, w / 2, h / 2) : 0;
+      const d = layer.shape === 'ellipse' ? g.ellipse(w / 2, h / 2, w - inset * 2, h - inset * 2, o)
+        : r > 0 ? g.path(roundedRect(inset, inset, w - inset * 2, h - inset * 2, r), o)
+          : g.rectangle(inset, inset, w - inset * 2, h - inset * 2, o);
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      svg.replaceChildren(...g.toPaths(d).map((q) => {
+        const path = doc.createElementNS(NS, 'path');
+        path.setAttribute('d', q.d);
+        path.setAttribute('stroke', q.stroke);
+        path.setAttribute('stroke-width', String(q.strokeWidth));
+        path.setAttribute('fill', q.fill || 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        return path;
+      }));
+    }, { ease: false, always: true });
+  },
+
   paper(ctx) {
     // Construction paper: a hand-cut edge, a fine grain over the colour, and a shadow lifting it off what is below. On a
     // text layer with a pill it makes a torn paper tag. It holds for the rest of the layer; "fps" re-cuts the edge a few

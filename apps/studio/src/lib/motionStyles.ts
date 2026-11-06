@@ -12,6 +12,16 @@ const gf = (q: string) => `https://fonts.googleapis.com/css2?${q}&display=swap`;
 
 export const MOTION_STYLES: SceneStyle[] = [
   {
+    id: 'sketchbook', name: 'Sketchbook', description: 'A notebook page: shapes drawn in wobbly pencil with scribbled fills, handwritten type, and things that jitter like a flip book.',
+    palette: { background: '#fbfaf5', text: '#22252b', muted: '#555a63', accent: '#d9483b', accent2: '#2f6fd6' },
+    fonts: { heading: 'Caveat', body: 'Patrick Hand', href: gf('family=Caveat:wght@700&family=Patrick+Hand'), headingWeight: 700, bodyWeight: 400 },
+    motion: { pace: 1, headline: { preset: 'pop', params: { from: 0.8 } }, text: { preset: 'stack-in' }, shape: { preset: 'pop', params: { from: 0.7 } }, exit: { preset: 'fade', params: { y: 0 } }, textAlt: [{ preset: 'text-typewriter' }], easeIn: 'steps(5)', easeOut: 'power2.in' },
+    sounds: { enter: 'paper-rustle', exit: 'swish', hit: 'tap', accent: 'click', density: 'normal' },
+    sample: { kicker: 'Notes', headline: 'Draw it out.', sub: 'A quick sketch beats a long talk.' },
+    guide: { signs: 'A pale page, dark pencil lines that wobble, boxes and circles filled with loose scribble, handwritten words, and a slight jitter between drawings.', build: 'Use shape layers with a "sketch" clip running from the layer\'s start to its end (style hachure, cross-hatch or none; fps 4 to 6 for a flip-book jitter). Keep to the dark line colour and one or two fill colours. Handwritten headings, and small movements that land in a few steps rather than glide.' },
+    signature: { preset: 'boil', params: { amount: 1.5, fps: 6 } },
+  },
+  {
     id: 'paper', name: 'Paper cut-out', description: 'Layered construction paper: a little world of cut shapes with depth, torn caption tags, and cuts that tear, turn or peel.',
     palette: { background: '#7fb6c9', text: '#1f2a37', muted: '#3d4b5c', accent: '#e4572e', accent2: '#2a9d8f' },
     fonts: { heading: 'Archivo Black', body: 'Fraunces', href: gf('family=Archivo+Black&family=Fraunces:opsz,wght@9..144,600;9..144,700'), headingWeight: 400, bodyWeight: 700, uppercase: true },
