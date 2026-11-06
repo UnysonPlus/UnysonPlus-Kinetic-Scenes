@@ -89,6 +89,22 @@ const SOUNDS: Array<SfxMeta & { recipe: Recipe }> = [
     recipe: (t, k) => k.filter(0, 'bp', k.noise(), env.glide(t, 1400, 6000, 0.25), 2.2) * env.arc(t, 0.28, 0.45) * 1.4,
   },
   {
+    id: 'paper-rustle', label: 'Paper rustle', category: 'motion', length: 0.42, description: 'A sheet of paper shifting: cut-outs arriving.',
+    recipe: (t, k) => k.filter(0, 'bp', k.noise(), 2600 + 1400 * Math.sin(t * 46), 1.4) * env.arc(t, 0.42, 0.3) * (0.55 + 0.45 * Math.sin(t * 118) * Math.sin(t * 71)) * 1.3,
+  },
+  {
+    id: 'paper-tear', label: 'Paper tear', category: 'motion', length: 0.5, description: 'A sheet ripping: paper tear transitions.',
+    recipe: (t, k) => k.filter(0, 'bp', k.noise(), env.glide(t, 1100, 3600, 0.46), 1.2) * env.arc(t, 0.5, 0.65) * (0.6 + 0.4 * k.square(1, 44 + t * 90)) * 1.5,
+  },
+  {
+    id: 'tape-pull', label: 'Tape pull', category: 'motion', length: 0.5, description: 'Tape peeled off: a sticky, crackling pull.',
+    recipe: (t, k) => k.filter(0, 'hp', k.noise(), 1700, 1) * env.arc(t, 0.5, 0.5) * (0.35 + 0.65 * Math.max(0, k.square(1, 62 - t * 30))) * 1.1,
+  },
+  {
+    id: 'stamp', label: 'Rubber stamp', category: 'impact', length: 0.2, description: 'A stamp pressed on paper: a soft thump with a dry click.',
+    recipe: (t, k) => k.sine(0, env.glide(t, 170, 70, 0.1)) * env.hit(t, 0.002, 0.05) * 0.9 + k.filter(1, 'bp', k.noise(), 1500, 2) * env.hit(t, 0.001, 0.016) * 0.6,
+  },
+  {
     id: 'slide', label: 'Slide', category: 'motion', length: 0.3, description: 'A soft upward glide.',
     recipe: (t, k) => k.sine(0, env.glide(t, 320, 760, 0.26)) * env.arc(t, 0.3, 0.3) * 0.7
       + k.filter(1, 'bp', k.noise(), 1800, 3) * env.arc(t, 0.3, 0.3) * 0.25,
@@ -248,6 +264,9 @@ const SUGGESTED: Record<string, { in: string; out?: string }> = {
   'tumble-in': { in: 'impact' },
   'camera-push': { in: 'riser' },
   'tr-slash': { in: 'swish', out: 'swish' },
+  'tr-tear': { in: 'paper-tear', out: 'paper-tear' },
+  'tr-page': { in: 'paper-rustle', out: 'paper-rustle' },
+  'tr-tape': { in: 'tape-pull', out: 'tape-pull' },
   'tr-flash': { in: 'impact', out: 'impact' },
   'tr-dip': { in: 'swell', out: 'swell' },
   'tr-whip': { in: 'whoosh', out: 'whoosh-out' },

@@ -10,10 +10,13 @@ import { containerOf, layersIn, mapLayer } from './sceneOps';
  * clock, as does its start, so everything here is in that time.
  */
 
-export type TransitionStyle = 'crossfade' | 'push' | 'zoom' | 'wipe' | 'blinds' | 'iris' | 'turn' | 'slash' | 'flash' | 'dip' | 'whip' | 'glitch';
+export type TransitionStyle = 'tear' | 'page' | 'tape' | 'crossfade' | 'push' | 'zoom' | 'wipe' | 'blinds' | 'iris' | 'turn' | 'slash' | 'flash' | 'dip' | 'whip' | 'glitch';
 export type PushTo = 'left' | 'right' | 'up' | 'down';
 
 export const TRANSITIONS: Array<{ id: TransitionStyle; label: string; hint: string }> = [
+  { id: 'tear', label: 'Paper tear', hint: 'The sheet tears across the stage, revealing the next group behind the rip.' },
+  { id: 'page', label: 'Page turn', hint: 'This group turns like a page from its left edge, uncovering the next.' },
+  { id: 'tape', label: 'Tape pull', hint: 'A strip of tape is pulled across, taking this group with it.' },
   { id: 'slash', label: 'Slash', hint: 'A glowing diagonal line sweeps across the stage, cutting from this group to the next.' },
   { id: 'flash', label: 'Flash', hint: 'A burst of light: the cut happens at its brightest moment.' },
   { id: 'whip', label: 'Whip pan', hint: 'A fast slide with blur, as if the camera swung to the next group.' },
@@ -48,7 +51,7 @@ export const groupEndTime = (g: GroupLayer) => (g.start ?? 0) + groupDuration(g)
 const EXIT_WINDOW = 1;
 
 /** Transitions made as one matched pair of presets (same start and length on both groups). */
-const PAIRED: Partial<Record<TransitionStyle, string>> = { slash: 'tr-slash', flash: 'tr-flash', dip: 'tr-dip', whip: 'tr-whip', glitch: 'tr-glitch', zoom: 'tr-zoom' };
+const PAIRED: Partial<Record<TransitionStyle, string>> = { tear: 'tr-tear', page: 'tr-page', tape: 'tr-tape', slash: 'tr-slash', flash: 'tr-flash', dip: 'tr-dip', whip: 'tr-whip', glitch: 'tr-glitch', zoom: 'tr-zoom' };
 
 const isDir = (c: Clip, dir: 'in' | 'out') => {
   const meta = presetMeta[c.preset];

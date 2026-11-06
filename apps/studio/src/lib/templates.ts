@@ -18,6 +18,7 @@ export const TEMPLATES: TemplateInfo[] = [
   { id: 'cta', name: 'Call to action', goal: 'Ask people to act', description: 'One strong line, a button that invites the click, and a held end frame.', format: '16x9' },
   { id: 'logo', name: 'Logo intro', goal: 'Open or close with the brand', description: 'A mark draws attention, the name opens out beside it, a tagline settles under them.', format: '16x9' },
   { id: 'social', name: 'Social promo', goal: 'A Reel, Short or TikTok', description: 'A vertical promo: a hook in the first second, three quick beats, and a call to action kept clear of the app buttons.', format: '9x16' },
+  { id: 'paper', name: 'Paper cut-out explainer', goal: 'Act out an idea in a paper world', description: 'A little world of cut paper with real depth: a slow camera moves through it, a banner states the idea, a caption rides on a torn tag and the scene tears away to the answer.', format: '9x16' },
   { id: 'explainer', name: 'Explainer', goal: 'Explain something in chapters', description: 'For longer pieces: chapter cards, a chapter progress bar, a small heads-up label and subtitles. Replace the script, or ask AI assist to fill it from yours.', format: '16x9' },
   { id: 'code', name: 'Code demo', goal: 'Show how code works', description: 'A code window types a snippet, the key line is highlighted with a note, and it runs.', format: '16x9' },
 ];
@@ -135,6 +136,30 @@ export function templateScene(id: string, style: SceneStyle = BUILT_IN_STYLES[0]
       duration = 9.5;
       break;
     }
+    case 'paper': {
+      breakpoints = [{ id: '9x16', label: '9:16', minWidth: 0, aspect: [9, 16] }];
+      format = { formats: ['9x16'], fps: 30, platform: 'reels' };
+      duration = 11;
+      const END = duration, CUT = 6;
+      const sheet = (over: number) => clip({ preset: 'paper', params: { rough: 2.5, grain: 0.28, lift: over } }, 0, END);
+      const world = (name: string, shape: string, box: Layer['box'], fill: string, depth: number, over: number) =>
+        add({ name, type: 'shape', shape, box, fill, depth, clips: [sheet(over)] } as never);
+      world('Sky', 'rect', { x: 50, y: 50, w: 130, h: 130 }, pal.background, -0.9, 0);
+      world('Sun', 'ellipse', { x: 72, y: 34, w: 24, ratio: 1 }, '#f6c445', -0.8, 0.6);
+      world('Far hill', 'ellipse', { x: 26, y: 78, w: 120, ratio: 1 }, pal.accent2 ?? pal.accent, -0.55, 1);
+      world('Middle hill', 'ellipse', { x: 88, y: 88, w: 130, ratio: 1 }, '#3c7f6b', -0.2, 1.2);
+      world('Near hill', 'ellipse', { x: 34, y: 112, w: 150, ratio: 1 }, '#2b5c4f', 0.3, 1.5);
+      const banner = (name: string, words: string, a: number, b: number, fill: string) => text(name, words, { x: 50, y: 15, w: 84 }, { ...heading, fontSize: 7.4, lineHeight: 1.05, color: '#ffffff' },
+        [clip({ preset: 'pop', params: { from: 0.7 } }, a, 0.4, 'back.out(1.7)'), clip({ preset: 'paper', params: { rough: 1, grain: 0.2, lift: 1.2 } }, a, b - a)], { start: a, end: b, pill: { fill, padX: 1.2, padY: 0.6, radius: 0.4 } });
+      const tag = (name: string, words: string, a: number, b: number) => text(name, words, { x: 46, y: 60, w: 70 }, { ...body, fontSize: 5, lineHeight: 1.15, color: '#1f2a37' },
+        [clip({ preset: 'stack-in', params: { lift: 30 } }, a, 0.35), clip({ preset: 'paper', params: { rough: 1.4, grain: 0.2, lift: 0.9 } }, a, b - a)], { start: a, end: b, pill: { fill: '#fbf7ee', padX: 1.1, padY: 0.5, radius: 0.2 } });
+      banner('Banner', 'Your big idea', 0.2, CUT, pal.accent);
+      tag('Caption', 'Say it as a small world.', 1.4, CUT);
+      add({ name: 'Page', type: 'shape', shape: 'rect', box: { x: 50, y: 50, w: 100, h: 100 }, fill: '#fbf7ee', start: CUT, end: END, clips: [clip({ preset: 'tr-tear', params: { direction: 'in' } }, CUT, 0.8)] } as never);
+      banner('Answer banner', 'The answer', CUT + 0.7, END, pal.accent2 ?? pal.accent);
+      tag('Answer caption', 'Then land one clear point.', CUT + 1.1, END);
+      break;
+    }
     case 'explainer': {
       const chapters = ['What it is', 'How it works', 'Why it matters'];
       const len = 8;
@@ -168,6 +193,7 @@ export function templateScene(id: string, style: SceneStyle = BUILT_IN_STYLES[0]
       fonts: style.fonts.href ? [{ family: style.fonts.heading, href: style.fonts.href }, ...(style.fonts.body !== style.fonts.heading ? [{ family: style.fonts.body }] : [])] : undefined,
     },
     playback: info.id === 'hero' ? { trigger: 'view', loop: true, repeatDelay: 0.6, posterTime: 3 } : { trigger: 'load', loop: false, posterTime: Math.min(duration - 0.5, 3) },
+    ...(info.id === 'paper' ? { camera: { keys: [{ id: 'k1', t: 0, x: -5, y: 0, zoom: 1 }, { id: 'k2', t: duration, x: 5, y: 0, zoom: 1.04 }] } } : {}),
     layers,
   } as Scene;
 }

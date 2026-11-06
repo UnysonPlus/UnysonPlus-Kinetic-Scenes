@@ -41,6 +41,30 @@ const target = (el: HTMLElement) => el.querySelector<HTMLElement>(':scope > vide
 const letters = (el: HTMLElement) => el.querySelector<HTMLElement>('.upw-txt') ?? el;
 
 export const LOOK_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
+  paper(ctx) {
+    // Construction paper: a hand-cut edge, a fine grain over the colour, and a shadow lifting it off what is below. On a
+    // text layer with a pill it makes a torn paper tag. It holds for the rest of the layer; "fps" re-cuts the edge a few
+    // times a second, like stop motion. Sizes follow the stage, so a preview and a 1080 px export look the same.
+    const p = ctx.params;
+    const rough = num(p, 'rough', 2.5);
+    const grain = Math.max(0, Math.min(1, num(p, 'grain', 0.3)));
+    const lift = num(p, 'lift', 1);
+    const fps = Math.max(0, Math.min(12, num(p, 'fps', 0)));
+    const { id, root } = svgFilter(ctx, 'upw-paper', `<feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4" result="e"/><feDisplacementMap in="SourceGraphic" in2="e" scale="3" xChannelSelector="R" yChannelSelector="G" result="cut"/><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="9" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${(-1.6 * grain).toFixed(2)} ${(0.95 * grain).toFixed(2)}" result="ga"/><feComposite in="ga" in2="cut" operator="in" result="gc"/><feMerge><feMergeNode in="cut"/><feMergeNode in="gc"/></feMerge>`);
+    const [edge, fine] = [...root.querySelectorAll('feTurbulence')];
+    const map = root.querySelector('feDisplacementMap')!;
+    const el = target(ctx.el);
+    drive(ctx, (raw) => {
+      const k = (ctx.el.closest<HTMLElement>('.upw-canvas')?.clientWidth || 640) / 640;
+      map.setAttribute('scale', (rough * k).toFixed(2));
+      edge.setAttribute('baseFrequency', (0.03 / k).toFixed(4));
+      fine.setAttribute('baseFrequency', (0.8 / k).toFixed(4));
+      edge.setAttribute('seed', String(4 + (fps ? Math.floor(raw * ctx.duration * fps) % 5 : 0)));
+      const y = (0.45 * lift).toFixed(2);
+      filterPart(el, ctx.clip.id, `url(#${id}) drop-shadow(0 ${y}cqw ${(0.5 * lift).toFixed(2)}cqw rgba(20,16,10,.38))`);
+    }, { ease: false, always: true });
+  },
+
   boil(ctx) {
     // Hand-drawn cel animation: the outlines wobble a little on every drawing, redrawn a few times a second.
     const p = ctx.params;

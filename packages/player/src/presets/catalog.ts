@@ -632,6 +632,27 @@ export const PRESET_CATALOG: PresetMeta[] = [
   },
   // ---- Scene transitions (for groups: an "out" on the scene leaving, an "in" on the next) ----
   {
+    id: 'tr-tear', label: 'Paper tear', category: 'transition', appliesTo: ALL,
+    description: 'The sheet tears across the stage with a pale ragged edge; the next scene is revealed behind the rip.',
+    defaultEase: 'softInOut', defaultDuration: 0.7,
+    defaults: { direction: 'in', rough: 3, edge: true, color: '#fbf7ee' },
+    fields: [DIRECTION, { key: 'rough', label: 'Ragged edge', type: 'number', min: 0.5, max: 8, step: 0.5 }, { key: 'edge', label: 'Torn edge', type: 'boolean' }, { key: 'color', label: 'Edge colour', type: 'color' }],
+  },
+  {
+    id: 'tr-page', label: 'Page turn', category: 'transition', appliesTo: ALL,
+    description: 'The scene turns like a page from its left edge, with a soft shadow, uncovering the next one.',
+    defaultEase: 'power2.inOut', defaultDuration: 0.8,
+    defaults: { direction: 'in' },
+    fields: [DIRECTION],
+  },
+  {
+    id: 'tr-tape', label: 'Tape pull', category: 'transition', appliesTo: ALL,
+    description: 'A strip of masking tape is pulled across the stage, taking the old picture with it.',
+    defaultEase: 'power2.inOut', defaultDuration: 0.6,
+    defaults: { direction: 'in', color: '#e6d39a' },
+    fields: [DIRECTION, { key: 'color', label: 'Tape colour', type: 'color' }],
+  },
+  {
     id: 'tr-slash', label: 'Slash', category: 'transition', appliesTo: ALL,
     description: 'A glowing diagonal line sweeps across the stage; the scene appears (or disappears) behind it.',
     defaultEase: 'softInOut', defaultDuration: 0.6,
@@ -790,6 +811,13 @@ export const PRESET_CATALOG: PresetMeta[] = [
     aiExcluded: true,
   },
   // ---- Looks for motion-design styles (hand-drawn, liquid, pixel art, paint, print, VHS, text looks) ----
+  {
+    id: 'paper', label: 'Cut paper', category: 'ambient', appliesTo: ALL,
+    description: 'Construction paper: a hand-cut edge, a fine grain and a shadow lifting it off the layer below. It holds for the rest of the layer. On text with a pill it makes a torn paper tag.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { rough: 2.5, grain: 0.3, lift: 1, fps: 0 },
+    fields: [{ key: 'rough', label: 'Rough edge', type: 'number', min: 0, max: 12, step: 0.5 }, { key: 'grain', label: 'Paper grain', type: 'number', min: 0, max: 1, step: 0.05 }, { key: 'lift', label: 'Shadow', type: 'number', min: 0, max: 4, step: 0.1 }, { key: 'fps', label: 'Re-cuts per second', type: 'number', min: 0, max: 12, step: 1 }],
+  },
   {
     id: 'boil', label: 'Line boil', category: 'ambient', appliesTo: ALL,
     description: 'Hand-drawn cel animation: the outlines wobble a little on every drawing, redrawn a few times a second, for as long as the clip lasts.',

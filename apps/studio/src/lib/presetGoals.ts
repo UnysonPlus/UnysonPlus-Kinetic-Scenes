@@ -14,7 +14,7 @@ const GOALS: PresetGoal[] = [
   { id: 'attention', label: 'Draw attention', hint: 'Point at one thing that matters, once. Too many of these and nothing stands out.',
     presets: ['spotlight', 'callout', 'lift', 'glow', 'pulse', 'sheen', 'select-box', 'strike', 'jiggle', 'shake'] },
   { id: 'change', label: 'Change scenes', hint: 'Move from one part to the next: put it on a beat or at the end of a sentence.',
-    presets: ['tr-slash', 'tr-whip', 'tr-zoom', 'tr-streak', 'tr-dip', 'tr-flash', 'tr-glitch', 'morph', 'portal'] },
+    presets: ['tr-slash', 'tr-whip', 'tr-zoom', 'tr-streak', 'tr-dip', 'tr-flash', 'tr-glitch', 'tr-tear', 'tr-page', 'tr-tape', 'morph', 'portal'] },
   { id: 'numbers', label: 'Show numbers and data', hint: 'Counts, progress and charts: a number counting up is more convincing than one appearing.',
     presets: ['text-count', 'odometer', 'progress', 'grow', 'draw', 'timecode'] },
   { id: 'alive', label: 'Keep a frame alive', hint: 'Slow movement for held frames, so nothing sits completely still.',

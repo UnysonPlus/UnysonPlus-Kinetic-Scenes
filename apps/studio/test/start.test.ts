@@ -48,3 +48,9 @@ test('voice and music are asked for only when chosen', () => {
   assert.equal(none.music, false);
   assert.equal(startRequest({ text: 'An idea', format: reel, seconds: 0, voice: true }).voice, true);
 });
+
+test('a paper explainer carries its story and picture rules', () => {
+  const r = startRequest({ text: 'How email works', format: reel, seconds: 30, extra: 'PAPER CUT-OUT EXPLAINER: test' });
+  assert.match(r.brief!, /9:16/);
+  assert.match(r.brief!, /PAPER CUT-OUT EXPLAINER/);
+});

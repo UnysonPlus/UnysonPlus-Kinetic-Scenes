@@ -48,6 +48,16 @@ function untouched(el: HTMLElement) {
   el.style.scale = '';
 }
 
+/** The torn edge of a sheet: fixed points down the stage (the same on every frame), as offsets in % of the stage width. */
+const TEAR = Array.from({ length: 34 }, (_, i) => Math.sin(i * 12.9898) * 43758.5453).map((v) => (v - Math.floor(v)) * 2 - 1).map((v, i) => v * 0.7 + Math.sin(i * 0.6) * 0.8);
+const tearLine = (pos: number, amp: number): Array<[number, number]> => TEAR.map((o, i) => [pos + o * amp, -4 + (i / (TEAR.length - 1)) * 108]);
+
+/** The part of the stage on one side of a line down it, as polygon points in stage %. */
+function sideOf(line: Array<[number, number]>, keep: 'before' | 'after'): Array<[number, number]> {
+  const big = keep === 'before' ? -400 : 400;
+  return [[big, -400], [line[0][0], -400], ...line, [line[line.length - 1][0], 500], [big, 500]];
+}
+
 const canvasOf = (el: HTMLElement) => el.closest<HTMLElement>('.upw-canvas');
 
 /**
@@ -111,6 +121,94 @@ function slashPolygon(pos: number, lean: number, keep: 'before' | 'after'): Arra
 }
 
 export const TRANSITION_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
+  'tr-tear'(ctx) {
+    // The sheet tears across the stage, with a pale torn edge riding the rip.
+    const p = ctx.params;
+    const out = isOut(p);
+    const amp = Math.max(0.5, Math.min(8, num(p, 'rough', 3)));
+    const edge = p.edge === false ? null : overlay(ctx, 'upw-tr-tear', true);
+    const color = str(p, 'color', '#fbf7ee');
+    const NS = 'http://www.w3.org/2000/svg';
+    const line = edge ? (edge.querySelector('polyline') ?? (() => {
+      const svg = edge.ownerDocument.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      Object.assign(svg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'visible', filter: 'drop-shadow(0 0 4px rgba(20,16,10,.45))' });
+      const l = edge.ownerDocument.createElementNS(NS, 'polyline');
+      l.setAttribute('fill', 'none');
+      l.setAttribute('stroke-linejoin', 'round');
+      l.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(l);
+      edge.appendChild(svg);
+      return l;
+    })()) : null;
+    drive(ctx, (t, raw) => {
+      const pos = -amp * 2 + t * (100 + amp * 4);
+      const pts = tearLine(pos, amp);
+      const map = stageToLocal(ctx.el);
+      if ((out && raw <= 0) || (!out && raw >= 1)) untouched(ctx.el);
+      else {
+        if (map) ctx.el.style.clipPath = `polygon(${sideOf(pts, out ? 'after' : 'before').map(([x, y]) => map(x, y)).join(', ')})`;
+        ctx.el.style.opacity = out && raw >= 1 ? '0' : '';
+      }
+      if (!edge || !line) return;
+      if (raw <= 0 || raw >= 1) { edge.style.opacity = '0'; return; }
+      edge.style.opacity = '1';
+      line.setAttribute('points', pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' '));
+      line.setAttribute('stroke', color);
+      line.setAttribute('stroke-width', String(Math.max(3, (edge.clientWidth || 640) * 0.016)));
+    });
+  },
+
+  'tr-page'(ctx) {
+    // A page turns from its left edge: the leaving page narrows towards the spine, and the next is uncovered behind its
+    // edge. Worked out from the same edge on both, so it reads as one page whichever group sits on top.
+    const p = ctx.params;
+    const out = isOut(p);
+    const shade = overlay(ctx, 'upw-tr-page', true);
+    const strip = shade ? (shade.firstElementChild as HTMLElement | null) ?? shade.appendChild(shade.ownerDocument.createElement('i')) : null;
+    if (strip) Object.assign(strip.style, { position: 'absolute', top: '0', bottom: '0', width: '14%', background: 'linear-gradient(90deg, rgba(20,16,10,.42), rgba(20,16,10,0))' });
+    drive(ctx, (t, raw) => {
+      const edge = 100 * Math.cos((t * Math.PI) / 2);
+      const map = stageToLocal(ctx.el);
+      if ((out && raw <= 0) || (!out && raw >= 1)) untouched(ctx.el);
+      else if (out) {
+        const c = Math.max(0.0001, edge / 100);
+        ctx.el.style.scale = `${c.toFixed(4)} 1`;
+        ctx.el.style.translate = `${(-(1 - c) * 50).toFixed(2)}% 0`;
+        ctx.el.style.opacity = raw >= 1 ? '0' : '';
+      } else if (map) {
+        ctx.el.style.clipPath = `polygon(${[[edge, -400], [400, -400], [400, 500], [edge, 500]].map(([x, y]) => map(x, y)).join(', ')})`;
+      }
+      if (!shade || !strip) return;
+      shade.style.opacity = raw <= 0 || raw >= 1 ? '0' : '1';
+      strip.style.left = `${edge.toFixed(2)}%`;
+    });
+  },
+
+  'tr-tape'(ctx) {
+    // A strip of masking tape is pulled across the stage, taking the old picture with it.
+    const p = ctx.params;
+    const out = isOut(p);
+    const color = str(p, 'color', '#e6d39a');
+    const tape = overlay(ctx, 'upw-tr-tape', true);
+    const bar = tape ? (tape.firstElementChild as HTMLElement | null) ?? tape.appendChild(tape.ownerDocument.createElement('i')) : null;
+    if (bar) Object.assign(bar.style, { position: 'absolute', top: '-30%', height: '160%', width: '20%', marginLeft: '-10%', transform: 'rotate(5deg)', boxShadow: '0 0 12px rgba(20,16,10,.35)' });
+    drive(ctx, (t, raw) => {
+      const pos = -12 + t * 124;
+      const map = stageToLocal(ctx.el);
+      if ((out && raw <= 0) || (!out && raw >= 1)) untouched(ctx.el);
+      else {
+        if (map) ctx.el.style.clipPath = `polygon(${slashPolygon(pos, 8, out ? 'after' : 'before').map(([x, y]) => map(x, y)).join(', ')})`;
+        ctx.el.style.opacity = out && raw >= 1 ? '0' : '';
+      }
+      if (!tape || !bar) return;
+      tape.style.opacity = raw <= 0 || raw >= 1 ? '0' : '1';
+      bar.style.left = `${pos.toFixed(2)}%`;
+      bar.style.background = `repeating-linear-gradient(90deg, ${color}, ${color} 6px, rgba(255,255,255,.14) 6px, rgba(255,255,255,.14) 7px), ${color}`;
+    });
+  },
+
   /** A glowing diagonal line sweeps across; the scene appears (or vanishes) behind it. */
   'tr-slash'(ctx) {
     const p = ctx.params;

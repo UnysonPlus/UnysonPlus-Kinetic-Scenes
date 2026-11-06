@@ -12,6 +12,16 @@ const gf = (q: string) => `https://fonts.googleapis.com/css2?${q}&display=swap`;
 
 export const MOTION_STYLES: SceneStyle[] = [
   {
+    id: 'paper', name: 'Paper cut-out', description: 'Layered construction paper: a little world of cut shapes with depth, torn caption tags, and cuts that tear, turn or peel.',
+    palette: { background: '#7fb6c9', text: '#1f2a37', muted: '#3d4b5c', accent: '#e4572e', accent2: '#2a9d8f' },
+    fonts: { heading: 'Archivo Black', body: 'Fraunces', href: gf('family=Archivo+Black&family=Fraunces:opsz,wght@9..144,600;9..144,700'), headingWeight: 400, bodyWeight: 700, uppercase: true },
+    motion: { pace: 1, headline: { preset: 'pop', params: { from: 0.7 } }, text: { preset: 'stack-in' }, shape: { preset: 'pop', params: { from: 0.6 } }, exit: { preset: 'fade', params: { y: 0 } }, textAlt: [{ preset: 'text-slam' }], easeIn: 'back.out(1.7)', easeOut: 'power2.in' },
+    sounds: { enter: 'paper-rustle', exit: 'swish', hit: 'stamp', accent: 'tap', density: 'normal' },
+    sample: { kicker: 'Paper explainer', headline: 'Cut it out.', sub: 'A small world made of paper.' },
+    guide: { signs: 'Flat shapes of coloured paper stacked in layers with soft shadows between them, slightly rough cut edges, a visible grain, a small physical world (hills, a desk, a town) acting out the idea, a heavy banner headline and captions on torn paper tags.', build: 'Give every shape and picture a "paper" clip running from the layer\'s start to its end. Build the world back to front from shape layers (sky, far hills, near hills, then props) and give each a "depth" from -0.8 (far) to 0.6 (near), then add scene.camera keys with a slow pan so the layers slide past each other. Act the idea out as one physical metaphor. Captions are text layers with a pale pill and a "paper" clip with rough about 1.4 and grain 0.2, so the letters stay crisp. Change scenes with tr-tear, tr-page or tr-tape, a matched out and in pair on two groups. Use paper-rustle for arrivals, stamp for hits, paper-tear with tr-tear and tape-pull with tr-tape.' },
+    signature: { preset: 'paper', params: { rough: 2.5, grain: 0.3, lift: 1 } },
+  },
+  {
     id: 'flat-vector', name: 'Flat vector', description: 'Explainer-video flat: solid shapes, no shadows, a friendly rounded font and bouncy, overlapping moves.',
     palette: { background: '#f6f1e7', text: '#1f2a44', muted: '#5b6782', accent: '#ff6b4a', accent2: '#2bb3a3' },
     fonts: { heading: 'Poppins', body: 'Poppins', href: gf('family=Poppins:wght@500;700;800'), headingWeight: 800, bodyWeight: 500 },

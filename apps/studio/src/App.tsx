@@ -1449,6 +1449,15 @@ export function App() {
           else if (a === 'sheet') setBatchOpen(true);
           else if (a === 'templates') setTemplatesOpen(true);
           else if (a === 'file') openRef.current?.click();
+          else if (a === 'paper-template') {
+            leaveForNew();
+            const next = templateScene('paper', allStyles.find((s) => s.id === 'paper'));
+            commit(next);
+            setScope(null);
+            setSelection({ layerId: null, clipId: null });
+            post({ type: 'seek', time: next.playback.posterTime ?? 0 });
+            guideFirstScene();
+          }
           else { leaveForNew(); startNew(); guideFirstScene(); }
         }} />
       <FirstRun open={firstRunOpen} from={firstRunStep} onClose={() => setFirstRunOpen(false)} onStart={() => { setFirstRunOpen(false); setStartOpen(true); }} />

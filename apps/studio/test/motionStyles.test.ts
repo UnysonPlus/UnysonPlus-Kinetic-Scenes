@@ -37,3 +37,10 @@ test('every style\'s starter scene is a valid scene', () => {
     if (out) writeFileSync(join(out, `${s.id}.json`), JSON.stringify(scene, null, 2));
   }
 });
+
+test('the paper style has its look, its cuts and its sounds', () => {
+  const paper = MOTION_STYLES.find((s) => s.id === 'paper')!;
+  assert.equal(paper.signature?.preset, 'paper');
+  for (const p of ['paper', 'tr-tear', 'tr-page', 'tr-tape']) assert.ok(presetMeta[p], p);
+  for (const n of ['paper-rustle', 'paper-tear', 'tape-pull', 'stamp']) assert.ok(SFX_IDS.includes(n), n);
+});

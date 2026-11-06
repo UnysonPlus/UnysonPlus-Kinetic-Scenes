@@ -1063,6 +1063,14 @@ dialog.start-dialog { width: min(1000px, calc(100vw - 32px)); max-height: calc(1
 .start-describe-row input::placeholder, .start-form input::placeholder, .start-form textarea::placeholder { color: var(--faint); }
 .start-describe-row .btn { height: 40px; padding: 0 16px; }
 .start-need { margin-top: 6px; font-size: 12px; color: var(--amber); }
+.start-feature { display: flex; gap: 14px; align-items: center; width: 100%; padding: 12px 14px; text-align: left; cursor: pointer; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); transition: border-color 150ms var(--ease), background-color 150ms var(--ease); }
+.start-feature:hover { border-color: var(--accent); background: var(--surface-3); }
+.start-paper { position: relative; flex: none; width: 56px; height: 40px; overflow: hidden; border-radius: 4px; background: #7fb6c9; }
+.start-paper i { position: absolute; border-radius: 50%; box-shadow: 0 -1px 2px oklch(0 0 0 / 0.35); }
+.start-paper i:nth-child(1) { left: -10px; top: 18px; width: 56px; height: 56px; background: #2a9d8f; }
+.start-paper i:nth-child(2) { left: 22px; top: 24px; width: 60px; height: 60px; background: #3c7f6b; }
+.start-paper i:nth-child(3) { left: 36px; top: 5px; width: 12px; height: 12px; background: #f6c445; }
+.start-actions .start-alt { margin-left: auto; }
 .start-group h3, .start-side h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
 .start-group ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
 .start-option { width: 100%; height: 100%; display: flex; gap: 11px; align-items: flex-start; padding: 10px 11px; text-align: left; cursor: pointer; border: 1px solid var(--border-soft); border-radius: var(--radius); background: var(--surface-2); transition: border-color 150ms var(--ease), background-color 150ms var(--ease); }
@@ -1108,5 +1116,5 @@ dialog.start-dialog.is-step { width: min(660px, calc(100vw - 32px)); }
   .start-describe-row input { flex-basis: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .start-option, .start-recent, .start-formats label { transition: none; }
+  .start-option, .start-feature, .start-recent, .start-formats label { transition: none; }
 }

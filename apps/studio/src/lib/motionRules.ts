@@ -49,7 +49,7 @@ CAMERA (the whole view)
 - Use it for the big gestures only: a slow push in on a held headline (zoom 1 to 1.1 over 2-4 s), a tilt reveal (tiltX 20-30 to 0 with softLand), a pan between two areas laid out side by side. Return to zoom 1 before content near the edges appears (zooming crops the stage's edges).
 
 SCENE TRANSITIONS (between groups: acts, slides, ideas)
-- The "transition" presets (tr-slash, tr-flash, tr-whip, tr-zoom, tr-glitch, tr-dip) act on a whole group. Use them as a matched pair: an "out" clip on the group that leaves and an "in" clip on the next group, with the SAME start and duration (the next group's start), and the leaving group still on stage until it ends.
+- The "transition" presets (tr-slash, tr-flash, tr-whip, tr-zoom, tr-glitch, tr-dip, and for paper scenes tr-tear, tr-page, tr-tape) act on a whole group. Use them as a matched pair: an "out" clip on the group that leaves and an "in" clip on the next group, with the SAME start and duration (the next group's start), and the leaving group still on stage until it ends.
 - When a group leaves through a transition, its own layers should not exit just before it: the transition carries them away.
 - One or two transition styles per scene, used for the big changes of idea; plain exits and entrances for the small ones.
 
