@@ -33,7 +33,8 @@ function filterPart(el: HTMLElement, key: string, value: string | null) {
   let m = FILTERS.get(el);
   if (!m) { m = new Map(); FILTERS.set(el, m); }
   if (value) m.set(key, value); else m.delete(key);
-  el.style.filter = [...m.values()].join(' ');
+  // In a fixed order, so two looks on one layer draw the same however the timeline was reached.
+  el.style.filter = [...m.keys()].sort().map((k) => m!.get(k)).join(' ');
 }
 
 /** The element whose own pixels a look applies to: the picture of an image or video layer, else the layer itself. */
@@ -247,7 +248,7 @@ export const LOOK_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     drive(ctx, (raw) => {
       const on = raw > 0 && raw < 1;
       fx.style.opacity = on ? '1' : '0';
-      if (!on) { filterPart(el, ctx.clip.id, null); el.style.translate = ''; return; }
+      if (!on) { filterPart(el, ctx.clip.id, null); el.style.translate = ''; band.style.top = ''; return; }
       const t = raw * ctx.duration, frame = Math.floor(t * 30);
       const b = (bleed * 0.6).toFixed(3);
       filterPart(el, ctx.clip.id, `drop-shadow(${b}cqw 0 0 rgba(255,0,60,.55)) drop-shadow(-${b}cqw 0 0 rgba(0,140,255,.55)) saturate(1.25) contrast(1.05)`);
@@ -290,7 +291,7 @@ export const LOOK_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     const angle = num(p, 'angle', 90);
     const el = letters(ctx.el);
     drive(ctx, (e) => {
-      if (e <= 0) { el.style.backgroundImage = ''; el.style.setProperty('-webkit-background-clip', ''); el.style.setProperty('-webkit-text-fill-color', ''); return; }
+      if (e <= 0) { el.style.backgroundImage = ''; el.style.backgroundPosition = ''; el.style.backgroundSize = ''; el.style.setProperty('-webkit-background-clip', ''); el.style.setProperty('-webkit-text-fill-color', ''); return; }
       el.style.backgroundImage = `linear-gradient(${angle}deg, ${a}, ${b}, ${a})`;
       el.style.backgroundSize = '200% 200%';
       el.style.backgroundPosition = `${(e * 100).toFixed(2)}% 50%`;

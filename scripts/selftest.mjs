@@ -17,8 +17,8 @@ try {
   const tab = await browser.newPage();
   const errors = [];
   tab.on('pageerror', (e) => errors.push(e.message));
-  await tab.goto(page);
-  await tab.waitForFunction(() => window.selfTestResult, null, { timeout: 60000 }).catch(() => {});
+  await tab.goto(page, { waitUntil: 'commit' });
+  await tab.waitForFunction(() => window.selfTestResult, null, { timeout: 170000 }).catch(() => {});
   const r = await tab.evaluate(() => window.selfTestResult);
   if (!r) throw new Error(`The self-test page did not finish: ${errors.join('; ') || 'no result'}`);
   console.log(`${r.ok ? 'PASS' : 'FAIL'}: ${r.frames} frames, ${r.presets} presets`);

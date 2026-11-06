@@ -152,7 +152,7 @@ export const TRANSITION_BUILDERS: Record<string, (ctx: PresetContext) => void> =
         ctx.el.style.opacity = out && raw >= 1 ? '0' : '';
       }
       if (!edge || !line) return;
-      if (raw <= 0 || raw >= 1) { edge.style.opacity = '0'; return; }
+      if (raw <= 0 || raw >= 1) { edge.style.opacity = '0'; line.removeAttribute('points'); return; }
       edge.style.opacity = '1';
       line.setAttribute('points', pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' '));
       line.setAttribute('stroke', color);
@@ -181,8 +181,9 @@ export const TRANSITION_BUILDERS: Record<string, (ctx: PresetContext) => void> =
         ctx.el.style.clipPath = `polygon(${[[edge, -400], [400, -400], [400, 500], [edge, 500]].map(([x, y]) => map(x, y)).join(', ')})`;
       }
       if (!shade || !strip) return;
-      shade.style.opacity = raw <= 0 || raw >= 1 ? '0' : '1';
-      strip.style.left = `${edge.toFixed(2)}%`;
+      const idle = raw <= 0 || raw >= 1;
+      shade.style.opacity = idle ? '0' : '1';
+      strip.style.left = idle ? '' : `${edge.toFixed(2)}%`;
     });
   },
 
@@ -203,9 +204,10 @@ export const TRANSITION_BUILDERS: Record<string, (ctx: PresetContext) => void> =
         ctx.el.style.opacity = out && raw >= 1 ? '0' : '';
       }
       if (!tape || !bar) return;
-      tape.style.opacity = raw <= 0 || raw >= 1 ? '0' : '1';
-      bar.style.left = `${pos.toFixed(2)}%`;
-      bar.style.background = `repeating-linear-gradient(90deg, ${color}, ${color} 6px, rgba(255,255,255,.14) 6px, rgba(255,255,255,.14) 7px), ${color}`;
+      const idle = raw <= 0 || raw >= 1;
+      tape.style.opacity = idle ? '0' : '1';
+      bar.style.left = idle ? '' : `${pos.toFixed(2)}%`;
+      bar.style.background = idle ? '' : `repeating-linear-gradient(90deg, ${color}, ${color} 6px, rgba(255,255,255,.14) 6px, rgba(255,255,255,.14) 7px), ${color}`;
     });
   },
 
