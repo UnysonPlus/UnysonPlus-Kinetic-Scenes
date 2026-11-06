@@ -25,6 +25,7 @@ import { suggestPoster } from '../lib/poster';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
+import { handDrawn } from '../lib/sceneOps';
 import { FRAME_OPTIONS, FootageKitSection, FootageSection, MadeForSection } from './VideoModeSections';
 import { SFX_CATALOG, SFX_CATEGORY_LABELS, sfxMeta, sfxSrc, suggestedSound, type SfxCategory } from '@unysonplus/scene-player/sfx';
 import { cleanSound } from '../lib/audio';
@@ -73,6 +74,8 @@ interface Props {
   onSeek: (sceneTime: number) => void;
   /** Plays a sound right away (to hear it before choosing it). */
   onPreviewSound?: (src: string, volume?: number) => void;
+  /** Opens Drop with physics for the selected layers. */
+  onPhysics?: () => void;
 }
 
 const EASES = [
@@ -507,6 +510,7 @@ function MultiInspector(props: Props & { ids: string[] }) {
 
       <div className="insp-actions">
         <button type="button" className="btn small" onClick={props.onGroup} title="Group (Ctrl+G)">Group {layers.length} layers</button>
+        {props.onPhysics && <button type="button" className="btn small" onClick={props.onPhysics} title="They fall, bounce and settle as real objects, written as keyframes you can edit">Drop with physics…</button>}
         <button type="button" className="btn small danger" onClick={() => {
           let next = scene;
           for (const l of layers) next = removeLayer(next, l.id);
@@ -596,6 +600,11 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
           <NumberField label="Dashes" value={layer.dash} step={0.1} min={0} max={50} unit="su" optional placeholder="Solid" onCommit={(v) => props({ dash: v || undefined })} />
           {!!layer.dash && <NumberField label="Gap" value={layer.dashGap ?? Math.round(layer.dash * 80) / 100} step={0.1} min={0} max={50} unit="su" onCommit={(v) => props({ dashGap: v })} />}
           {!!layer.dash && <p className="field-hint wide">A dashed outline can march (Marching outline) and close up into a solid one (Make solid).</p>}
+          {!layer.clips.some((c) => c.preset === 'sketch') && (
+            <div className="insp-start wide">
+              <button type="button" className="btn small" onClick={() => onCommit(handDrawn(scene, layer.id))} title="Wobbly pencil lines and a scribbled fill. Change them on its Hand-drawn clip">Make it hand-drawn</button>
+            </div>
+          )}
         </Section>
       )}
 

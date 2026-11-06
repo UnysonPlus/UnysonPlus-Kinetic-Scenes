@@ -43,6 +43,8 @@ import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
 import { StartDialog } from './components/StartDialog';
 import { PhysicsDialog } from './components/PhysicsDialog';
 import { ListenDialog } from './components/ListenDialog';
+import { WhatsNewDialog } from './components/WhatsNewDialog';
+import { markNewsSeen, newsUnseen, readNewsSeen, type NewsAction } from './lib/whatsNew';
 import { shouldShowStart, startProjectName, type StartFormat, type startRequest } from './lib/start';
 import { buildAvailable } from './lib/agent';
 import { toVideo } from './lib/videoMode';
@@ -304,6 +306,16 @@ export function App() {
   const [startOpen, setStartOpen] = useState(() => shouldShowStart(location.search));
   const [physicsOpen, setPhysicsOpen] = useState(false);
   const [listenOpen, setListenOpen] = useState(false);
+  const [newsOpen, setNewsOpen] = useState(false);
+  const [newsUnread, setNewsUnread] = useState(() => newsUnseen(readNewsSeen()));
+  const openNews = () => { setStartOpen(false); setNewsOpen(true); setNewsUnread(false); markNewsSeen(); };
+  const tryNews = (a: NewsAction) => {
+    setNewsOpen(false);
+    if (a === 'listen') setListenOpen(true);
+    else if (a === 'physics') setPhysicsOpen(true);
+    else setStartOpen(true);
+  };
+  const newTag = newsUnread ? 'New' : undefined;
   /** A new scene is on its way from the start screen: it must not land in the project reopened from last time. */
   const fromStart = useRef(false);
   const [likeOpen, setLikeOpen] = useState(false);
@@ -1021,19 +1033,20 @@ export function App() {
       { label: 'Make one like this…', onSelect: () => setLikeOpen(true), hint: 'Give a video you like: the AI makes yours the same way (structure, pacing, text style, cuts), with your own content' },
       { label: 'Make music…', onSelect: () => setMusicOpen(true) },
     ] },
-    { label: 'Tools', items: [
+    { label: 'Tools', dot: newsUnread, items: [
       { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox, ACE-Step music and other tools the AI Dev Kit can use on this computer' },
       { label: 'Make music…', onSelect: () => setMusicOpen(true) },
       { label: 'Videos from a spreadsheet…', onSelect: () => setBatchOpen(true), hint: 'One design, a video per row: fill the {{placeholders}} in the scene from a CSV, preview each row, render them all' },
-      { label: 'Drop with physics…', onSelect: () => setPhysicsOpen(true), hint: 'The selected layers fall, bounce and settle as real objects, written as keyframes you can edit' },
-      { label: 'Second listener…', onSelect: () => setListenOpen(true), hint: 'Gemini hears the scene\'s sound, with no render, and gives timed notes on how it comes across' },
+      { label: 'Drop with physics…', onSelect: () => setPhysicsOpen(true), badge: newTag, hint: 'The selected layers fall, bounce and settle as real objects, written as keyframes you can edit' },
+      { label: 'Second listener…', onSelect: () => setListenOpen(true), badge: newTag, hint: 'Gemini hears the scene\'s sound, with no render, and gives timed notes on how it comes across' },
       { label: 'Make a reel from a video…', onSelect: () => setHighlightsOpen(true), hint: 'The AI Dev Kit finds the best moments of a long video and cuts them together to the length you ask' },
       'sep',
       { label: 'Separate voice and music', disabled: !(selLayer?.type === 'video' || (selAudio && !selAudio.src.startsWith('sfx:'))),
         hint: 'Select footage or an audio clip first', onSelect: () => showLayerSection(selLayer?.type === 'video' ? 'Footage tools' : 'Voice and music') },
       { label: 'Transcribe a voice-over', disabled: !(selAudio && !selAudio.src.startsWith('sfx:')), hint: 'Select an audio clip first', onSelect: () => showLayerSection('Words') },
     ] },
-    { label: 'Help', items: [
+    { label: 'Help', dot: newsUnread, items: [
+      { label: 'What\'s new', onSelect: openNews, badge: newTag },
       { label: 'The manual', onSelect: link(DOCS) },
       { label: 'Connect your AI agent', onSelect: link(AGENTS_GUIDE) },
       { label: 'Your first scene (guide)', onSelect: () => { setFirstRunStep(0); setFirstRunOpen(true); } },
@@ -1419,7 +1432,7 @@ export function App() {
               <CameraInspector scene={scene} keyId={selection.camera} time={state.time} cameraView={cameraView} onCommit={commit} onSeek={seek}
                 onSelectKey={(id) => setSelection(id ? { layerId: null, clipId: null, camera: id } : { layerId: null, clipId: null })} />
             ) : tab === 'inspect' && selection.audio && scene.audio?.some((a) => a.id === selection.audio) ? (
-              <AudioInspector scene={scene} clip={scene.audio!.find((a) => a.id === selection.audio)!} info={audioInfo[scene.audio!.find((a) => a.id === selection.audio)!.src]}
+              <AudioInspector onListen={() => setListenOpen(true)} scene={scene} clip={scene.audio!.find((a) => a.id === selection.audio)!} info={audioInfo[scene.audio!.find((a) => a.id === selection.audio)!.src]}
                 onCommit={commit} onDeselect={() => setSelection({ layerId: null, clipId: null })} onSeek={seek}
                 decode={(src) => audioEngine.buffer(src)}
                 onMakeScene={(clipId) => {
@@ -1431,13 +1444,13 @@ export function App() {
                   openAssist(true);
                 }} />
             ) : tab === 'check' ? null : tab === 'inspect'
-              ? <Inspector onPreviewSound={(src, v) => { audioEngine.preview(src, v); }} time={state.time} onSeek={seek} scene={scene} selection={selection} bp={state.breakpoint} onCommit={commit} onSelect={setSelection} alignTo={alignTo} onAlignTo={setAlignTo} onAlign={align} onEnter={enterGroup} onGroup={groupSelection} onUngroup={ungroupSelection} />
+              ? <Inspector onPhysics={() => setPhysicsOpen(true)} onPreviewSound={(src, v) => { audioEngine.preview(src, v); }} time={state.time} onSeek={seek} scene={scene} selection={selection} bp={state.breakpoint} onCommit={commit} onSelect={setSelection} alignTo={alignTo} onAlignTo={setAlignTo} onAlign={align} onEnter={enterGroup} onGroup={groupSelection} onUngroup={ungroupSelection} />
               : <ScenePanel scene={scene} onCommit={commit} />}
           </div>
         </aside>
       </main>
 
-      <ExportDialog open={exporting} scene={scene} fileName={slug(scene)} project={project?.id ?? null} onClose={() => setExporting(false)} onDone={setNotice} />
+      <ExportDialog onListen={() => { setExporting(false); setListenOpen(true); }} open={exporting} scene={scene} fileName={slug(scene)} project={project?.id ?? null} onClose={() => setExporting(false)} onDone={setNotice} />
       <AddonsDialog open={addonsOpen} onClose={() => setAddonsOpen(false)} />
       <LikeThisDialog open={likeOpen} onClose={() => { fromStart.current = false; setLikeOpen(false); }}
         onBrief={(r) => { leaveForNew(); setLikeOpen(false); setQueued({ text: r.about, brief: r.brief, context: r.context, scope: 'new' }); openAssist(true); setNotice(`How the video is made: ${r.summary} AI assist is making yours.`); }} />
@@ -1445,7 +1458,7 @@ export function App() {
       <StartDialog open={startOpen} onClose={() => setStartOpen(false)} status={kit} agent={canUseAgent} styles={allStyles} styleId={aiStyle}
         currentTitle={scene === DEMO || !scene.layers.length ? '' : scene.title || 'This scene'} projectOpen={!!project}
         onAi={startWithAi} onProject={(id) => { setStartOpen(false); openFolderProject(id); }}
-        onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }}
+        onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }} onNews={openNews}
         onAction={(a) => {
           setStartOpen(false);
           fromStart.current = a !== 'sheet';
@@ -1466,6 +1479,7 @@ export function App() {
           }
           else { leaveForNew(); startNew(); guideFirstScene(); }
         }} />
+      <WhatsNewDialog open={newsOpen} onClose={() => setNewsOpen(false)} onTry={tryNews} />
       <ListenDialog open={listenOpen} scene={scene} onClose={() => setListenOpen(false)} onSeek={seek} />
       <PhysicsDialog open={physicsOpen} scene={scene} ids={selectedIds(selection)} at={+state.time.toFixed(2)} onClose={() => setPhysicsOpen(false)}
         onScene={(s, note) => { commit(s); setPhysicsOpen(false); setNotice(note); post({ type: 'seek', time: state.time }); }} />

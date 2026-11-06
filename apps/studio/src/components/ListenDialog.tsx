@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
+import { KIT_REPO } from './GetKit';
 import { GEMINI_KEY_URL, listenStatus, listenTo, setListenKey, type ListenResult, type ListenStatus } from '../lib/listen';
 
 const clock = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
@@ -89,6 +90,7 @@ export function ListenDialog(props: { open: boolean; scene: Scene; onClose: () =
         )}
         {!hasSound && <p className="export-warn">This scene has no sound yet.</p>}
         {error && <p className="export-warn" role="alert">{error}</p>}
+        {!status && error && <p><a href={KIT_REPO} target="_blank" rel="noopener noreferrer">Get the free AI Dev Kit</a></p>}
         <div className="export-row">
           {status?.hasKey && !changingKey && <button type="button" className="btn small primary" disabled={!agreed || !hasSound || !!step} onClick={go}>{step ? `${step}…` : 'Listen to it'}</button>}
           {step && <button type="button" className="btn small ghost" onClick={() => stop.current?.abort()}>Stop</button>}

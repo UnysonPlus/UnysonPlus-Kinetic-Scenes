@@ -18,6 +18,8 @@ export function AudioInspector(props: {
   /** Jump the playhead (clicking a word). */
   onSeek: (t: number) => void;
   onMakeScene?: (clipId: string) => void;
+  /** Opens the second listener. */
+  onListen?: () => void;
   /** Decodes the clip's file (for finding the beats). */
   decode?: (src: string) => Promise<AudioBuffer | null>;
 }) {
@@ -67,6 +69,13 @@ export function AudioInspector(props: {
         <NumberField label="Fade in" value={clip.fadeIn ?? 0} step={0.05} min={0} unit="s" onCommit={(v) => set({ fadeIn: v || undefined })} />
         <NumberField label="Fade out" value={clip.fadeOut ?? 0} step={0.05} min={0} unit="s" onCommit={(v) => set({ fadeOut: v || undefined })} />
       </Section>
+
+      {clip.role === 'voice' && props.onListen && (
+        <Section title="How it sounds">
+          <div className="insp-start wide"><button type="button" className="btn small" onClick={props.onListen}>Second listener…</button></div>
+          <p className="field-hint wide">Gemini hears the scene before you render and gives timed notes on how the voice comes across.</p>
+        </Section>
+      )}
 
       {builtIn ? (
         <Section title="Built-in sound">

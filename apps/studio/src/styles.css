@@ -961,6 +961,19 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 .stock-meta .addon-detail { margin: 0; font-size: 11px; }
 .stock-dialog select { min-height: 30px; }
 
+/* What's new */
+.menu-badge { flex: none; padding: 1px 6px; border-radius: 999px; font: 600 10px/1.5 var(--sans); color: var(--accent); border: 1px solid currentColor; }
+.menu-top { position: relative; }
+.menu-dot { position: absolute; top: 5px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.news-dialog .export-inner { max-width: 560px; }
+.news-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.news-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.news-list p { margin: 2px 0 0; opacity: .8; }
+.news-actions { flex: none; display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.start-side .start-news-h { margin-top: 14px; }
+.export-listen { margin: 0 0 8px; font-size: 12px; }
+@media (max-width: 520px) { .news-list li { flex-direction: column; gap: 6px; } }
+
 /* Tools › Second listener */
 .listen-dialog .export-inner { max-width: 620px; }
 .listen-key { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }

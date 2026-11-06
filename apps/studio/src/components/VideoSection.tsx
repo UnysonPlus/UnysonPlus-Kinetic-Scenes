@@ -26,7 +26,7 @@ const hasReference = (list: Layer[]): boolean => list.some((l) => (l.type === 'v
  * Export → Video: an MP4, WebM or ProRes file rendered frame by frame by the AI Dev Kit on this computer.
  * A web scene picks a size (and so a layout); a video scene exports its own formats, one or all of them.
  */
-export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note: string) => void }) {
+export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note: string) => void; onListen?: () => void }) {
   const video = props.scene.mode === 'video' && props.scene.video ? props.scene.video : null;
   const formats = sortFormats(video?.formats ?? []);
   const [check, setCheck] = useState<RenderCheck | null>(null);
@@ -162,12 +162,17 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
           <button type="button" className="btn small" onClick={() => abort.current?.abort()}>Stop</button>
         </div>
       ) : (
+        <>
+        {props.onListen && props.scene.audio?.some((a) => a.role === 'voice') && (
+          <p className="export-listen">Check the voice before you wait for a render: <button type="button" className="link-btn" onClick={props.onListen}>Second listener</button></p>
+        )}
         <div className="export-row">
           <button type="button" className="btn primary" onClick={start} disabled={!check?.ok && !inBrowser}>
             <DownloadIcon /> {jobs.length > 1 ? `Render ${jobs.length} videos` : inBrowser ? 'Render in this browser' : 'Render video'}
           </button>
           <span className="export-meta">{frames} frames, {props.scene.duration} s{check === null ? ' · looking for the AI Dev Kit…' : ''}</span>
         </div>
+        </>
       )}
       {error && <p className="export-error" role="alert">{error}</p>}
     </section>

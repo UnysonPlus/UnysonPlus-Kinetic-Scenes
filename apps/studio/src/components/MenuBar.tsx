@@ -7,9 +7,9 @@ import { useEffect, useRef, useState } from 'react';
  */
 
 export type MenuItem =
-  | { label: string; onSelect: () => void; shortcut?: string; disabled?: boolean; checked?: boolean; hint?: string }
+  | { label: string; onSelect: () => void; shortcut?: string; disabled?: boolean; checked?: boolean; hint?: string; badge?: string }
   | 'sep';
-export interface Menu { label: string; items: MenuItem[] }
+export interface Menu { label: string; items: MenuItem[]; dot?: boolean }
 
 export function MenuBar(props: { menus: Menu[] }) {
   const [open, setOpen] = useState<number | null>(null);
@@ -57,6 +57,7 @@ export function MenuBar(props: { menus: Menu[] }) {
             className="menu-item" disabled={it.disabled} title={it.hint} onClick={() => run(it)}>
             <span className="menu-check" aria-hidden="true">{it.checked ? '✓' : ''}</span>
             <span className="menu-label">{it.label}</span>
+            {it.badge && <span className="menu-badge">{it.badge}</span>}
             {it.shortcut && <kbd className="menu-kbd">{it.shortcut}</kbd>}
           </button>
         ))}
@@ -74,6 +75,7 @@ export function MenuBar(props: { menus: Menu[] }) {
               onPointerEnter={() => { if (open !== null && open !== i) setOpen(i); }}
               onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(i); } }}>
               {m.label}
+              {m.dot && <span className="menu-dot"><span className="sr-only"> (new)</span></span>}
             </button>
             {open === i && items(m, i)}
           </div>
@@ -92,6 +94,7 @@ export function MenuBar(props: { menus: Menu[] }) {
                   <button key={j} type="button" role="menuitem" className="menu-item" disabled={it.disabled} onClick={() => run(it)}>
                     <span className="menu-check" aria-hidden="true">{it.checked ? '✓' : ''}</span>
                     <span className="menu-label">{it.label}</span>
+                    {it.badge && <span className="menu-badge">{it.badge}</span>}
                   </button>
                 ))}
               </section>

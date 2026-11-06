@@ -4,6 +4,7 @@ import { listProjects, workspaceAvailable, type ProjectInfo } from '../lib/works
 import { PAPER_BRIEF, START_FORMATS, START_LENGTHS, setStartHidden, startHidden, startRequest, startUrl, type StartFormat } from '../lib/start';
 import type { SceneStyle } from '../lib/styles';
 import { KIT_REPO } from './GetKit';
+import { WHATS_NEW } from '../lib/whatsNew';
 
 type Needs = 'ai' | 'kit';
 export type StartAction = 'video' | 'like' | 'recording' | 'sheet' | 'templates' | 'blank' | 'file' | 'paper-template';
@@ -66,6 +67,7 @@ export function StartDialog(props: {
   onAction: (action: StartAction) => void;
   onProject: (id: string) => void;
   onAllProjects: () => void;
+  onNews: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [step, setStep] = useState<'pick' | 'describe' | 'website' | 'paper'>('pick');
@@ -176,6 +178,11 @@ export function StartDialog(props: {
                   <a href={KIT_REPO} target="_blank" rel="noopener noreferrer">get the free AI Dev Kit</a>.
                 </p>
               )}
+              <h3 className="start-news-h">New</h3>
+              {WHATS_NEW.slice(0, 3).map((n) => (
+                <button key={n.id} type="button" className="start-recent" onClick={props.onNews}><strong>{n.title}</strong><span>{n.short}</span></button>
+              ))}
+              <button type="button" className="link-btn" onClick={props.onNews}>See what's new</button>
             </aside>
           </div>
         ) : (

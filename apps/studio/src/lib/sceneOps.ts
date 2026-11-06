@@ -403,6 +403,12 @@ export function addClip(scene: Scene, layerId: string, presetId: string, at: num
   return { scene: mapLayer(scene, layerId, (l) => ({ ...l, clips: [...l.clips, clip] })), id };
 }
 
+/** Makes a shape hand-drawn in one step: the look only holds while its clip runs, so the clip lasts the whole scene. */
+export function handDrawn(scene: Scene, layerId: string): Scene {
+  const r = addClip(scene, layerId, 'sketch', 0);
+  return r ? setClip(r.scene, layerId, r.id, { start: 0, duration: scene.duration }) : scene;
+}
+
 export function removeClip(scene: Scene, layerId: string, clipId: string): Scene {
   return mapLayer(scene, layerId, (l) => ({ ...l, clips: l.clips.filter((c) => c.id !== clipId) }));
 }

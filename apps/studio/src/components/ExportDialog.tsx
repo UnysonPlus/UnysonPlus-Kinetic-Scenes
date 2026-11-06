@@ -25,6 +25,7 @@ export function ExportDialog(props: {
   project?: string | null;
   onClose: () => void;
   onDone: (message: string) => void;
+  onListen?: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [withFonts, setWithFonts] = useState(false);
@@ -105,7 +106,7 @@ export function ExportDialog(props: {
         </header>
 
         {/* A video's main export is the video. */}
-        {props.scene.mode === 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} />}
+        {props.scene.mode === 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} onListen={props.onListen} />}
         {footageIds(props.scene).length > 0 && (
           <p className="export-warn">This scene has footage. Videos and the downloaded page carry it; a share link and the embed code can't (footage is too big for them).</p>
         )}
@@ -153,7 +154,7 @@ export function ExportDialog(props: {
           )}
         </section>
 
-        {props.scene.mode !== 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} />}
+        {props.scene.mode !== 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} onListen={props.onListen} />}
         {props.scene.mode === 'video' && <EditorSection project={props.project ?? null} onDone={props.onDone} />}
 
         {error && <p className="export-error" role="alert">{error}</p>}
