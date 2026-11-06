@@ -209,7 +209,6 @@ export function App() {
   const screencastRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
   const sentScene = useRef<Scene>(scene);
-  const firstReady = useRef(true);
 
   // Latest values for handlers that outlive a render (message and key listeners).
   const latest = useRef({ scene, selection, state, scope });
@@ -678,10 +677,6 @@ export function App() {
         case 'upw:ready':
           setReady(true);
           setFrameError(null);
-          if (firstReady.current) {
-            firstReady.current = false;
-            post({ type: 'play' });
-          }
           break;
         case 'upw:state':
           setState({ time: m.time, duration: m.duration, playing: m.playing, breakpoint: m.breakpoint, stageHeight: m.stageHeight });
