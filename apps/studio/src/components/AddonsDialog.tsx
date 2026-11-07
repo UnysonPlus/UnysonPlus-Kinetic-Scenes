@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browseAddon, checkComputer, findAddon, listAddons, setAddonLocation, type Addon, type AddonField } from '../lib/addons';
+import { FfmpegNotice } from './FfmpegNotice';
 import { GetKit } from './GetKit';
 
 const STATE: Record<Addon['state'], string> = {
@@ -113,6 +114,7 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
               </div>
               <p>{a.what}</p>
               <p className="addon-detail">{a.detail}</p>
+              {a.id === 'ffmpeg' && a.state === 'not-installed' && <FfmpegNotice what="Video export, footage and captions" onReady={refresh} />}
               {a.id === 'voicebox' && a.state === 'connected' && a.profiles && a.profiles.length > 0 && (
                 <p className="addon-detail">Voices: {a.profiles.map((p) => p.name).join(', ')}. Pick one under Voice-over from a script, or in AI assist.</p>
               )}

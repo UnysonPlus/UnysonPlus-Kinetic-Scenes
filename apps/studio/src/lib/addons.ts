@@ -17,6 +17,8 @@ export interface Addon {
   app?: AddonField;
   profiles?: Array<{ id: string; name: string; language: string; engine: string | null }>;
   link?: string;
+  /** Downloads: whether the kit can install it on this computer. */
+  canInstall?: boolean;
 }
 
 /** Where a connector is: an address on this computer, or a folder or program the kit may start. */

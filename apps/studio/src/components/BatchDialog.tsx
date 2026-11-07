@@ -4,6 +4,7 @@ import { VIDEO_FORMATS } from '@unysonplus/scene-player/video';
 import { fillScene, missingColumns, parseCsv, placeholders, rowLabel, slug } from '../lib/batch';
 import type { Sheet } from '../lib/batch';
 import { canRender, renderVideo } from '../lib/video';
+import { FfmpegNotice } from './FfmpegNotice';
 
 function save(blob: Blob, name: string) {
   const a = document.createElement('a');
@@ -29,6 +30,7 @@ export function BatchDialog(props: {
   const csvRef = useRef<HTMLInputElement>(null);
   const picRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
+  const [needFfmpeg, setNeedFfmpeg] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
 
@@ -49,7 +51,8 @@ export function BatchDialog(props: {
     if (!sheet) return;
     setError('');
     const check = await canRender();
-    if (!check.ok) { setError(check.reason === 'ffmpeg' ? 'The AI Dev Kit needs ffmpeg to render video.' : 'Rendering needs the AI Dev Kit running on this computer (or a newer one).'); return; }
+    setNeedFfmpeg(!check.ok && check.reason === 'ffmpeg');
+    if (!check.ok) { if (check.reason !== 'ffmpeg') setError('Rendering needs the AI Dev Kit running on this computer (or a newer one).'); return; }
     const ctl = new AbortController();
     abort.current = ctl;
     const fps = props.scene.video?.fps ?? 30;
@@ -88,6 +91,7 @@ export function BatchDialog(props: {
           gives a column for each, one row per video.
         </p>
         {error && <p className="export-warn" role="alert">{error}</p>}
+        {needFfmpeg && <FfmpegNotice what="Rendering videos" onReady={() => setNeedFfmpeg(false)} />}
         <p className="addon-detail">
           {used.length ? <>This scene's placeholders: {used.map((p) => <code key={p}>{`{{${p}}}`}</code>).reduce<React.ReactNode[]>((a, c, i) => (i ? [...a, ', ', c] : [c]), [])}.</>
             : 'This scene has no placeholders yet: type one into a text layer, e.g. {{product}}.'}

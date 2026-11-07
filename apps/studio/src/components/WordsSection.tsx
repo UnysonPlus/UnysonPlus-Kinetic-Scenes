@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyWordCuts, planWordCuts, suggestRemovals } from '../lib/wordEdit';
 import type { AudioClip, Scene } from '@unysonplus/scene-player/types';
 import { Section } from './fields';
+import { FfmpegNotice } from './FfmpegNotice';
 import { setAudio } from '../lib/audio';
 import { clipWords, installSpeech, isStrong, transcribe, transcribeStatus, type ModelKey, type TranscribeStatus } from '../lib/transcribe';
 
@@ -203,9 +204,9 @@ export function WordsSection(props: {
           {anyModel
             ? 'Turns the voice-over into words with their timing and how strongly each is said. Runs on your computer; about 10 seconds a minute of audio with the fast model.'
             : 'Turns the voice-over into words with their timing and how strongly each is said. The AI Dev Kit downloads speech recognition once; after that it works offline on your computer. Fast suits clear voice-overs; Accurate handles accents, noise and music better.'}
-          {status && !status.ffmpeg ? ' It also needs ffmpeg (Windows: winget install Gyan.FFmpeg; macOS: brew install ffmpeg).' : ''}
         </p>
       )}
+      {status && !status.ffmpeg && !busy && <div className="wide"><FfmpegNotice what="Turning a voice-over into words" onReady={refresh} /></div>}
       {has && !busy && <div className="insp-actions wide"><button type="button" className="btn small ghost" onClick={() => props.onCommit(setAudio(props.scene, clip.id, { words: undefined, speech: undefined }))}>Remove words</button></div>}
     </Section>
   );

@@ -5,6 +5,7 @@ import { VIDEO_SIZES, canRender, renderVideo, type RenderCheck, type VideoOption
 import { DownloadIcon } from './icons';
 import { sortFormats } from '../lib/videoMode';
 import { browserCanRender, renderInBrowser } from '../lib/browserVideo';
+import { FfmpegNotice } from './FfmpegNotice';
 
 const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
 const KIT_REPO = 'https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit';
@@ -30,6 +31,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
   const video = props.scene.mode === 'video' && props.scene.video ? props.scene.video : null;
   const formats = sortFormats(video?.formats ?? []);
   const [check, setCheck] = useState<RenderCheck | null>(null);
+  const [ffmpegJustInstalled, setFfmpegJustInstalled] = useState(false);
   const [size, setSize] = useState(video ? (formats.length > 1 ? 'all' : formats[0]) : '1080p');
   const [fps, setFps] = useState(video?.fps ?? 30);
   const [format, setFormat] = useState<VideoOptions['format']>(video?.transparent ? 'webm' : 'mp4');
@@ -111,11 +113,11 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
           exports need the <a href={KIT_REPO} target="_blank" rel="noopener noreferrer">AI Dev Kit</a>.
         </p>
       )}
-      {check && !check.ok && !inBrowser && (
+      {(ffmpegJustInstalled || (check && !check.ok && check.reason === 'ffmpeg')) && <FfmpegNotice what="Video export" onReady={() => { setFfmpegJustInstalled(true); canRender().then(setCheck); }} />}
+      {check && !check.ok && check.reason !== 'ffmpeg' && !inBrowser && (
         <p className="export-warn">
           {check.reason === 'kit' && <>Video export runs through the <a href={KIT_REPO} target="_blank" rel="noopener noreferrer"><strong>AI Dev Kit</strong></a> on your computer. <a href={GUIDE} target="_blank" rel="noopener noreferrer">Set it up</a>, start it (start.bat or start.command), then open Export again.</>}
-          {check.reason === 'outdated' && <>Your AI Dev Kit needs an update for video export. Close it and start it again: it updates itself.</>}
-          {check.reason === 'ffmpeg' && <>The AI Dev Kit needs <strong>ffmpeg</strong> to make videos. Install it (Windows: <code>winget install Gyan.FFmpeg</code>; macOS: <code>brew install ffmpeg</code>), restart the kit, then open Export again.</>}
+          {check.reason === 'outdated' && <>Your AI Dev Kit needs an update for video export. Close it and start it again: it updates itself.</>}
         </p>
       )}
       <div className="video-opts">

@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-07';
+export const NEWS_ID = '2026-11-08';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'ffmpeg', title: 'FFmpeg, installed for you', short: 'One click when a video needs it', text: 'Video export, footage and captions need the free tool FFmpeg. If it isn\'t on your computer, Kinetic Scenes now tells you at the moment it is needed, and the AI Dev Kit can install it with one click, or you can follow the direct link. Your AI agent can install it too.', doc: `${DOCS}ffmpeg` },
   { id: 'styles', title: 'All 30 styles, moving', short: 'Hover a style below to watch it', text: 'Every style is now on the start screen with a preview that plays when you hover over it. Pick one to start something in it.', doc: `${DOCS}start-screen#start-from-a-style` },
   { id: 'listener', title: 'Second listener', short: 'Notes on your voice-over before you render', text: 'Before you render, Gemini hears your scene and gives timed notes on how it comes across. Needs the AI Dev Kit and your own free key.', doc: `${DOCS}second-listener`, action: 'listen' },
   { id: 'physics', title: 'Drop with physics', short: 'Layers that fall and pile up', text: 'Select some layers and they fall, bounce and pile up like real objects.', doc: `${DOCS}sketch-and-physics`, action: 'physics' },
