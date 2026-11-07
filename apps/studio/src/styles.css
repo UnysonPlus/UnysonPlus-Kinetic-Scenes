@@ -975,8 +975,9 @@ dialog.notes-dialog { width: min(720px, 94vw); max-width: 94vw; }
 @media (max-width: 520px) { .news-list li { flex-direction: column; gap: 6px; } }
 
 /* The start screen's styles */
-dialog.start-dialog:not(.is-step) .export-inner { max-height: calc(100dvh - 32px); overflow: hidden; }
-dialog.start-dialog:not(.is-step) .start-body { min-height: 0; overflow-y: auto; margin-right: -12px; padding-right: 12px; }
+dialog.start-dialog:not(.is-step)[open] { display: flex; flex-direction: column; overflow: hidden; }
+dialog.start-dialog:not(.is-step) .export-inner { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+dialog.start-dialog:not(.is-step) .start-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-right: -12px; padding-right: 12px; }
 .start-dialog .start-side { position: sticky; top: 0; align-self: start; }
 .gallery-filters { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .gallery-filters button { padding: 4px 10px; font-size: 12px; color: var(--muted); cursor: pointer; border: 1px solid var(--border); border-radius: 999px; background: none; }
@@ -996,7 +997,7 @@ dialog.start-dialog:not(.is-step) .start-body { min-height: 0; overflow-y: auto;
 .start-picked img { flex: 0 1 240px; min-width: 0; width: 240px; height: auto; border-radius: 6px; }
 .start-picked p { flex: 1; margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .gallery-live, .gallery-frame { transition: none; } }
-@media (max-width: 760px) { dialog.start-dialog:not(.is-step) .export-inner { max-height: none; overflow: visible; } dialog.start-dialog:not(.is-step) .start-body { overflow: visible; margin-right: 0; padding-right: 0; } .start-dialog .start-side { position: static; } }
+@media (max-width: 760px) { dialog.start-dialog:not(.is-step)[open] { display: block; overflow: auto; } dialog.start-dialog:not(.is-step) .export-inner { overflow: visible; } dialog.start-dialog:not(.is-step) .start-body { overflow: visible; margin-right: 0; padding-right: 0; } .start-dialog .start-side { position: static; } }
 
 /* Tools › Second listener */
 .listen-dialog .export-inner { max-width: 620px; }
