@@ -139,6 +139,8 @@ export function Timeline(props: Props) {
   /* ---- scrubbing on the ruler ---- */
   const onRulerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
+    // Without this the drag starts a text selection, and the browser scrolls the rows to follow it.
+    e.preventDefault();
     const seekTo = (x: number) => live.current.onSeek(Math.max(0, Math.min(scene.duration, roundTime(xToTime(x) + offset))));
     seekTo(e.clientX);
     const move = (ev: PointerEvent) => seekTo(ev.clientX);
@@ -365,6 +367,7 @@ export function Timeline(props: Props) {
             <div className="tl-corner">
               <span className="mono">{time.toFixed(2)}s{scope ? ' in group' : ''}</span>
             </div>
+            {time >= 0 && time <= D && <div className="tl-ruler-head" style={{ left: NAME_W + time * pps }} aria-hidden="true" />}
             <div className="tl-ticks" style={{ width }}>
               {ticks.map((t) => (
                 <span key={t} className="tick" style={{ left: t * pps }}>
@@ -689,7 +692,7 @@ export function Timeline(props: Props) {
           })}
 
           {groupLen !== null && <div className="tl-groupend" style={{ left: NAME_W + groupLen * pps }} title="End of the group's own timeline" aria-hidden="true" />}
-          {time >= 0 && time <= D && <div className="tl-playhead" style={{ left: NAME_W + time * pps }} aria-hidden="true" />}
+          {time >= 0 && time <= D && <div className="tl-playhead" style={{ left: NAME_W + time * pps }} aria-hidden="true" onPointerDown={onRulerDown} />}
           <div className="tl-after" style={{ left: NAME_W + width }} aria-hidden="true" />
         </div>
       </div>

@@ -341,7 +341,8 @@ h1, h2, p { margin: 0; }
 .tl-add { display: flex; gap: 4px; }
 .tl-zoom { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
 .tl-zoom input { width: 110px; accent-color: var(--accent); }
-.tl-scroll { flex: 1; min-height: 0; overflow: auto; position: relative; }
+.tl-scroll { flex: 1; min-height: 0; overflow: auto; position: relative; user-select: none; }
+.tl-scroll input, .tl-scroll textarea { user-select: text; }
 .tl-inner { position: relative; min-height: 100%; }
 .tl-ruler { position: sticky; top: 0; z-index: 5; display: flex; height: 24px; background: var(--surface); border-bottom: 1px solid var(--border-soft); cursor: ew-resize; }
 .tl-corner {
@@ -394,8 +395,12 @@ h1, h2, p { margin: 0; }
 .clip.cat-3d { background: oklch(0.8 0.1 200); }
 .clip:hover { filter: brightness(1.08); }
 .clip.sel { border-color: var(--ink); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--ink); z-index: 1; }
-.tl-playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent); z-index: 4; pointer-events: none; }
-.tl-playhead::before { content: ""; position: absolute; top: 0; left: -5px; border: 5px solid transparent; border-top: 7px solid var(--accent); }
+.tl-playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent); z-index: 4; cursor: ew-resize; }
+/* A wider grip than the line itself, so it is easy to catch. */
+.tl-playhead::after { content: ""; position: absolute; top: 0; bottom: 0; left: -3px; width: 7px; }
+/* The head rides in the ruler, which stays put, so the line reaches the ticks however far the rows are scrolled. */
+.tl-ruler-head { position: absolute; top: 0; bottom: -1px; z-index: 1; width: 1px; background: var(--accent); pointer-events: none; }
+.tl-ruler-head::before { content: ""; position: absolute; top: 0; left: -5px; width: 11px; height: 13px; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); }
 .tl-after { position: absolute; top: 24px; bottom: 0; right: 0; background: repeating-linear-gradient(135deg, transparent 0 6px, oklch(0.2 0.01 245) 6px 7px); pointer-events: none; }
 .tl-empty { padding: 18px 16px; font-size: 12px; color: var(--muted); }
 
