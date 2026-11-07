@@ -1454,6 +1454,15 @@ export function App() {
         currentTitle={scene === DEMO || !scene.layers.length ? '' : scene.title || 'This scene'} projectOpen={!!project}
         onAi={startWithAi} onProject={(id) => { setStartOpen(false); openFolderProject(id); }}
         onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }} onNews={openNews}
+        onStyleNew={(style) => {
+          setStartOpen(false);
+          leaveForNew();
+          commit(starterScene(style, latest.current.scene));
+          setScope(null);
+          setSelection({ layerId: null, clipId: null });
+          post({ type: 'seek', time: 0 });
+          setNotice(`New scene in the ${style.name} style. Edit the words, or ask AI assist to build on it.`);
+        }}
         onAction={(a) => {
           setStartOpen(false);
           fromStart.current = a !== 'sheet';

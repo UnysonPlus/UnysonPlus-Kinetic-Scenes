@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-06';
+export const NEWS_ID = '2026-11-07';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'styles', title: 'All 30 styles, moving', short: 'Hover a style below to watch it', text: 'Every style is now on the start screen with a preview that plays when you hover over it. Pick one to start something in it.', doc: `${DOCS}start-screen#start-from-a-style` },
   { id: 'listener', title: 'Second listener', short: 'Notes on your voice-over before you render', text: 'Before you render, Gemini hears your scene and gives timed notes on how it comes across. Needs the AI Dev Kit and your own free key.', doc: `${DOCS}second-listener`, action: 'listen' },
   { id: 'physics', title: 'Drop with physics', short: 'Layers that fall and pile up', text: 'Select some layers and they fall, bounce and pile up like real objects.', doc: `${DOCS}sketch-and-physics`, action: 'physics' },
   { id: 'hand-drawn', title: 'Hand-drawn shapes', short: 'Pencil lines and scribbled fills', text: 'Select a shape and click Make it hand-drawn for wobbly pencil lines and scribbled fills.', doc: `${DOCS}sketch-and-physics` },

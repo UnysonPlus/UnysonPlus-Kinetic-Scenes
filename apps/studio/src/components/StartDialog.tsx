@@ -5,6 +5,7 @@ import { PAPER_BRIEF, START_FORMATS, START_LENGTHS, setStartHidden, startHidden,
 import type { SceneStyle } from '../lib/styles';
 import { KIT_REPO } from './GetKit';
 import { WHATS_NEW } from '../lib/whatsNew';
+import { StyleGallery } from './StyleGallery';
 
 type Needs = 'ai' | 'kit';
 export type StartAction = 'video' | 'like' | 'recording' | 'sheet' | 'templates' | 'blank' | 'file' | 'paper-template';
@@ -68,9 +69,11 @@ export function StartDialog(props: {
   onProject: (id: string) => void;
   onAllProjects: () => void;
   onNews: () => void;
+  /** A new scene in this style, with no AI. */
+  onStyleNew: (style: SceneStyle) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [step, setStep] = useState<'pick' | 'describe' | 'website' | 'paper'>('pick');
+  const [step, setStep] = useState<'pick' | 'describe' | 'website' | 'paper' | 'style'>('pick');
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
   const [formatId, setFormatId] = useState(START_FORMATS[0].id);
@@ -102,6 +105,7 @@ export function StartDialog(props: {
   }, [props.open, step]);
 
   const format = START_FORMATS.find((f) => f.id === formatId) ?? START_FORMATS[0];
+  const picked = props.styles.find((s) => s.id === styleId) ?? null;
   const goodUrl = startUrl(url);
   const canCreate = step === 'website' ? !!goodUrl : !!text.trim();
   const create = () => {
@@ -137,7 +141,7 @@ export function StartDialog(props: {
       onClick={(e) => { if (e.target === ref.current) props.onClose(); }}>
       <div className="export-inner">
         <header className="export-head">
-          <h2 id="start-title">{step === 'pick' ? 'What do you want to make today?' : step === 'website' ? 'Make it from a website' : step === 'paper' ? 'A paper cut-out explainer' : 'Make it from your idea'}</h2>
+          <h2 id="start-title">{step === 'pick' ? 'What do you want to make today?' : step === 'style' ? `Make it in ${picked?.name ?? 'this style'}` : step === 'website' ? 'Make it from a website' : step === 'paper' ? 'A paper cut-out explainer' : 'Make it from your idea'}</h2>
           <button type="button" className="icon-link" aria-label="Close" onClick={props.onClose}>×</button>
         </header>
 
@@ -153,12 +157,9 @@ export function StartDialog(props: {
                 </div>
                 {aiNeed && <p className="start-need">{aiNeed}: the AI builds this one.</p>}
               </form>
-              <button type="button" className="start-feature" onClick={() => { setText(''); setStep('paper'); }}>
-                <span className="start-paper" aria-hidden="true"><i /><i /><i /></span>
-                <span className="start-words"><strong>A paper cut-out explainer</strong><span>Any idea acted out in a small world of cut paper, with depth, torn captions and paper cuts.</span>{aiNeed && <em>Needs AI for the story, or start from the template</em>}</span>
-              </button>
               {options('Start from something you have', HAVE)}
               {options('Start from a design', DESIGN)}
+              <StyleGallery styles={props.styles} onPick={(s) => { setText(''); if (s.id === 'paper') setStep('paper'); else { setStyleId(s.id); setStep('style'); } }} />
             </div>
             <aside className="start-side" aria-label="Pick up where you left off">
               <h3>Pick up where you left off</h3>
@@ -197,6 +198,12 @@ export function StartDialog(props: {
               </>
             ) : (
               <>
+                {picked && step === 'style' && (
+                  <div className="start-picked">
+                    {!picked.custom && <img src={`${import.meta.env.BASE_URL}styles/${picked.id}.jpg`} alt="" width={320} height={180} />}
+                    <p>{picked.description}</p>
+                  </div>
+                )}
                 <label htmlFor="start-about">{step === 'paper' ? 'What should it explain?' : 'What it is about'}</label>
                 <textarea id="start-about" className="notes-text" rows={3} value={text} onChange={(e) => setText(e.target.value)} />
               </>
@@ -239,6 +246,7 @@ export function StartDialog(props: {
             <div className="start-actions">
               <button type="button" className="btn" onClick={() => setStep('pick')}>Back</button>
               {step === 'paper' && <button type="button" className="btn start-alt" onClick={() => props.onAction('paper-template')}>Start from the template</button>}
+              {step === 'style' && picked && <button type="button" className="btn start-alt" onClick={() => props.onStyleNew(picked)}>Start with a title card</button>}
               <button type="submit" className="btn primary" disabled={!canCreate}>Create</button>
             </div>
           </form>
