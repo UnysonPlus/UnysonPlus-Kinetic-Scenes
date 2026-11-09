@@ -102,6 +102,82 @@ export const TOUR_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     });
   },
 
+  'build-draw'(ctx) {
+    // Build: draw. A box is drawn as if dragged out in a design tool: the outline grows from the layer's top-left
+    // corner to its full size with corner handles and a live W x H badge, over a grey placeholder; then the layer
+    // itself appears (swept in top to bottom, or faded in) as the placeholder melts away. With reveal "none" the
+    // layer is left to a following clip (Typewriter types into the drawn text box). Pair it with a Cursor's Drag
+    // over the same seconds (the drawing part) and the cursor looks like it is drawing the box.
+    const p = ctx.params;
+    const c = color(p, 'color', '#4c7dff');
+    const drawPart = Math.max(0.1, Math.min(0.95, num(p, 'draw', 0.65)));
+    const reveal = pick(p, 'reveal', ['sweep', 'fade', 'none'] as const, 'sweep');
+    const fill = p.fill !== 'none' && reveal !== 'none';
+    const badge = p.badge !== false;
+    const node = stageOverlay(ctx, 'build');
+    if (!node) return;
+    const doc = node.ownerDocument;
+    if (!node.firstElementChild) {
+      const box = doc.createElement('div');
+      Object.assign(box.style, { position: 'absolute', boxSizing: 'border-box' });
+      node.appendChild(box);
+      for (let i = 0; i < 4; i++) {
+        const h = doc.createElement('i');
+        Object.assign(h.style, { position: 'absolute', boxSizing: 'border-box', background: '#ffffff' });
+        node.appendChild(h);
+      }
+      const tag = doc.createElement('span');
+      Object.assign(tag.style, { position: 'absolute', whiteSpace: 'nowrap', color: '#ffffff', borderRadius: '0.3em', padding: '0.15em 0.45em', translate: '-50% 0' });
+      node.appendChild(tag);
+    }
+    const el = ctx.el;
+    const grow = (d: number) => (d < 0.5 ? 2 * d * d : 1 - (-2 * d + 2) ** 2 / 2);
+    let g = 0, shown = false;
+    drive(ctx, (t) => {
+      if (t <= 0 || t >= 1) {
+        node.style.opacity = '0';
+        shown = false;
+        if (reveal !== 'none') {
+          el.style.clipPath = t <= 0 ? 'inset(0 0 100% 0)' : '';
+          if (reveal === 'fade') el.style.filter = t <= 0 ? 'opacity(0)' : '';
+        }
+        return;
+      }
+      shown = true;
+      g = grow(Math.min(1, t / drawPart));
+      const r = t <= drawPart ? 0 : (t - drawPart) / (1 - drawPart);
+      node.style.opacity = (1 - r).toFixed(3);
+      if (reveal === 'sweep') el.style.clipPath = `inset(0 0 ${((1 - r) * 100).toFixed(2)}% 0)`;
+      else if (reveal === 'fade') { el.style.clipPath = r > 0 ? '' : 'inset(0 0 100% 0)'; el.style.filter = `opacity(${r.toFixed(3)})`; }
+    }, { ease: false, always: true });
+    ctx.late(() => {
+      if (!shown) return;
+      const b = onStage(ctx);
+      if (!b) return;
+      const [box, h1, h2, h3, h4, tag] = Array.from(node.children) as HTMLElement[];
+      const w = b.w * g, h = b.h * g;
+      const line = Math.max(1, 0.14 * b.unit), hs = Math.max(4, 0.7 * b.unit);
+      Object.assign(box.style, {
+        left: `${b.x.toFixed(1)}px`, top: `${b.y.toFixed(1)}px`, width: `${w.toFixed(1)}px`, height: `${h.toFixed(1)}px`,
+        border: `${line.toFixed(1)}px solid ${c}`, background: fill ? 'rgba(140,146,160,0.26)' : 'transparent',
+      });
+      const corners: [number, number][] = [[b.x, b.y], [b.x + w, b.y], [b.x, b.y + h], [b.x + w, b.y + h]];
+      [h1, h2, h3, h4].forEach((k, i) => Object.assign(k.style, {
+        left: `${(corners[i][0] - hs / 2).toFixed(1)}px`, top: `${(corners[i][1] - hs / 2).toFixed(1)}px`, width: `${hs.toFixed(1)}px`, height: `${hs.toFixed(1)}px`,
+        border: `${line.toFixed(1)}px solid ${c}`,
+      }));
+      if (badge) {
+        // The size in pixels of a 1920-wide frame, as a design tool would show it.
+        const px = 1920 / (100 * b.unit);
+        tag.textContent = `${Math.round(w * px)} × ${Math.round(h * px)}`;
+        Object.assign(tag.style, {
+          display: '', background: c, font: `600 ${(0.95 * b.unit).toFixed(1)}px/1.2 Inter, system-ui, sans-serif`,
+          left: `${(b.x + w / 2).toFixed(1)}px`, top: `${(b.y + h + 0.7 * b.unit).toFixed(1)}px`,
+        });
+      } else tag.style.display = 'none';
+    });
+  },
+
   lift(ctx) {
     // Magnify: the layer comes forward, larger, on a soft shadow (and a ring when given a colour), and stays
     // until an Out clip. It uses the separate scale property, so it adds to whatever moves the layer.

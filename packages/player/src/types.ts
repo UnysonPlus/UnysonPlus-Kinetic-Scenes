@@ -711,6 +711,10 @@ export interface CursorLayer extends LayerBase {
   theme?: 'light' | 'dark';
   /** The colour of the ring a click ripples. */
   ringColor?: string;
+  /** A colour for the pointer itself (with a white outline), like a collaborator's cursor in a shared design file. */
+  color?: string;
+  /** A name tag that rides beside the pointer, in its colour (a collaborator's name). */
+  label?: string;
 }
 
 export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer | LottieLayer;

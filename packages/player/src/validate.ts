@@ -328,6 +328,8 @@ export function validateScene(input: unknown): ValidationResult {
       } else if (layer.type === 'cursor') {
         if (layer.shape !== undefined && !['auto', 'arrow', 'hand'].includes(layer.shape)) fail(`${lp}.shape`, 'must be auto, arrow or hand');
         if (layer.theme !== undefined && !['light', 'dark'].includes(layer.theme)) fail(`${lp}.theme`, 'must be light or dark');
+        if (layer.color !== undefined && typeof layer.color !== 'string') fail(`${lp}.color`, 'must be a colour');
+        if (layer.label !== undefined && typeof layer.label !== 'string') fail(`${lp}.label`, 'must be text');
       } else if (layer.type === 'captions') {
         if (!isObj(layer.style) || !isNum(layer.style.fontSize) || layer.style.fontSize <= 0) fail(`${lp}.style.fontSize`, 'is required (stage units)');
         if (layer.maxWords !== undefined && (!isNum(layer.maxWords) || layer.maxWords < 1 || layer.maxWords > 12)) fail(`${lp}.maxWords`, 'must be 1 to 12');

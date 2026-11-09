@@ -267,9 +267,11 @@ export function CursorSection(props: { layer: CursorLayer; set: (patch: Partial<
       <SelectField label="Shape" value={layer.shape ?? 'auto'} options={[{ value: 'auto', label: 'Arrow, a hand over links' }, { value: 'arrow', label: 'Always an arrow' }, { value: 'hand', label: 'Always a hand' }]} onChange={(v) => set({ shape: v === 'auto' ? undefined : v })} />
       <SelectField label="Look" value={layer.theme ?? 'light'} options={[{ value: 'light', label: 'White, dark outline' }, { value: 'dark', label: 'Dark, white outline' }]} onChange={(v) => set({ theme: v === 'light' ? undefined : v })} />
       <ColorField label="Click ring" value={layer.ringColor} placeholder="#ffffff" onCommit={(v) => set({ ringColor: v || undefined })} />
+      <ColorField label="Pointer colour" value={layer.color} placeholder="(white or dark, from Look)" onCommit={(v) => set({ color: v || undefined })} />
+      <TextField label="Name tag" value={layer.label} placeholder="e.g. Ana" onCommit={(v) => set({ label: v.trim() || undefined })} />
       <p className="field-hint wide">
         Its position is where the tip starts: keep it off the stage so it enters. Add <strong>Move to</strong> (pick the layer to
-        point at) and <strong>Click</strong> from the Cursor and tours presets. Its width is its size: 3 to 7% reads well in a video.
+        point at), <strong>Click</strong>, <strong>Drag</strong> and <strong>Type</strong> from the Cursor and tours presets. A colour and a name tag make it a collaborator's cursor. Its width is its size: 3 to 7% reads well in a video.
       </p>
     </Section>
   );

@@ -244,9 +244,12 @@ const BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     const chars = textTargets(ctx, 'chars');
     const each = ctx.duration / Math.max(1, chars.length);
     const out = isOut(ctx.params);
+    // Hidden from the start when nothing before it shows the text: the first clip, or only Build: draw before it
+    // (the box is drawn, then the text is typed into it).
+    const lead = ctx.first || ctx.layer.clips.filter((c) => c.start < ctx.clip.start).every((c) => c.preset === 'build-draw');
     // Each letter switches instantly; the stagger spaces the switches across the clip.
     ctx.tl.fromTo(chars, { opacity: out ? 1 : 0 }, {
-      opacity: out ? 0 : 1, duration: 0.001, ease: 'none', immediateRender: ctx.first,
+      opacity: out ? 0 : 1, duration: 0.001, ease: 'none', immediateRender: !out && lead,
       stagger: { each, from: out ? 'end' : 'start' },
     }, ctx.at);
     if (ctx.params.caret === true) typewriterCaret(ctx, chars);
