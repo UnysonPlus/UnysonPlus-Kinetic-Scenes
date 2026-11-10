@@ -44,6 +44,19 @@ export function voiceSpans(clips: AudioClip[]): Array<[number, number]> {
   return spans;
 }
 
+/**
+ * How long an audio clip plays, in seconds: its own length if set; otherwise the rest of the file after the trim, or,
+ * for a looped clip, until the end of the scene. A clip never runs past the end of the scene.
+ */
+export function audioClipLength(clip: Pick<AudioClip, 'start' | 'offset' | 'duration' | 'loop'>, fileLength: number | null | undefined, sceneDuration: number): number {
+  const start = Math.max(0, clip.start || 0);
+  const room = Math.max(0, sceneDuration - start);
+  const trimIn = Math.max(0, clip.offset ?? 0);
+  const file = fileLength != null && fileLength > 0 ? Math.max(0, fileLength - trimIn) : Infinity;
+  const own = clip.duration ?? (clip.loop ? room : file);
+  return Math.max(0, Math.min(own, clip.loop ? room : file, room));
+}
+
 export class SceneAudio {
   private ctx: Ctx | null = null;
   private master: GainNode | null = null;
@@ -67,7 +80,11 @@ export class SceneAudio {
   /** Whether the browser is actually letting the engine make sound now. */
   get running() { return this.ctx?.state === 'running'; }
 
-  setClips(clips: AudioClip[] | undefined) {
+  /** The scene's length: a looped clip with no length of its own plays until then. */
+  sceneDuration = Infinity;
+
+  setClips(clips: AudioClip[] | undefined, sceneDuration?: number) {
+    if (sceneDuration && sceneDuration > 0) this.sceneDuration = sceneDuration;
     this.clips = (clips ?? []).filter((c) => c && typeof c.src === 'string' && c.src);
     if (this.ctx) for (const c of this.clips) this.load(c.src);
   }
@@ -221,7 +238,9 @@ export class SceneAudio {
   private schedule(clip: AudioClip, buf: AudioBuffer, time: number) {
     const ctx = this.ctx!;
     const trimIn = Math.max(0, clip.offset ?? 0);
-    const len = Math.max(0, Math.min(clip.duration ?? Infinity, buf.duration - trimIn));
+    const seg = buf.duration - trimIn;
+    if (!(seg > 0)) return;
+    const len = audioClipLength(clip, buf.duration, Number.isFinite(this.sceneDuration) ? this.sceneDuration : clip.start + (clip.loop ? 3600 : seg));
     const start = clip.start;
     const end = start + len;
     if (!(len > 0) || time >= end) return;
@@ -268,7 +287,13 @@ export class SceneAudio {
         g.linearRampToValueAtTime(0, ctxAt(end));
       }
     }
-    src.start(Math.max(ctx.currentTime, ctxAt(from)), trimIn + (from - start), end - from);
+    if (clip.loop) {
+      // Looped: the trimmed part of the file repeats; a seek lands at the same point in the repeat.
+      src.loop = true;
+      src.loopStart = trimIn;
+      src.loopEnd = buf.duration;
+      src.start(Math.max(ctx.currentTime, ctxAt(from)), trimIn + ((from - start) % seg), end - from);
+    } else src.start(Math.max(ctx.currentTime, ctxAt(from)), trimIn + (from - start), end - from);
     this.live.push({ src, gain });
   }
 }

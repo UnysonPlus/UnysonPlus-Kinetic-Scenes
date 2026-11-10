@@ -117,7 +117,9 @@ async function mixAudio(api: Api, scene: Scene, seconds: number): Promise<AudioB
     const vol = Math.max(0, Math.min(2, c.volume ?? 1));
     const start = Math.max(0, c.start);
     const offset = Math.max(0, c.offset ?? 0);
-    const len = Math.max(0.05, Math.min(c.duration ?? Infinity, (buf.duration - offset) / speed, seconds - start));
+    const loop = !!(c as { loop?: boolean }).loop && speed === 1 && buf.duration - offset > 0.05;
+    const len = loop ? Math.max(0.05, Math.min(c.duration ?? Infinity, seconds - start)) : Math.max(0.05, Math.min(c.duration ?? Infinity, (buf.duration - offset) / speed, seconds - start));
+    if (loop) { src.loop = true; src.loopStart = offset; src.loopEnd = buf.duration; }
     g.gain.setValueAtTime(vol, 0);
     const fi = Math.max(0, (c as { fadeIn?: number }).fadeIn ?? 0), fo = Math.max(0, (c as { fadeOut?: number }).fadeOut ?? 0);
     if (fi > 0) { g.gain.setValueAtTime(0, start); g.gain.linearRampToValueAtTime(vol, start + fi); }

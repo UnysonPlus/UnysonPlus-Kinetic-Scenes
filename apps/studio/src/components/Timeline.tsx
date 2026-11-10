@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useLive, type LiveValue } from '../lib/liveValue';
 import type { Layer, Scene } from '@unysonplus/scene-player/types';
 import { presetMeta } from '@unysonplus/scene-player/catalog';
+import { audioClipLength } from '@unysonplus/scene-player/audio';
 import { addClip, layersIn, roundTime, scopePath, setClip } from '../lib/sceneOps';
 import { groupDuration, groupOffset } from '@unysonplus/scene-player/groups';
 import { PRESET_MIME } from './Library';
@@ -31,7 +33,8 @@ const ROW_H = 30;
 
 interface Props {
   scene: Scene;
-  time: number;
+  /** The playhead, in scene seconds. A live value: only the readout and the playhead lines redraw as it moves. */
+  clock: LiveValue<number>;
   selection: Selection;
   onSelect: (sel: Selection) => void;
   onSeek: (t: number) => void;
@@ -84,12 +87,30 @@ function tickStep(pps: number) {
 
 const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', video: '▶', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚', lottie: '✦' };
 
-export function Timeline(props: Props) {
+/** The time readout at the top-left of the ruler. */
+function Readout(props: { clock: LiveValue<number>; offset: number; scope: string | null | undefined }) {
+  const t = useLive(props.clock) - props.offset;
+  return <span className="mono">{t.toFixed(2)}s{props.scope ? ' in group' : ''}</span>;
+}
+
+/** A line at the playhead: the ruler's head, or the playhead across the rows. */
+function PlayheadLine(props: { clock: LiveValue<number>; offset: number; D: number; pps: number; left: number; className: string; onPointerDown?: (e: React.PointerEvent) => void }) {
+  const t = useLive(props.clock) - props.offset;
+  if (!(t >= 0 && t <= props.D)) return null;
+  return <div className={props.className} style={{ left: props.left + t * props.pps }} aria-hidden="true" onPointerDown={props.onPointerDown} />;
+}
+
+/**
+ * The timeline. Memoized: playback moves only the readout and the playhead lines (they read the clock themselves), so
+ * a long scene's thousands of rows are not re-drawn on every frame. App passes stable callbacks (useStableCallbacks).
+ */
+export const Timeline = memo(TimelineView);
+
+function TimelineView(props: Props) {
   const NAME_W = useNameWidth();
   const { scene, selection, scope } = props;
   // Inside a group everything is on the group's clock: 0 is the group's start in the scene.
   const offset = scope ? groupOffset(scene, scope) : 0;
-  const time = props.time - offset;
   const scrollRef = useRef<HTMLDivElement>(null);
   /** The row a Shift + click range starts from: the last row clicked without Shift. */
   const anchorRef = useRef<string | null>(null);
@@ -163,7 +184,7 @@ export function Timeline(props: Props) {
     const s0 = clip.start;
     const d0 = clip.duration;
     // Edges worth snapping to: the scene's start and end, the playhead, and every other clip.
-    const points = [0, D, live.current.time - offset];
+    const points = [0, D, live.current.clock.get() - offset];
     for (const l of layersIn(scene, scope)) for (const c of l.clips) if (c.id !== clipId) points.push(c.start, c.start + c.duration);
     const thr = 6 / pps;
     // Hold Alt to place freely.
@@ -265,7 +286,7 @@ export function Timeline(props: Props) {
       let start = Math.max(0, s0 + (ev.clientX - x0) / pps);
       if (!ev.altKey) {
         // Snap the start to the playhead and to whole tenths.
-        const ph = live.current.time - offset;
+        const ph = live.current.clock.get() - offset;
         if (Math.abs(start - ph) < 6 / pps) start = ph;
         else start = Math.round(start * 10) / 10;
       }
@@ -346,11 +367,11 @@ export function Timeline(props: Props) {
           {!scope && (
             <>
               <button type="button" className="btn small" onClick={() => {
-                const r = addCameraKey(scene, props.time);
+                const r = addCameraKey(scene, props.clock.get());
                 props.onCommit(r.scene);
                 props.onSelect({ layerId: null, clipId: null, camera: r.id });
               }} title="A camera key at the playhead: pan, zoom, tilt or roll the whole view. Two keys make a move.">+ Camera</button>
-              <button type="button" className="btn small" onClick={() => props.onCommit(addMarker(scene, props.time))}
+              <button type="button" className="btn small" onClick={() => props.onCommit(addMarker(scene, props.clock.get()))}
                 title="A marker at the playhead (M). In a click-to-advance scene, the presentation stops there until a click.">+ Marker</button>
             </>
           )}
@@ -365,9 +386,9 @@ export function Timeline(props: Props) {
         <div className="tl-inner" style={{ width: NAME_W + width + 24 }}>
           <div className="tl-ruler" onPointerDown={onRulerDown}>
             <div className="tl-corner">
-              <span className="mono">{time.toFixed(2)}s{scope ? ' in group' : ''}</span>
+              <Readout clock={props.clock} offset={offset} scope={scope} />
             </div>
-            {time >= 0 && time <= D && <div className="tl-ruler-head" style={{ left: NAME_W + time * pps }} aria-hidden="true" />}
+            <PlayheadLine clock={props.clock} offset={offset} D={D} pps={pps} left={NAME_W} className="tl-ruler-head" />
             <div className="tl-ticks" style={{ width }}>
               {ticks.map((t) => (
                 <span key={t} className="tick" style={{ left: t * pps }}>
@@ -609,7 +630,7 @@ export function Timeline(props: Props) {
           {!scope && (scene.audio ?? []).map((a: AudioClip) => {
             const inf = props.audioInfo[a.src];
             const trimIn = a.offset ?? 0;
-            const len = a.duration ?? (inf ? Math.max(0.1, inf.duration - trimIn) : 1);
+            const len = a.loop ? Math.max(0.1, audioClipLength(a, inf?.duration, scene.duration)) : a.duration ?? (inf ? Math.max(0.1, inf.duration - trimIn) : 1);
             const sel = selection.audio === a.id;
             const w = Math.max(6, len * pps);
             const onDown = (e: React.PointerEvent) => {
@@ -631,7 +652,7 @@ export function Timeline(props: Props) {
                   // Trim the start: the clip's sound stays put on the timeline, only less of it plays.
                   const d = Math.max(-trimIn, Math.min(len - 0.1, dt));
                   patch = { start: Math.max(0, a.start + d), offset: trimIn + d, duration: len - d };
-                } else patch = { duration: Math.max(0.1, Math.min(fileLen - trimIn, len + dt)) };
+                } else patch = { duration: Math.max(0.1, Math.min(a.loop ? live.current.scene.duration - a.start : fileLen - trimIn, len + dt)) };
                 live.current.onLive(setAudio(live.current.scene, a.id, patch));
               };
               const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); if (started) live.current.onEnd(); };
@@ -643,7 +664,7 @@ export function Timeline(props: Props) {
                 <div className="tl-head">
                   <button type="button" className="tl-name" onClick={() => props.onSelect({ layerId: null, clipId: null, audio: a.id })} aria-pressed={sel}>
                     <span className="tl-glyph" aria-hidden="true">♪</span>
-                    <span className="tl-label">{a.name || a.id}</span>
+                    <span className="tl-label">{a.name || a.id}{a.loop ? ' ↻' : ''}</span>
                   </button>
                 </div>
                 <div className="tl-lane" style={{ width }}>
@@ -692,7 +713,7 @@ export function Timeline(props: Props) {
           })}
 
           {groupLen !== null && <div className="tl-groupend" style={{ left: NAME_W + groupLen * pps }} title="End of the group's own timeline" aria-hidden="true" />}
-          {time >= 0 && time <= D && <div className="tl-playhead" style={{ left: NAME_W + time * pps }} aria-hidden="true" onPointerDown={onRulerDown} />}
+          <PlayheadLine clock={props.clock} offset={offset} D={D} pps={pps} left={NAME_W} className="tl-playhead" onPointerDown={onRulerDown} />
           <div className="tl-after" style={{ left: NAME_W + width }} aria-hidden="true" />
         </div>
       </div>

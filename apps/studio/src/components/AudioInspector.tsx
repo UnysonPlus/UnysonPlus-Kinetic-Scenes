@@ -1,5 +1,6 @@
 import type { AudioClip, Scene } from '@unysonplus/scene-player/types';
-import { NumberField, Section, SelectField, TextField } from './fields';
+import { CheckField, NumberField, Section, SelectField, TextField } from './fields';
+import { audioClipLength } from '@unysonplus/scene-player/audio';
 import { removeAudio, setAudio, type AudioInfo } from '../lib/audio';
 import { SFX_CATALOG, parseSfxSrc, sfxMeta, sfxSrc } from '@unysonplus/scene-player/sfx';
 import { WordsSection } from './WordsSection';
@@ -27,7 +28,7 @@ export function AudioInspector(props: {
   const set = (patch: Partial<AudioClip>) => props.onCommit(setAudio(scene, clip.id, patch));
   const trimIn = clip.offset ?? 0;
   const fileLen = info?.duration;
-  const len = clip.duration ?? (fileLen !== undefined ? fileLen - trimIn : undefined);
+  const len = fileLen !== undefined || clip.loop ? audioClipLength(clip, fileLen, scene.duration) : clip.duration;
   const uploaded = clip.src.startsWith('data:');
   const builtIn = parseSfxSrc(clip.src);
   const kb = uploaded ? Math.round((clip.src.length * 3) / 4 / 1024) : 0;
@@ -48,12 +49,13 @@ export function AudioInspector(props: {
 
       <Section title="Timing">
         <NumberField label="Starts" value={clip.start} step={0.05} min={0} max={scene.duration} unit="s" onCommit={(v) => v !== undefined && set({ start: v })} />
-        <NumberField label="Length" value={clip.duration} placeholder={len !== undefined ? len.toFixed(2) : ''} step={0.05} min={0.1} max={fileLen !== undefined ? fileLen - trimIn : undefined} unit="s" optional
+        <NumberField label="Length" value={clip.duration} placeholder={len !== undefined ? len.toFixed(2) : ''} step={0.05} min={0.1} max={clip.loop ? scene.duration - clip.start : fileLen !== undefined ? fileLen - trimIn : undefined} unit="s" optional
           onCommit={(v) => set({ duration: v })} />
         <NumberField label="Trim start" value={trimIn} step={0.05} min={0} max={fileLen} unit="s" onCommit={(v) => set({ offset: v || undefined })} />
         <SelectField label="Kind" value={clip.role ?? 'sfx'} onChange={(v) => set({ role: v as AudioClip['role'] })}
           options={[{ value: 'voice', label: 'Voice-over' }, { value: 'music', label: 'Music' }, { value: 'sfx', label: 'Sound effect' }]} />
-        <p className="field-hint wide">Drag the clip on the timeline to move it; drag an edge to trim. Length left empty plays to the end of the file.</p>
+        {!builtIn && <CheckField label="Loop (repeat until the length runs out)" wide checked={!!clip.loop} onChange={(v) => set({ loop: v || undefined })} />}
+        <p className="field-hint wide">Drag the clip on the timeline to move it; drag an edge to trim. Length left empty plays to the end of the file{clip.loop ? ', or looped, to the end of the scene' : ''}.{clip.loop && fileLen !== undefined ? ` The ${(fileLen - trimIn).toFixed(1)} s file repeats ${Math.max(1, Math.ceil((len ?? 0) / Math.max(0.1, fileLen - trimIn)))} times.` : ''}</p>
       </Section>
 
       {!builtIn && (clip.role === 'music') && <BeatsSection scene={scene} clip={clip} onCommit={props.onCommit} decode={props.decode} />}

@@ -149,6 +149,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (typeof a.src !== 'string' || !(/^(data:audio\/|https?:\/\/)/.test(a.src) || parseSfxSrc(a.src))) fail(`${ap}.src`, `must be an audio data: URL, an http(s) address or a built-in sound "sfx:<name>" (${SFX_IDS.join(', ')})`);
         if (!isNum(a.start) || a.start < 0) fail(`${ap}.start`, 'must be 0 or more seconds');
         for (const k of ['offset', 'duration', 'fadeIn', 'fadeOut'] as const) if (a[k] !== undefined && (!isNum(a[k]) || (a[k] as number) < 0)) fail(`${ap}.${k}`, 'must be 0 or more seconds');
+        if (a.loop !== undefined && typeof a.loop !== 'boolean') fail(`${ap}.loop`, 'must be true or false');
         if (a.volume !== undefined && (!isNum(a.volume) || a.volume < 0 || a.volume > 2)) fail(`${ap}.volume`, 'must be 0 to 2');
         if (a.role !== undefined && !['voice', 'music', 'sfx'].includes(a.role as string)) fail(`${ap}.role`, 'must be voice, music or sfx');
         if (a.words !== undefined) {

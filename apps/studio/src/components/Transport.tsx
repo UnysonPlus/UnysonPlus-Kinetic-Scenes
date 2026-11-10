@@ -1,3 +1,6 @@
+import { liveValue, useLive, type LiveValue } from '../lib/liveValue';
+/** Stands in when no clock is given (hooks must always run). */
+const STILL = liveValue(0);
 import { PauseIcon, PlayIcon, RestartIcon } from './icons';
 
 const fmt = (t: number) => t.toFixed(2);
@@ -5,6 +8,8 @@ const fmt = (t: number) => t.toFixed(2);
 /** Play, pause, jump to the start and scrub. */
 export function Transport(props: {
   time: number;
+  /** The playhead as a live value: when given, the readout and the bar follow every frame (App state is updated less often). */
+  clock?: LiveValue<number>;
   duration: number;
   playing: boolean;
   disabled: boolean;
@@ -17,7 +22,9 @@ export function Transport(props: {
   soundWaiting?: boolean;
   onSound?: (on: boolean) => void;
 }) {
-  const { time, duration, playing, disabled } = props;
+  const { duration, playing, disabled } = props;
+  const live = useLive(props.clock ?? STILL);
+  const time = props.clock ? live : props.time;
   const pct = duration > 0 ? Math.min(100, (time / duration) * 100) : 0;
   return (
     <div className="transport">

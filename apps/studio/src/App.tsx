@@ -1,5 +1,6 @@
 import { registerWebMcp } from './lib/webmcp';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { liveValue, useStableCallbacks } from './lib/liveValue';
 import { validateScene } from '@unysonplus/scene-player/validate';
 import type { HeightMode, Layer, Scene } from '@unysonplus/scene-player/types';
 import demo from './scenes/demo.json';
@@ -184,6 +185,13 @@ export function App() {
   const { engine: audioEngine, info: audioInfo, peaksPerSecond, waiting: soundWaiting } = useSceneAudio(scene, state, soundOn);
   // The playhead, for inspector actions that start "here" (Focus the camera on it).
   (window as unknown as { __upwPlayhead?: number }).__upwPlayhead = state.time;
+  // The playhead as a live value: the timeline's playhead lines follow it without re-drawing the rows.
+  const clock = useMemo(() => liveValue(0), []);
+  /** When App's own copy of the playhead was last updated (see 'upw:state'). */
+  const lastStateAt = useRef(0);
+  useLayoutEffect(() => { clock.set(state.time); }, [clock, state.time]);
+  // Counted once per change of the scene, not on every frame of playback.
+  const sceneSoundCounts = useMemo(() => soundCounts(scene), [scene]);
   const audioRef = useRef<HTMLInputElement>(null);
   const [frameError, setFrameError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -681,9 +689,19 @@ export function App() {
           setReady(true);
           setFrameError(null);
           break;
-        case 'upw:state':
+        case 'upw:state': {
+          // The playhead goes to the clock on every frame (the timeline's playhead and the transport follow it). While
+          // playing, the rest of the Studio is updated about five times a second instead of on every frame: in a long
+          // scene, redrawing every panel each frame is what made playback stutter. Anything else (a pause, a seek, a new
+          // layout) updates it at once.
+          clock.set(m.time);
+          const now = performance.now();
+          const onlyTime = m.playing && st.playing && m.duration === st.duration && m.breakpoint === st.breakpoint && m.stageHeight === st.stageHeight;
+          if (onlyTime && now - lastStateAt.current < 200) break;
+          lastStateAt.current = now;
           setState({ time: m.time, duration: m.duration, playing: m.playing, breakpoint: m.breakpoint, stageHeight: m.stageHeight });
           break;
+        }
         case 'upw:layout-check':
           setLayoutCheck({ running: false, issues: Array.isArray(m.issues) ? m.issues : [], done: true });
           break;
@@ -1054,6 +1072,19 @@ export function App() {
     ] },
   ];
 
+  // The timeline is memoized (a long scene has thousands of rows): its callbacks are stable and always call the latest.
+  const timelineCallbacks = useStableCallbacks({
+    onSelect: setSelection, onSeek: seek, onCommit: commit, onBegin: history.begin, onLive: history.live, onEnd: history.end,
+    onAddLayer, onEnter: enterGroup, onLeaveTo: leaveTo, onRename: setRenaming,
+    onAddAudio: () => audioRef.current?.click(),
+    onCommand: (c: 'duplicate' | 'delete' | 'group' | 'ungroup') => {
+      // After a right-click the selection may only just have changed: let it land first.
+      setTimeout(() => handleKey(c === 'duplicate' ? { key: 'd', code: 'KeyD', mod: true, shift: false, alt: false }
+        : c === 'delete' ? { key: 'Delete', code: 'Delete', mod: false, shift: false, alt: false }
+          : { key: 'g', code: 'KeyG', mod: true, shift: c === 'ungroup', alt: false }), 0);
+    },
+  });
+
   return (
     <div className="app">
       <div className="head">
@@ -1242,7 +1273,7 @@ export function App() {
           }
           sounds={(() => {
             const selClip = findClip(scene, selection.layerId, selection.clipId);
-            const counts = soundCounts(scene);
+            const counts = sceneSoundCounts;
             return (
               <SoundLibrary
                 clipSelected={!!selClip}
@@ -1374,6 +1405,7 @@ export function App() {
 
           <Transport
             time={state.time}
+            clock={clock}
             duration={state.duration}
             playing={state.playing}
             disabled={!ready}
@@ -1388,29 +1420,13 @@ export function App() {
 
           <Timeline
             scene={scene}
-            time={state.time}
+            clock={clock}
             selection={selection}
-            onSelect={setSelection}
-            onSeek={seek}
-            onCommit={commit}
-            onBegin={history.begin}
-            onLive={history.live}
-            onEnd={history.end}
-            onAddLayer={onAddLayer}
             scope={scope}
-            onEnter={enterGroup}
-            onLeaveTo={leaveTo}
             renaming={renaming}
-            onRename={setRenaming}
             audioInfo={audioInfo}
             peaksPerSecond={peaksPerSecond}
-            onAddAudio={() => audioRef.current?.click()}
-            onCommand={(c) => {
-              // After a right-click the selection may only just have changed: let it land first.
-              setTimeout(() => handleKey(c === 'duplicate' ? { key: 'd', code: 'KeyD', mod: true, shift: false, alt: false }
-                : c === 'delete' ? { key: 'Delete', code: 'Delete', mod: false, shift: false, alt: false }
-                  : { key: 'g', code: 'KeyG', mod: true, shift: c === 'ungroup', alt: false }), 0);
-            }}
+            {...timelineCallbacks}
           />
         </section>
 

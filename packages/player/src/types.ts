@@ -103,8 +103,13 @@ export interface AudioClip {
   start: number;
   /** Seconds into the file where the clip begins (trims the start). */
   offset?: number;
-  /** How long the clip plays, in seconds; defaults to the rest of the file. */
+  /** How long the clip plays, in seconds; defaults to the rest of the file (or, looped, to the end of the scene). */
   duration?: number;
+  /**
+   * Repeat the clip: the file plays from its trim start to its end, again and again, until the clip's length runs out
+   * (or the scene ends). For music shorter than the scene.
+   */
+  loop?: boolean;
   /** 0 to 2 (1 = as recorded). */
   volume?: number;
   fadeIn?: number;

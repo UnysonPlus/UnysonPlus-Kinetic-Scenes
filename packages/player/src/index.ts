@@ -10,7 +10,7 @@ export { lintScene, readingTime, type LintIssue } from './lint';
 export { settledMoments, layoutIssues, type LayoutIssue } from './layout';
 export { SCROLL_DEFAULTS } from './scroll';
 export { setAssetBase, REST_3D, type State3D } from './model3d';
-export { SceneAudio, voiceSpans } from './audio';
+export { SceneAudio, voiceSpans, audioClipLength } from './audio';
 export { expandRepeats, expandRepeat } from './repeat';
 export { sceneTranscript, transcriptHtml, TRANSCRIPT_CLASS, type TranscriptItem } from './transcript';
 export { SFX_CATALOG, SFX_IDS, SFX_CATEGORY_LABELS, sfxMeta, suggestedSound, soundTrack, synthSfx, sfxWav, sfxSrc, parseSfxSrc, sfxPeak, type SfxMeta, type SfxCategory } from './sfx';

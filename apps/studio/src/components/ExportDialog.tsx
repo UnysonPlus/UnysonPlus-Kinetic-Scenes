@@ -1,3 +1,4 @@
+import { memoIgnoringCallbacks } from '../lib/liveValue';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { embedCode, exportHtml, hasLottie, hasModel, hasPainted, lottieRuntime, paintRuntime, threeRuntime, hasCodeClips } from '../lib/documents';
@@ -18,7 +19,7 @@ const HEAVY_EMBED = 300 * 1024;
  * Export: a standalone page to download, or code to paste into any page. Built on the native dialog
  * element, so focus is trapped and Escape closes it without extra code.
  */
-export function ExportDialog(props: {
+export const ExportDialog = memoIgnoringCallbacks(function ExportDialog(props: {
   open: boolean;
   scene: Scene;
   fileName: string;
@@ -161,4 +162,4 @@ export function ExportDialog(props: {
       </div>
     </dialog>
   );
-}
+});

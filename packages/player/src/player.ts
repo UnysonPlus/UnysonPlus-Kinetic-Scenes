@@ -323,7 +323,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       return;
     }
     if (!sound) sound = new SceneAudio(win);
-    sound.setClips(soundTrack(scene));
+    sound.setClips(soundTrack(scene), scene.duration);
     if (!soundBtn) {
       soundBtn = doc.createElement('button');
       soundBtn.type = 'button';

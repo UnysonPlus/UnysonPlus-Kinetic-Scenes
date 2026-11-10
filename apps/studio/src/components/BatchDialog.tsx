@@ -1,3 +1,4 @@
+import { memoIgnoringCallbacks } from '../lib/liveValue';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { VIDEO_FORMATS } from '@unysonplus/scene-player/video';
@@ -20,7 +21,7 @@ const readAsDataUrl = (f: File) => new Promise<string>((res, rej) => { const r =
  * Tools › Videos from a spreadsheet: the scene's {{placeholders}} filled from each row of a CSV, previewed row by row on
  * the stage (the scene itself is not changed) and rendered as one video per row.
  */
-export function BatchDialog(props: {
+export const BatchDialog = memoIgnoringCallbacks(function BatchDialog(props: {
   open: boolean; onClose: () => void; scene: Scene;
   sheet: Sheet | null; files: Map<string, string>;
   onSheet: (sheet: Sheet | null, files: Map<string, string>) => void;
@@ -151,4 +152,4 @@ export function BatchDialog(props: {
       </div>
     </dialog>
   );
-}
+});
