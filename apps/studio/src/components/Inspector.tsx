@@ -25,7 +25,7 @@ import { suggestPoster } from '../lib/poster';
 import { TransitionSection } from './TransitionSection';
 import type { GroupLayer } from '@unysonplus/scene-player/types';
 import { AlignPanel, type AlignMode, type AlignTo } from './AlignPanel';
-import { handDrawn } from '../lib/sceneOps';
+import { handDrawn, painted } from '../lib/sceneOps';
 import { FRAME_OPTIONS, FootageKitSection, FootageSection, MadeForSection } from './VideoModeSections';
 import { SFX_CATALOG, SFX_CATEGORY_LABELS, sfxMeta, sfxSrc, suggestedSound, type SfxCategory } from '@unysonplus/scene-player/sfx';
 import { cleanSound } from '../lib/audio';
@@ -600,9 +600,10 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
           <NumberField label="Dashes" value={layer.dash} step={0.1} min={0} max={50} unit="su" optional placeholder="Solid" onCommit={(v) => props({ dash: v || undefined })} />
           {!!layer.dash && <NumberField label="Gap" value={layer.dashGap ?? Math.round(layer.dash * 80) / 100} step={0.1} min={0} max={50} unit="su" onCommit={(v) => props({ dashGap: v })} />}
           {!!layer.dash && <p className="field-hint wide">A dashed outline can march (Marching outline) and close up into a solid one (Make solid).</p>}
-          {!layer.clips.some((c) => c.preset === 'sketch') && (
+          {!layer.clips.some((c) => c.preset === 'sketch' || c.preset === 'painted') && (
             <div className="insp-start wide">
               <button type="button" className="btn small" onClick={() => onCommit(handDrawn(scene, layer.id))} title="Wobbly pencil lines and a scribbled fill. Change them on its Hand-drawn clip">Make it hand-drawn</button>
+              <button type="button" className="btn small" onClick={() => onCommit(painted(scene, layer.id))} title="Real brushes: a pencil outline over a watercolour wash. Change the brush, the paint and Paint on in its Painted clip">Paint it</button>
             </div>
           )}
         </Section>
@@ -612,6 +613,11 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       {layer.type === 'model' && <CameraPath scene={scene} layer={layer} time={time} />}
       {layer.type === 'lottie' && <LottieSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'path' && <PathSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'path' && !layer.clips.some((c) => c.preset === 'painted') && (
+        <div className="insp-start wide">
+          <button type="button" className="btn small" onClick={() => onCommit(painted(scene, layer.id))} title="Draw the line with a real brush (pencil, ink, crayon…). Change it in its Painted clip">Paint it</button>
+        </div>
+      )}
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'cursor' && <CursorSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'repeat' && <RepeatSection layer={layer} set={(p) => props(p as Record<string, unknown>)} onUnpack={() => onCommit(repeatToGroup(scene, layer.id))} />}

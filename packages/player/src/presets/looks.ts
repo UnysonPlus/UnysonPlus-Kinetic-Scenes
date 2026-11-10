@@ -1,6 +1,7 @@
 import type { PresetContext } from './index';
 import { clamp01, drive, isOut, num, owned, pick } from './more';
 import { RoughGenerator } from 'roughjs/bin/generator';
+import { loadPaint, type PaintJob } from '../paintLayer';
 
 /**
  * Looks for motion-design styles the other presets can't make: hand-drawn line boil, a liquid blob, pixel art,
@@ -101,6 +102,112 @@ export const LOOK_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
         return path;
       }));
     }, { ease: false, always: true });
+  },
+
+  painted(ctx) {
+    // Painted: the shape (or line) is painted with real brushes (p5.brush): a pencil, ink, marker, charcoal, crayon or
+    // pastel outline over a watercolour wash, a flat wash or hatching. Painting is seeded, so every frame is the same on
+    // every play and export. With "paint" above 0 it paints on over that part of the clip: the outline is drawn round
+    // the shape while the colour blooms in behind it. The paint engine (scene-paint.js) loads only for scenes using it.
+    const p = ctx.params;
+    const layer = ctx.layer as unknown as { type: string; shape?: string; fill?: string; stroke?: string; radius?: number; d?: string };
+    const medium = pick(p, 'medium', ['pencil', 'ink', 'fineliner', 'marker', 'charcoal', 'crayon', 'pastel', 'coloured pencil'] as const, 'pencil');
+    // Automatic: a line is only drawn, a shape (or a filled line) gets a watercolour wash.
+    const chosen = pick(p, 'fill', ['auto', 'watercolour', 'wash', 'hatch', 'none'] as const, 'auto');
+    const fillMode = chosen !== 'auto' ? chosen : layer.type === 'path' && !layer.fill ? 'none' : 'watercolour';
+    const line = p.line !== false;
+    const lineColor = typeof p.color === 'string' && p.color ? p.color : layer.stroke || '#1c1e22';
+    const fillColor = (typeof p.fillColor === 'string' && p.fillColor) || firstColour(layer.fill) || '#2ad38b';
+    const paintPart = Math.max(0, Math.min(0.95, num(p, 'paint', 0)));
+    const seed = Math.max(1, Math.round(num(p, 'seed', 0)) || seedOf(ctx.layer.id));
+    // Room round the shape for the watercolour to bleed into: more bleed, more room.
+    const PAD = 0.08 + 0.3 * Math.max(0, Math.min(1, num(p, 'bleed', 0.25)));
+    const doc = ctx.el.ownerDocument;
+    const win = doc.defaultView as Window;
+    const host = owned(ctx, 'upw-paint');
+    Object.assign(host.style, { position: 'absolute', left: `${-PAD * 100}%`, top: `${-PAD * 100}%`, width: `${100 + 2 * PAD * 100}%`, height: `${100 + 2 * PAD * 100}%`, pointerEvents: 'none' });
+    const mk = (cls: string) => {
+      let c = host.querySelector<HTMLCanvasElement>(`canvas.${cls}`);
+      if (!c) { c = doc.createElement('canvas'); c.className = cls; host.appendChild(c); }
+      Object.assign(c.style, { position: 'absolute', inset: '0', width: '100%', height: '100%' });
+      return c;
+    };
+    const fillCanvas = mk('upw-paint-fill');
+    const lineCanvas = mk('upw-paint-line');
+    let fillKey = '', lineKey = '', last = -1, waiting = false;
+
+    /** The outline in the canvas's pixels: the shape's own, or points along the line layer's path. */
+    const outline = (w: number, h: number, dpr: number, stageW: number): { pts: Array<[number, number]>; closed: boolean; curve: number } | null => {
+      const ox = PAD * w * dpr, oy = PAD * h * dpr;
+      const P = (x: number, y: number): [number, number] => [ox + x * dpr, oy + y * dpr];
+      if (layer.type === 'path') {
+        const path = ctx.el.querySelector<SVGPathElement>('path');
+        if (!path || !path.getTotalLength) return null;
+        const len = path.getTotalLength();
+        const m = path.getScreenCTM();
+        const box = ctx.el.getBoundingClientRect();
+        const zoom = ctx.el.offsetWidth ? box.width / ctx.el.offsetWidth : 1;
+        if (!len || !m) return null;
+        const n = Math.max(24, Math.min(160, Math.round(len / 4)));
+        const pts: Array<[number, number]> = [];
+        for (let i = 0; i <= n; i++) {
+          const q = path.getPointAtLength((len * i) / n).matrixTransform(m);
+          pts.push(P((q.x - box.left) / zoom, (q.y - box.top) / zoom));
+        }
+        return { pts, closed: /z\s*$/i.test(layer.d ?? ''), curve: 0.3 };
+      }
+      if (layer.shape === 'ellipse') {
+        const n = 56;
+        return { pts: Array.from({ length: n }, (_, i) => P(w / 2 + (w / 2) * Math.cos((i / n) * 2 * Math.PI - Math.PI / 2), h / 2 + (h / 2) * Math.sin((i / n) * 2 * Math.PI - Math.PI / 2))), closed: true, curve: 0.5 };
+      }
+      const r = Math.min(((layer.radius ?? 0) / 100) * stageW, w / 2, h / 2);
+      if (r < 1) return { pts: [P(0, 0), P(w, 0), P(w, h), P(0, h)], closed: true, curve: 0 };
+      const pts: Array<[number, number]> = [];
+      const arc = (cx: number, cy: number, a0: number) => { for (let i = 0; i <= 6; i++) { const a = a0 + (i * Math.PI) / 12; pts.push(P(cx + r * Math.cos(a), cy + r * Math.sin(a))); } };
+      // From the top-left corner, clockwise, the way a hand would go round it.
+      arc(r, r, Math.PI); arc(w - r, r, -Math.PI / 2); arc(w - r, h - r, 0); arc(r, h - r, Math.PI / 2);
+      return { pts, closed: true, curve: 0 };
+    };
+
+    const render = (raw: number) => {
+      last = raw;
+      const w = ctx.el.clientWidth, h = ctx.el.clientHeight;
+      // The layer's own look gives way to the painting (a path's own line too).
+      if (layer.type === 'path') ctx.el.querySelectorAll<SVGElement>('svg path').forEach((el) => { el.style.opacity = '0'; });
+      else { ctx.el.style.background = 'transparent'; ctx.el.style.border = '0'; }
+      if (!w || !h) return;
+      const engine = win.UnysonPlusScenePaint;
+      if (!engine) {
+        if (!waiting) { waiting = true; loadPaint(win).then(() => { waiting = false; render(last); }, () => { waiting = false; }); }
+        return;
+      }
+      const stageW = ctx.el.closest<HTMLElement>('.upw-canvas')?.clientWidth || 640;
+      const dpr = Math.min(2, win.devicePixelRatio || 1);
+      const shape = outline(w, h, dpr, stageW);
+      if (!shape) return;
+      const W = Math.round(w * (1 + 2 * PAD) * dpr), H = Math.round(h * (1 + 2 * PAD) * dpr);
+      const job: PaintJob = {
+        width: W, height: H, points: shape.pts, closed: shape.closed, curve: shape.curve, medium, line, lineColor, fill: fillMode, fillColor,
+        opacity: Math.max(0.05, Math.min(1, num(p, 'opacity', 1))), weight: num(p, 'weight', 1), bleed: Math.max(0, Math.min(1, num(p, 'bleed', 0.25))),
+        texture: Math.max(0, Math.min(1, num(p, 'texture', 0.5))), gap: num(p, 'gap', 7), angle: num(p, 'angle', -35),
+        scale: (stageW / 640) * dpr, seed, progress: 1, part: 'fill',
+      };
+      // Paint on: the outline goes round in the first 70%, the colour blooms in from a quarter of the way.
+      const pr = paintPart > 0 ? clamp01(raw / paintPart) : 1;
+      const lineP = Math.round(clamp01(pr / 0.7) * 60) / 60;
+      const fillP = clamp01((pr - 0.25) / 0.75);
+      const fk = `${W}x${H}:${fillMode}:${fillColor}`;
+      if (fk !== fillKey) { fillKey = fk; engine.paint({ ...job, part: 'fill' }, fillCanvas); }
+      const lk = `${W}x${H}:${lineP}`;
+      if (lk !== lineKey) { lineKey = lk; engine.paint({ ...job, part: 'line', progress: lineP }, lineCanvas); }
+      fillCanvas.style.opacity = fillP.toFixed(3);
+      const edge = -30 + 130 * fillP;
+      const mask = fillP >= 1 ? '' : `linear-gradient(100deg, #000 ${edge.toFixed(1)}%, transparent ${(edge + 30).toFixed(1)}%)`;
+      fillCanvas.style.maskImage = mask;
+      fillCanvas.style.setProperty('-webkit-mask-image', mask);
+      lineCanvas.style.opacity = lineP > 0 ? '1' : '0';
+    };
+    drive(ctx, render, { ease: false, always: true });
   },
 
   paper(ctx) {

@@ -409,6 +409,12 @@ export function handDrawn(scene: Scene, layerId: string): Scene {
   return r ? setClip(r.scene, layerId, r.id, { start: 0, duration: scene.duration }) : scene;
 }
 
+/** Painted: real brushes (a pencil outline over a watercolour wash) for the whole length of the scene. */
+export function painted(scene: Scene, layerId: string): Scene {
+  const r = addClip(scene, layerId, 'painted', 0);
+  return r ? setClip(r.scene, layerId, r.id, { start: 0, duration: scene.duration }) : scene;
+}
+
 export function removeClip(scene: Scene, layerId: string, clipId: string): Scene {
   return mapLayer(scene, layerId, (l) => ({ ...l, clips: l.clips.filter((c) => c.id !== clipId) }));
 }

@@ -1,5 +1,6 @@
 import type { ModelLayer } from './types';
 import { setLottieBase } from './lottieLayer';
+import { setPaintBase } from './paintLayer';
 
 /**
  * The link between the player and the 3D runtime (three.js), which lives in a separate script,
@@ -54,6 +55,7 @@ let assetBase = '';
 export function setAssetBase(url: string) {
   assetBase = url && !url.endsWith('/') ? `${url}/` : url;
   setLottieBase(url);
+  setPaintBase(url);
 }
 
 const pending = new WeakMap<Window, Promise<Module3D>>();

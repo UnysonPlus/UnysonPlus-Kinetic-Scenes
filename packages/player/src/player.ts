@@ -1,4 +1,5 @@
 import { loadLottie, lottieData, lottieFrame } from './lottieLayer';
+import { loadPaint } from './paintLayer';
 import { gsap } from 'gsap';
 import type { Box, Breakpoint, Clip, LottieLayer, ModelLayer, Scene, TextStyle } from './types';
 import { validateScene } from './validate';
@@ -756,6 +757,11 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         const done = lots.filter((r) => r.lottie!.anim);
         if (done.length < lots.length) missing.push(`${lots.length - done.length} Lottie animation(s)`);
         await Promise.all(done.map((r) => until(r.lottie!.anim!.ready, limitMs, 'Lottie animation')));
+        emit('update');
+      }
+      // Painted: the paint engine (each painting repaints itself as soon as it has loaded).
+      if (flatRefs(layers).some((r) => r.layer.clips.some((c) => c.preset === 'painted'))) {
+        await until(loadPaint(win).then(() => new Promise<void>((ok) => win.requestAnimationFrame(() => ok()))), limitMs, 'paint engine');
         emit('update');
       }
       return { missing };

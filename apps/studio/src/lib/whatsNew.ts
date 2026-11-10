@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-09';
+export const NEWS_ID = '2026-11-10';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'painted', title: 'Painted', short: 'Real watercolour, pencil and ink', text: 'Paint shapes and lines with real brushes: a pencil, ink, marker, charcoal, crayon or pastel outline over a watercolour wash, a flat wash or hatching, with the grain of the paper and soft bleeding edges. Turn on Paint on and it is painted in front of the viewer. Select a shape or a line and click Paint it.', doc: `${DOCS}painted` },
   { id: 'swarm', title: 'Build with cursors', short: 'A team of cursors builds your scene', text: 'A team of coloured, named cursors builds the opening of your scene in front of the viewer, like collaborators in a shared design file: each box is dragged out with its size showing, each line of text is typed in. Then they leave and the scene plays on. Everything is ordinary layers and clips you can edit.', doc: `${DOCS}build-with-cursors`, action: 'swarm' },
   { id: 'ffmpeg', title: 'FFmpeg, installed for you', short: 'One click when a video needs it', text: 'Video export, footage and captions need the free tool FFmpeg. If it isn\'t on your computer, Kinetic Scenes now tells you at the moment it is needed, and the AI Dev Kit can install it with one click, or you can follow the direct link. Your AI agent can install it too.', doc: `${DOCS}ffmpeg` },
   { id: 'styles', title: 'All 30 styles, moving', short: 'Hover a style below to watch it', text: 'Every style is now on the start screen with a preview that plays when you hover over it. Pick one to start something in it.', doc: `${DOCS}start-screen#start-from-a-style` },

@@ -1,6 +1,6 @@
 {
   "name": "@unysonplus/scene-player",
-  "version": "0.0.59",
+  "version": "0.0.60",
   "private": true,
   "description": "Plays Unyson+ Kinetic Scenes scene files in any web page.",
   "type": "module",
@@ -25,12 +25,13 @@
     "./lottieData": "./src/lottieData.ts"
   },
   "scripts": {
-    "build": "vite build && vite build --config vite.editor.config.ts && vite build --config vite.3d.config.ts && vite build --config vite.lottie.config.ts",
+    "build": "vite build && vite build --config vite.editor.config.ts && vite build --config vite.3d.config.ts && vite build --config vite.lottie.config.ts && vite build --config vite.paint.config.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "gsap": "3.13.0",
     "lottie-web": "5.12.2",
+    "p5.brush": "3.0.0",
     "roughjs": "4.6.6",
     "three": "0.186.0"
   },

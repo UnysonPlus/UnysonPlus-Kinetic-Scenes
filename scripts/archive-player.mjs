@@ -28,6 +28,11 @@ const files = [
     banner: `/*! Unyson+ scene player ${version}, Lottie runtime | lottie-web (MIT, (c) Bodymovin / Airbnb) */
 `,
   },
+  {
+    from: 'scene-paint.iife.js', to: 'scene-paint.js',
+    banner: `/*! Unyson+ scene player ${version}, paint engine | p5.brush (MIT, (c) 2023-2026 Alejandro Campos Uribe) */
+`,
+  },
 ];
 
 let published = 0;
