@@ -202,6 +202,89 @@ export const PIECES: Piece[] = [
     },
   },
   {
+    id: 'voicenote', name: 'Voice note', description: 'A voice message bubble: it pops in, the play button presses, the waveform plays through and the time counts up.',
+    build: () => {
+      const bars = Array.from({ length: 28 }, (_, i) => {
+        const hgt = 1.2 + 3.2 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.6));
+        return rect(`bar${i + 1}`, 30 + i * 1.55, 14, 0.75, hgt, { fill: '#c9ced6', radius: 0.4, clips: [C('fade', 0.2, 0.2), C('recolor', 0.9 + i * 0.06, 0.15, { to: '#2ad38b' })] });
+      });
+      return group('voicenote', 'Voice note', [
+        rect('bubble', 50, 14, 84, 9, { fill: '#ffffff', radius: 4.5, clips: [C('stack-in', 0, 0.4)] }),
+        { id: 'play', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 18, y: 14, w: 6.5, ratio: 1 }, clips: [C('pop', 0.15, 0.3), C('pulse', 0.7, 0.3, { scale: 0.88, times: 1 })] } as Layer,
+        text('icon', '▶', 18.4, 14, 3, { style: { fontSize: 3, fontWeight: 900, color: '#ffffff' }, clips: [C('fade', 0.2, 0.2)] }),
+        ...bars,
+        text('time', '0:12', 82, 14, 2.8, { style: { fontSize: 2.8, fontWeight: 700, color: '#5f6266', fontFamily: MONO }, clips: [C('fade', 0.2, 0.2), C('text-count', 0.9, 1.8, { from: 0 })] }),
+        text('label', 'Voice note', 50, 21, 2.4, { style: { fontSize: 2.4, fontWeight: 700, color: '#ffffff' }, pill: { fill: 'rgba(0,0,0,0.55)', padX: 0.9, padY: 0.35, radius: 2 }, clips: [C('fade', 0.4, 0.3)] } as Record<string, unknown>),
+      ]);
+    },
+  },
+  {
+    id: 'predict', name: 'Predict keys', description: 'A phone keyboard slides up, a sentence is typed, and the suggestion bar offers the next word, which is tapped: "your words, predicted".',
+    build: () => {
+      const rows = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+      const keys = rows.flatMap((row, r) => row.split('').map((ch, i) => {
+        const x = 50 + (i - (row.length - 1) / 2) * 8.6, y = 80 + r * 5.6;
+        return [
+          rect(`k${r}${i}`, x, y, 7.6, 4.6, { fill: '#ffffff', radius: 0.9, clips: [] }),
+          text(`kt${r}${i}`, ch, x, y, 3, { style: { fontSize: 3, fontWeight: 500, color: '#1c1e22' } }),
+        ];
+      }).flat());
+      return group('predict', 'Predict keys', [
+        rect('board', 50, 85, 100, 26, { fill: '#d4d7dd', clips: [C('slide', 0, 0.45, { from: 'bottom' })] }),
+        rect('field', 50, 66, 88, 6.5, { fill: '#ffffff', radius: 3.2, clips: [C('fade', 0.2, 0.3)] }),
+        text('typed', 'Make the edit feel', 10, 66, 3.2, { box: { anchor: 'left' }, style: { fontSize: 3.2, fontWeight: 500, color: '#1c1e22' }, clips: [C('text-typewriter', 0.5, 1, { caret: true }), C('text-swap', 2.2, 0.3, { to: 'Make the edit feel alive', style: 'fade' })] }),
+        rect('sug', 50, 73.5, 100, 4.6, { fill: '#c7cbd2', clips: [C('fade', 0.3, 0.3)] }),
+        text('s1', 'fast', 20, 73.5, 2.8, { style: { fontSize: 2.8, fontWeight: 600, color: '#3a3d42' }, clips: [C('fade', 1.4, 0.2)] }),
+        text('s2', 'alive', 50, 73.5, 2.8, { style: { fontSize: 2.8, fontWeight: 800, color: '#1c1e22' }, clips: [C('fade', 1.45, 0.2), C('pulse', 1.9, 0.3, { scale: 1.25, times: 1 })] }),
+        text('s3', 'real', 80, 73.5, 2.8, { style: { fontSize: 2.8, fontWeight: 600, color: '#3a3d42' }, clips: [C('fade', 1.5, 0.2)] }),
+        ...keys,
+      ]);
+    },
+  },
+  {
+    id: 'frontpage', name: 'Newspaper front page', description: 'A newspaper front page: the paper\'s name, a huge headline, columns of text and a photo slot. Put a person cut out of the footage with Risograph or Engraving in the photo slot for "made the front page".',
+    build: () => group('frontpage', 'Newspaper front page', [
+      rect('paper', 50, 50, 100, 100, { fill: '#efe8d8', clips: [C('fade', 0, 0.3)] }),
+      text('name', 'The Daily Reel', 50, 9, 8.6, { style: { fontSize: 8.6, fontWeight: 700, color: '#1d1b17', fontFamily: SERIF }, clips: [C('fade', 0.15, 0.4)] }),
+      rect('rule1', 50, 14.4, 92, 0.25, { fill: '#1d1b17', clips: [C('grow', 0.3, 0.4, { from: 'left' })] }),
+      text('date', 'FRIDAY · ONE EDITION · ALL THE NEWS THAT FITS', 50, 16, 1.9, { style: { fontSize: 1.9, fontWeight: 600, color: '#1d1b17', letterSpacing: 0.12 }, clips: [C('fade', 0.4, 0.3)] }),
+      rect('rule2', 50, 17.6, 92, 0.25, { fill: '#1d1b17', clips: [C('grow', 0.4, 0.4, { from: 'left' })] }),
+      text('head', 'BIG NEWS', 50, 25, 12, { style: { fontSize: 12, fontWeight: 900, color: '#1d1b17', fontFamily: SERIF }, clips: [C('text-slam', 0.6, 0.45)] }),
+      text('deck', 'in one line, under the headline', 50, 32.5, 4, { style: { fontSize: 4, fontWeight: 400, color: '#1d1b17', fontFamily: SERIF, fontStyle: 'italic' }, clips: [C('fade', 0.9, 0.4)] }),
+      rect('photo', 50, 58, 50, 36, { fill: '#d8d0bd', stroke: '#1d1b17', strokeWidth: 0.25, clips: [C('fade', 1, 0.4)] }),
+      text('colL', 'The lead. The story starts here and runs down the column in small serif type, the way a front page reads.', 5, 58, 1.7, { box: { anchor: 'left', w: 18 }, style: { fontSize: 1.7, fontWeight: 400, color: '#1d1b17', fontFamily: SERIF, align: 'left', lineHeight: 1.3 }, clips: [C('fade', 1.2, 0.4)] }),
+      text('colR', 'The ask. A second column on the right, with the details and a quote.', 95, 58, 1.7, { box: { anchor: 'right', w: 18 }, style: { fontSize: 1.7, fontWeight: 400, color: '#1d1b17', fontFamily: SERIF, align: 'left', lineHeight: 1.3 }, clips: [C('fade', 1.3, 0.4)] }),
+      text('caption', 'Pictured: you, on the front page.', 50, 78, 1.9, { style: { fontSize: 1.9, fontWeight: 400, color: '#1d1b17', fontFamily: SERIF, fontStyle: 'italic' }, clips: [C('fade', 1.4, 0.4)] }),
+    ]),
+  },
+  {
+    id: 'banknote', name: 'Banknote', description: 'A banknote: an engraved border, serial numbers, a big value that rolls up like an odometer and an oval for the portrait. Put a person cut out of the footage with the Engraving preset (Oval on) in the oval.',
+    build: () => group('banknote', 'Banknote', [
+      rect('note', 50, 50, 94, 74, { fill: '#e6e2cf', stroke: '#2f4a3a', strokeWidth: 0.8, radius: 1, clips: [C('zoom', 0, 0.45)] }),
+      rect('inner', 50, 50, 88, 69, { fill: 'rgba(0,0,0,0)', stroke: '#2f4a3a', strokeWidth: 0.25, radius: 0.6, clips: [C('draw', 0.3, 0.6)] }),
+      text('serialL', 'AI 0274 553 VE', 22, 19, 2.2, { style: { fontSize: 2.2, fontWeight: 700, color: '#2f4a3a', fontFamily: MONO, letterSpacing: 0.08 }, clips: [C('fade', 0.4, 0.3)] }),
+      text('serialR', 'AI 0274 553 VE', 78, 19, 2.2, { style: { fontSize: 2.2, fontWeight: 700, color: '#2f4a3a', fontFamily: MONO, letterSpacing: 0.08 }, clips: [C('fade', 0.4, 0.3)] }),
+      { id: 'oval', type: 'shape', shape: 'ellipse', fill: 'rgba(0,0,0,0)', stroke: '#2f4a3a', strokeWidth: 0.5, box: { x: 50, y: 45, w: 46, h: 40 }, clips: [C('fade', 0.5, 0.4)] } as Layer,
+      text('value', '174,953', 50, 72, 11, { style: { fontSize: 11, fontWeight: 700, color: '#2f4a3a', fontFamily: SERIF }, clips: [C('odometer', 0.7, 1.8)] }),
+      text('legend', 'ONE PROMISE TO PAY THE BEARER', 50, 80.5, 1.9, { style: { fontSize: 1.9, fontWeight: 700, color: '#2f4a3a', letterSpacing: 0.14 }, clips: [C('fade', 1, 0.4)] }),
+    ]),
+  },
+  {
+    id: 'daydial', name: 'Day dial', description: 'A big dial with the days around it turns behind the speaker, like a calendar wheel. Put it under a person cut out of the footage.',
+    build: () => {
+      const n = 12;
+      const ticks = Array.from({ length: n }, (_, i) => {
+        const a = (i / n) * Math.PI * 2;
+        return text(`d${i + 1}`, `day ${i + 1}`, 50 + Math.sin(a) * 36, 40 - Math.cos(a) * 20.3, 3, { box: { rotate: (i / n) * 360 }, style: { fontSize: 3, fontWeight: 600, color: '#1d1b17', fontFamily: SERIF, fontStyle: 'italic' } });
+      });
+      return group('daydial', 'Day dial', [
+        { id: 'face', type: 'shape', shape: 'ellipse', fill: '#efe8d8', stroke: '#1d1b17', strokeWidth: 0.3, box: { x: 50, y: 40, w: 90, ratio: 1 }, clips: [] } as Layer,
+        { id: 'ring', type: 'shape', shape: 'ellipse', fill: 'rgba(0,0,0,0)', stroke: '#1d1b17', strokeWidth: 0.2, box: { x: 50, y: 40, w: 64, ratio: 1 }, clips: [] } as Layer,
+        ...ticks,
+      ], [C('fade', 0, 0.4), C('keyframes', 0, 4, { frames: [{ t: 0, rotate: -50 }, { t: 4, rotate: 40 }] })]);
+    },
+  },
+  {
     id: 'giantcaps', name: 'Giant captions', description: 'Big captions from the voice-over, each word slamming in as it is said (transcribe the voice first).',
     build: () => ({ id: 'giant', type: 'captions', name: 'Giant captions', box: { x: 50, y: 62, w: 86 }, style: { fontSize: 9, fontWeight: 900, color: '#ffffff' }, uppercase: true, maxWords: 2, motion: 'slam', mode: 'word', highlight: '#ffd166', clips: [] } as Layer),
   },

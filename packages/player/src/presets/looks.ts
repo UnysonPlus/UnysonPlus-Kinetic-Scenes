@@ -30,7 +30,7 @@ function svgFilter(ctx: PresetContext, cls: string, inner: string): { id: string
 
 /** Adds or removes one named part of the layer's CSS filter, leaving the others (from other clips) in place. */
 const FILTERS = new WeakMap<HTMLElement, Map<string, string>>();
-function filterPart(el: HTMLElement, key: string, value: string | null) {
+export function filterPart(el: HTMLElement, key: string, value: string | null) {
   let m = FILTERS.get(el);
   if (!m) { m = new Map(); FILTERS.set(el, m); }
   if (value) m.set(key, value); else m.delete(key);

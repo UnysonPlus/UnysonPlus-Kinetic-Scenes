@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-11b';
+export const NEWS_ID = '2026-11-12';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'talking-head', title: 'Talking-head effects', short: 'Code body, manga ink, blow away and more', text: 'New effects for a person on camera: turn them into code, a banknote engraving or a manga impact frame, blow them away into grains, put clones of them in a row, run words round their head, rack the focus and explode a frame into its layers. Plus new pieces: a voice note, a phone keyboard that predicts the next word, a newspaper front page, a banknote and a day dial. Cut the person out of the footage first.', doc: `${DOCS}video-effects#effects-on-a-person` },
   { id: 'screencast-narration', title: 'Narrated screencasts', short: 'Voice-over and a written guide from one take', text: 'Record a product demo with the AI Dev Kit and it writes the voice-over for you, a line per step that fits before the next one, in English or another language. It speaks each line, checks it, and also writes a step-by-step guide with a picture of every step, ready for a help page or a blog post.', doc: `${DOCS}screencasts#the-voice-over-and-a-written-guide-from-the-same-take` },
   { id: 'long-videos', title: 'Long videos', short: 'Chapters, looping music, smoother playback', text: 'Make videos longer than a reel: tick Loop on a music clip and it repeats to the end of the scene, render each chapter, and the AI Dev Kit joins them into one video with the YouTube chapter list written for you. Long, busy scenes also play much more smoothly while you edit.', doc: `${DOCS}long-videos` },
   { id: 'painted', title: 'Painted', short: 'Real watercolour, pencil and ink', text: 'Paint shapes and lines with real brushes: a pencil, ink, marker, charcoal, crayon or pastel outline over a watercolour wash, a flat wash or hatching, with the grain of the paper and soft bleeding edges. Turn on Paint on and it is painted in front of the viewer. Select a shape or a line and click Paint it.', doc: `${DOCS}painted` },

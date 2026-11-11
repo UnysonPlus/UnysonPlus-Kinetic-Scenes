@@ -1,6 +1,6 @@
 # Presets
 
-Generated from the Studio 0.1.37. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.1.38. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text
@@ -49,6 +49,11 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `sheen` | **Sheen.** A band of light sweeps across once. Best after the layer has settled. | shape, image, video | 0.9 s | `angle`: number 0 to 360 °; `width`: number 5 to 60 %; `strength`: number 0 to 1; `color`: color |
 | `select-box` | **Select box.** Draws a coloured box with square corner handles around one word (or a few) of the text, like a selected object in a design tool, and tints the word to match. The key word of a headline. | text | 0.6 s | `direction`: `in` / `out`; `word`: number 1 to 200; `words`: number 1 to 20; `color`: color; `tint`: boolean; `handles`: boolean; `padding`: number 0 to 1 em; `stroke`: number 0.05 to 1 |
 | `halftone` | **Risograph.** Risograph print: halftone dots over the layer and a second ink printed slightly out of register. | image, video, shape, text, group | 0.6 s | `direction`: `in` / `out`; `dot`: number 0.4 to 4 cqw; `ink`: color; `offset`: number 0 to 2 cqw |
+| `ascii` | **Code body.** The picture redrawn in characters: each cell a letter as bright as the picture under it, in its own colours or one ink. Code and binary characters flicker like a readout. On a person cut out of the footage, the person turns into code. | video, image | 1.5 s | `chars`: `code` / `binary` / `density` / `blocks`; `charset`: text; `color`: `source` / `ink`; `ink`: color; `background`: color; `cell`: number 0.4 to 4 cqw; `hold`: boolean |
+| `engrave` | **Engraving.** The picture as a banknote engraving: rows of fine lines that swell where it is dark and ripple with its shapes, in one ink on paper, optionally framed in an engraved oval. Pair it with an odometer for a money moment. | video, image | 1.5 s | `ink`: color; `paper`: color; `lines`: number 20 to 220; `wave`: number 0 to 1; `oval`: boolean; `hold`: boolean |
+| `manga` | **Manga ink.** An impact frame: the picture in black ink on white paper, mid-tones in screentone dots, outlines inked, with speed lines bursting from behind. Put a big word on top for the hit. | video, image | 1.2 s | `threshold`: number 0.1 to 0.9; `ink`: color; `paper`: color; `lines`: boolean; `rays`: number 20 to 240; `hold`: boolean |
+| `clone-row` | **Clone row.** Copies of the picture appear one by one on either side, a little smaller and darker each step, all playing. On a person cut out of the footage: a row of clones behind the speaker. | video, image | 0.9 s | `direction`: `in` / `out`; `count`: number 1 to 4; `spread`: number 0.2 to 1.2 × width; `shrink`: number 0.5 to 1 ×; `dim`: number 0 to 1 |
+| `rack-focus` | **Rack focus.** The layer drifts out of focus (or into it), like a lens pulling focus. On the footage behind a cut-out person, the background softens while the person stays sharp. | video, image, shape, text, group | 0.8 s | `from`: number 0 to 5 cqw; `to`: number 0 to 5 cqw |
 
 ## Reveal and exit
 
@@ -67,6 +72,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `blinds` | **Blinds.** Revealed (or hidden) in strips, one after another, like a stair wipe. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.8 s | `direction`: `in` / `out`; `from`: `top` / `bottom` / `left` / `right`; `count`: number 2 to 24; `stagger`: number 0 to 0.9 |
 | `pixelate` | **Pixelate.** Pixel art: the layer resolves out of big square pixels (or breaks up into them, out). | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.8 s | `direction`: `in` / `out`; `size`: number 2 to 80 px |
 | `brush` | **Brush strokes.** Watercolour and ink: the layer paints on in a few brush strokes, row after row, each with a ragged end. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 1.2 s | `direction`: `in` / `out`; `strokes`: number 1 to 8; `from`: `left` / `right` |
+| `blow-away` | **Blow away.** The picture crumbles into grains the wind carries off, sweeping across it (In: they blow back together). On a person cut out of the footage, over a shot of the empty room, the person is blown away and the room stays. | video, image | 1.6 s | `direction`: `in` / `out`; `wind`: `right` / `left` / `up`; `grain`: number 0.2 to 3 cqw |
 
 ## Move and scale
 
@@ -87,6 +93,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `turn` | **Turn.** Turns into place in 3D, around the vertical or horizontal axis, as if on a hinge through its middle. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.7 s | `direction`: `in` / `out`; `axis`: `y` / `x`; `angle`: number -180 to 180 °; `perspective`: number 200 to 3000 px |
 | `scroll` | **Scroll.** Scrolls a tall screenshot inside its frame (or pans a wide one across), from one point to another. Make the frame shorter than the picture. Repeat makes it endless: the picture follows on from itself, and 0 to 100 is one full pass, so a looping ending joins up seamlessly (use the None ease for a steady speed). | image | 6 s | `from`: number 0 to 100 %; `to`: number 0 to 1000 %; `axis`: `y` / `x`; `repeat`: boolean |
 | `code` *(not for AI)* | **Custom code.** Your own GSAP code, for an effect no preset covers. It only runs where the page allows custom code (the Studio, downloaded pages and embeds; in WordPress, pages by authors trusted with unfiltered HTML). | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 1 s | `code`: code |
+| `explode-3d` | **Layer explode.** The layers of a group come apart in depth while the view turns, showing how the frame is built: footage, captions, sound, graphics. Out: they collapse back into one picture. | group | 1.2 s | `direction`: `in` / `out`; `depth`: number 1 to 30 cqw; `turn`: number -70 to 70 °; `tilt`: number -45 to 45 ° |
 
 ## Ambient and backgrounds
 
@@ -105,6 +112,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `boil` | **Line boil.** Hand-drawn cel animation: the outlines wobble a little on every drawing, redrawn a few times a second, for as long as the clip lasts. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 3 s | `amount`: number 0.5 to 10; `fps`: number 2 to 24 |
 | `liquid` | **Liquid blob.** The shape flows from one organic blob into the next, as if it were poured: liquid and morph styles. | shape, image, video | 4 s | `speed`: number 0.2 to 4 |
 | `scanlines` | **VHS / CRT.** An old tape or tube for as long as the clip lasts: scanlines, colour bleeding into red and blue fringes, a vignette, a jittering frame and a tracking band rolling down. | image, video, shape, text, group | 3 s | `bleed`: number 0 to 1.5; `jitter`: number 0 to 1; `tracking`: boolean |
+| `ring-text` | **Text ring.** The letters travel round a tilted ring, nearer ones bigger and brighter: words orbiting a head. For a ring that passes behind a cut-out person, use two copies of the text: one behind the person showing the far half, one in front showing the near half. | text | 4 s | `half`: `all` / `front` / `back`; `radius`: number 0.2 to 2 × width; `tilt`: number 0 to 1; `speed`: number -1 to 1; `arc`: number 0.1 to 1 |
 
 ## Cursor and tours
 
