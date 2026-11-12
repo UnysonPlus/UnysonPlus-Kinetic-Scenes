@@ -1552,7 +1552,7 @@ export function App() {
       <MusicDialog open={musicOpen} onClose={() => setMusicOpen(false)} scene={scene} onCommit={commit}
         decode={(src) => audioEngine.buffer(src)} onAddons={() => setAddonsOpen(true)} />
       {notice && <div className="toast" role="status">{notice}</div>}
-      {fullscreen && <FullscreenPlayer scene={scene} startAt={0} onClose={() => setFullscreen(false)} />}
+      {fullscreen && <FullscreenPlayer scene={scene} startAt={0} frame={format ? { width: device.width, height: device.height } : undefined} onClose={() => setFullscreen(false)} />}
     </div>
   );
 }

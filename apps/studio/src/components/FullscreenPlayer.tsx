@@ -8,13 +8,26 @@ import { PauseIcon, PlayIcon, ResetIcon } from './icons';
  * visitor's display. Controls fade away while it plays and come back when the mouse moves.
  * Esc (or the browser's own exit) closes it.
  */
-export function FullscreenPlayer(props: { scene: Scene; startAt: number; onClose: () => void }) {
+export function FullscreenPlayer(props: { scene: Scene; startAt: number; onClose: () => void; frame?: { width: number; height: number } }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<ScenePlayer | null>(null);
   const [playing, setPlaying] = useState(true);
   const [idle, setIdle] = useState(false);
   const [time, setTime] = useState(0);
+  // A video keeps its format's shape (a 9:16 reel stays 9:16, as tall as the screen): it plays at the format's
+  // real pixel size, as it is exported, scaled to fit the screen with black bars at the sides or top and bottom.
+  const frame = props.frame;
+  const fitScale = () => (frame ? Math.min(window.innerWidth / frame.width, window.innerHeight / frame.height) : 1);
+  const [scale, setScale] = useState(fitScale);
+  useEffect(() => {
+    if (!frame) return;
+    const fit = () => setScale(fitScale());
+    window.addEventListener('resize', fit);
+    document.addEventListener('fullscreenchange', fit);
+    return () => { window.removeEventListener('resize', fit); document.removeEventListener('fullscreenchange', fit); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frame?.width, frame?.height]);
 
   useEffect(() => {
     const wrap = wrapRef.current!;
@@ -67,7 +80,13 @@ export function FullscreenPlayer(props: { scene: Scene; startAt: number; onClose
         if (e.key === ' ' && props.scene.playback.advance !== 'click') { e.preventDefault(); e.stopPropagation(); toggle(); }
       }}
       tabIndex={-1}>
-      <div className="fs-stage"><div ref={hostRef} className="fs-host" /></div>
+      {frame ? (
+        <div className="fs-frame" style={{ width: frame.width * scale, height: frame.height * scale }}>
+          <div ref={hostRef} className="fs-host" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})`, transformOrigin: '0 0' }} />
+        </div>
+      ) : (
+        <div className="fs-stage"><div ref={hostRef} className="fs-host" /></div>
+      )}
       <div className="fs-controls">
         <button type="button" className="icon-btn" onClick={restart} aria-label="Restart" title="Restart"><ResetIcon /></button>
         <button type="button" className="icon-btn" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause (Space)' : 'Play (Space)'}>{playing ? <PauseIcon /> : <PlayIcon />}</button>
