@@ -13,6 +13,7 @@
     "dev": "npm run build:player && npm run dev -w apps/studio",
     "build": "npm run build:player && node scripts/build-skill.mjs && npm run build -w apps/studio",
     "build:skill": "node scripts/build-skill.mjs",
+    "docs:presets": "node scripts/build-docs-presets.mjs",
     "preview": "npm run preview -w apps/studio",
     "typecheck": "npm run typecheck -w packages/player && npm run typecheck -w apps/studio",
     "selftest": "node scripts/selftest.mjs",
