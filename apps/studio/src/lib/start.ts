@@ -11,10 +11,10 @@ export function setStartHidden(hidden: boolean) {
   try { if (hidden) localStorage.setItem(HIDE_KEY, '1'); else localStorage.removeItem(HIDE_KEY); } catch { /* private window */ }
 }
 
-/** Opens with the Studio, unless the person turned it off or arrived with a job: an agent's project link, or a page editor. */
+/** Opens with the Studio, unless the person turned it off or arrived with a job: an agent's project link, a shared scene link, or a page editor. */
 export function shouldShowStart(search: string, hidden = startHidden()): boolean {
   const q = new URLSearchParams(search);
-  return !hidden && !q.has('project') && !q.has('connect');
+  return !hidden && !q.has('project') && !q.has('scene') && !q.has('connect');
 }
 
 export interface StartFormat { id: string; label: string; hint: string; video: VideoSettings | null }

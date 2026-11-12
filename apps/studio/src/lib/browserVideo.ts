@@ -4,7 +4,7 @@ import { footageIds, getFootage } from './footage';
 
 /**
  * Video export in the browser itself, with nothing installed, where the browser can draw part of a page into a
- * picture (HTML-in-Canvas: a canvas with "layoutsubtree" and drawElementImage). The scene plays inside such a
+ * picture (HTML-in-Canvas: a canvas with content="drawable", formerly "layoutsubtree", and drawElementImage). The scene plays inside such a
  * canvas; each frame is sought, drawn exactly and encoded by the browser (WebCodecs, H.264), its sound mixed
  * offline and encoded as AAC, and both are put into an MP4. Elsewhere the AI Dev Kit renders the video.
  */
@@ -29,7 +29,9 @@ type Player = { seek: (t: number) => void; settle?: () => Promise<void>; whenRea
 export function browserCanRender(): boolean {
   return typeof window !== 'undefined'
     && typeof (CanvasRenderingContext2D.prototype as unknown as { drawElementImage?: unknown }).drawElementImage === 'function'
-    && 'layoutSubtree' in HTMLCanvasElement.prototype
+    // The first version marked the canvas "layoutsubtree"; Chrome now ships it as content="drawable" (with
+    // "drawable" on what is drawn) and no longer has layoutSubtree. Either one works.
+    && ('layoutSubtree' in HTMLCanvasElement.prototype || 'requestPaint' in HTMLCanvasElement.prototype)
     && typeof VideoEncoder !== 'undefined' && typeof WC.AudioEncoder !== 'undefined';
 }
 
@@ -61,6 +63,8 @@ function pickBreakpoint(bps: Breakpoint[], w: number, h: number): Breakpoint {
 }
 
 /** Footage kept in this browser, given addresses this page can play. */
+const REMOTE_PICTURE = /^https?:\/\/[^\s]+\.(png|jpe?g|webp|gif|avif|svg|mp4|webm|mov|m4v)([?#][^\s]*)?$/i;
+
 async function withLocalFootage(scene: Scene): Promise<{ scene: Scene; urls: string[] }> {
   const urls: string[] = [];
   const map = new Map<string, string>();
@@ -71,6 +75,25 @@ async function withLocalFootage(scene: Scene): Promise<{ scene: Scene; urls: str
     urls.push(u);
     map.set(id, u);
   }
+  // Pictures and footage on other sites (a shared scene's media, stock photos): the browser leaves another site's
+  // picture out of a drawn page, so each one is fetched (with that site's permission) and drawn from a copy here.
+  // One that can't be fetched stays as it is.
+  const remote = new Set<string>();
+  const find = (v: unknown): void => {
+    if (typeof v === 'string') { if (REMOTE_PICTURE.test(v) && !v.startsWith(location.origin)) remote.add(v); return; }
+    if (Array.isArray(v)) { v.forEach(find); return; }
+    if (v && typeof v === 'object') Object.values(v).forEach(find);
+  };
+  find(scene.layers);
+  await Promise.all([...remote].map(async (src) => {
+    try {
+      const r = await fetch(src, { mode: 'cors', credentials: 'omit' });
+      if (!r.ok) return;
+      const u = URL.createObjectURL(await r.blob());
+      urls.push(u);
+      map.set(src, u);
+    } catch { /* not allowed: drawn as before */ }
+  }));
   const walk = (v: unknown): unknown => {
     if (typeof v === 'string') return map.get(v) ?? v;
     if (Array.isArray(v)) return v.map(walk);
@@ -150,9 +173,11 @@ export async function renderInBrowser(input: Scene, opts: BrowserRenderOptions, 
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   canvas.setAttribute('layoutsubtree', '');
+  canvas.setAttribute('content', 'drawable');
   canvas.style.cssText = `width:${W}px;height:${H}px`;
   const host = document.createElement('div');
   host.style.cssText = `width:${W}px;height:${H}px;overflow:hidden;background:#000`;
+  host.setAttribute('drawable', '');
   canvas.appendChild(host);
   wrap.appendChild(canvas);
   document.body.appendChild(wrap);

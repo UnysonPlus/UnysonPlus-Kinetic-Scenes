@@ -2,6 +2,7 @@ import { registerWebMcp } from './lib/webmcp';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { liveValue, useStableCallbacks } from './lib/liveValue';
 import { validateScene } from '@unysonplus/scene-player/validate';
+import { clearSceneLink, readSceneLink, sceneLinkUrl } from './lib/sceneLink';
 import type { HeightMode, Layer, Scene } from '@unysonplus/scene-player/types';
 import demo from './scenes/demo.json';
 import { previewHtml } from './lib/documents';
@@ -363,6 +364,23 @@ export function App() {
 
   // Reopen the project named in the address (?project=…, the link an agent gives) or the one from last time.
   useEffect(() => {
+    // A shared scene (?scene=<address>, the "Change the words or photos" link on a share page) opens as a copy.
+    const linked = sceneLinkUrl(location.search);
+    if (linked) {
+      readSceneLink(linked)
+        .then(({ scene: sc, strippedCode }) => {
+          clearSceneLink();
+          commit(sc);
+          setSelection({ layerId: null, clipId: null });
+          setNotice(`Your copy of “${sc.title || 'this scene'}”. Click any words or picture to change them, then File › Export… to save your video. Nothing you change here affects the original.${strippedCode ? ' Custom code was removed, for safety.' : ''}`);
+        })
+        .catch((e) => setNotice(`The shared scene could not be opened: ${(e as Error).message}.`));
+      return;
+    }
+    if (new URLSearchParams(location.search).has('scene')) {
+      setNotice('That scene link is not from a Unyson+ site, so it was not opened.');
+      return;
+    }
     let id: string | null = new URLSearchParams(location.search).get('project');
     if (!id) try { id = localStorage.getItem(PROJECT_KEY); } catch { /* private window */ }
     if (!id) return;

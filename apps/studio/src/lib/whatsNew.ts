@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-12';
+export const NEWS_ID = '2026-11-12-scene-links';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'scene-links', title: 'Hand over a video to change', short: 'A link that opens your scene for someone else', text: 'Put a scene and its pictures on your site and send a link: the person gets their own copy in the Studio, changes the words or photos, and exports the video in Chrome with nothing installed. Video export in Chrome now works by default, stock photos included.', doc: `${DOCS}export#scene-links-open-a-scene-from-the-web` },
   { id: 'talking-head', title: 'Talking-head effects', short: 'Code body, manga ink, blow away and more', text: 'New effects for a person on camera: turn them into code, a banknote engraving or a manga impact frame, blow them away into grains, put clones of them in a row, run words round their head, rack the focus and explode a frame into its layers. Plus new pieces: a voice note, a phone keyboard that predicts the next word, a newspaper front page, a banknote and a day dial. Cut the person out of the footage first.', doc: `${DOCS}video-effects#effects-on-a-person` },
   { id: 'screencast-narration', title: 'Narrated screencasts', short: 'Voice-over and a written guide from one take', text: 'Record a product demo with the AI Dev Kit and it writes the voice-over for you, a line per step that fits before the next one, in English or another language. It speaks each line, checks it, and also writes a step-by-step guide with a picture of every step, ready for a help page or a blog post.', doc: `${DOCS}screencasts#the-voice-over-and-a-written-guide-from-the-same-take` },
   { id: 'long-videos', title: 'Long videos', short: 'Chapters, looping music, smoother playback', text: 'Make videos longer than a reel: tick Loop on a music clip and it repeats to the end of the scene, render each chapter, and the AI Dev Kit joins them into one video with the YouTube chapter list written for you. Long, busy scenes also play much more smoothly while you edit.', doc: `${DOCS}long-videos` },

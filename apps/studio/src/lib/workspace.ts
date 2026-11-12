@@ -16,7 +16,7 @@ import { getFootage, isWsFootage, wsFootageId } from './footage';
 export interface ProjectInfo { id: string; title: string; duration: number; updated: number }
 export interface OpenProject { id: string; mtime: number }
 
-const MEDIA = /^(?![a-z][a-z0-9+.-]*:)(?!\/)[^\s?#]+\.(mp4|webm|mov|m4v|mp3|wav|m4a|ogg|aac|flac|png|jpe?g|webp|gif|avif|svg|glb|gltf|riv|lottie|json|vtt|srt)$/i;
+export const MEDIA = /^(?![a-z][a-z0-9+.-]*:)(?!\/)[^\s?#]+\.(mp4|webm|mov|m4v|mp3|wav|m4a|ogg|aac|flac|png|jpe?g|webp|gif|avif|svg|glb|gltf|riv|lottie|json|vtt|srt)$/i;
 /** Embedded files above this size are moved into media/ (small icons can stay in the scene). */
 const INLINE_LIMIT = 48 * 1024;
 /** Sound is fetched by the Studio itself; everything else reaches the preview as a file the Studio hands over. */
@@ -43,7 +43,7 @@ const post = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'Cont
 /** Fields that hold words, never a file: a code window titled "promo.json" or a caption about "logo.png" stay as written. */
 const WORDS = new Set(['title', 'text', 'name', 'label', 'alt', 'code', 'sub', 'description', 'to']);
 
-function mapStrings<T>(v: T, fn: (s: string) => string): T {
+export function mapStrings<T>(v: T, fn: (s: string) => string): T {
   if (typeof v === 'string') return fn(v) as T;
   if (Array.isArray(v)) return v.map((x) => mapStrings(x, fn)) as T;
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, WORDS.has(k) && typeof x === 'string' ? x : mapStrings(x, fn)])) as T;

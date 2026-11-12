@@ -53,19 +53,27 @@ export async function readSharedScene(): Promise<SharedResult> {
     const json = kind === '1' ? await pipe(bytes, new DecompressionStream('deflate-raw')) : bytes;
     const r = validateScene(JSON.parse(new TextDecoder().decode(json)));
     if (!r.ok) return { ok: false, error: r.errors[0] ?? 'it is not a valid scene' };
-    let stripped = 0;
-    type L = { clips: Array<{ preset: string }>; layers?: L[] };
-    const walk = (list: L[]) => list.forEach((l) => {
-      const before = l.clips.length;
-      l.clips = l.clips.filter((c) => c.preset !== 'code');
-      stripped += before - l.clips.length;
-      if (l.layers) walk(l.layers);
-    });
-    walk(r.scene.layers as unknown as L[]);
-    return { ok: true, scene: r.scene, strippedCode: stripped };
+    return { ok: true, scene: r.scene, strippedCode: stripCode(r.scene) };
   } catch {
     return { ok: false, error: 'the link is damaged or incomplete (it may have been cut short when it was copied)' };
   }
+}
+
+/**
+ * Removes custom code clips (in place) and says how many: a scene from a link can come from anyone, and code is
+ * the one part of a scene that could act on the computer that opens it.
+ */
+export function stripCode(scene: Scene): number {
+  let stripped = 0;
+  type L = { clips: Array<{ preset: string }>; layers?: L[] };
+  const walk = (list: L[]) => list.forEach((l) => {
+    const before = l.clips.length;
+    l.clips = l.clips.filter((c) => c.preset !== 'code');
+    stripped += before - l.clips.length;
+    if (l.layers) walk(l.layers);
+  });
+  walk(scene.layers as unknown as L[]);
+  return stripped;
 }
 
 /** Removes the shared scene from the address, so a reload doesn't load it again over later edits. */
