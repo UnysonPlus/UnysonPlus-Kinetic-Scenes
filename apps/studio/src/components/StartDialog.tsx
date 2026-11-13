@@ -7,6 +7,9 @@ import { KIT_REPO } from './GetKit';
 import { WHATS_NEW } from '../lib/whatsNew';
 import { StyleGallery } from './StyleGallery';
 
+/** The done-for-you video service, on the Unyson+ site. */
+const DFY_URL = 'https://www.unysonplus.com/videos/?utm_source=kinetic-scenes&utm_medium=start-screen';
+
 type Needs = 'ai' | 'kit';
 export type StartAction = 'video' | 'like' | 'recording' | 'sheet' | 'templates' | 'blank' | 'file' | 'paper-template';
 interface Option { id: string; title: string; text: string; icon: ReactNode; needs?: Needs; action: StartAction | 'website' }
@@ -162,6 +165,13 @@ export function StartDialog(props: {
               <StyleGallery styles={props.styles} onPick={(s) => { setText(''); if (s.id === 'paper') setStep('paper'); else { setStyleId(s.id); setStep('style'); } }} />
             </div>
             <aside className="start-side" aria-label="Pick up where you left off">
+              {/* The done-for-you service: for people who would rather have the video made for them. */}
+              <a className="start-dfy" href={DFY_URL} target="_blank" rel="noopener">
+                <span className="start-dfy__tag">Done for you</span>
+                <strong>No time to make it? We make it for you.</strong>
+                <span>Short videos and reels for your business, from the photos you already have. From US$5 a video.</span>
+                <span className="start-dfy__go">See how it works <span aria-hidden="true">→</span></span>
+              </a>
               <h3>Pick up where you left off</h3>
               {props.currentTitle && (
                 <button type="button" className="start-recent" onClick={props.onClose}>
