@@ -410,10 +410,14 @@ function frameMedia(doc: Document, inner: HTMLElement, media: HTMLElement, frame
     box('left:3.5%;top:1.8%;width:93%;height:96.4%;border-radius:10% / 5%');
     part('left:50%;top:3%;width:30%;height:2.4%;transform:translateX(-50%);background:#0b0c0e;border-radius:99px');
   } else if (frame === 'browser') {
-    Object.assign(inner.style, { background: '#f2f3f5', borderRadius: '1.2cqw', boxShadow: '0 1.5cqw 3.5cqw rgba(0,0,0,.35)', overflow: 'hidden' });
-    box('left:0;top:3.4cqw;width:100%;height:calc(100% - 3.4cqw)');
-    const bar = part('left:0;right:0;top:0;height:3.4cqw;display:flex;align-items:center;gap:0.7cqw;padding-left:1.4cqw;background:#e4e6ea');
-    bar.innerHTML = ['#ff5f57', '#febc2e', '#28c840'].map((c) => `<b style="width:1cqw;height:1cqw;border-radius:50%;background:${c}"></b>`).join('') + '<b style="margin-left:2cqw;flex:0 1 45%;height:1.8cqw;border-radius:1cqw;background:#fff"></b>';
+    // The window is the size reference for its own chrome (a size container: cqw/cqh inside it are the window's), so a
+    // small window gets a small bar instead of one sized for the whole stage. Corners are small (the layer's radius
+    // when it has one), and the picture is square-topped under the bar.
+    Object.assign(inner.style, { background: '#f2f3f5', borderRadius: `${radius > 0 ? radius : 0.6}cqw`, boxShadow: '0 1.5cqw 3.5cqw rgba(0,0,0,.35)', overflow: 'hidden', containerType: 'size' });
+    box('left:0;top:4.2cqw;width:100%;height:calc(100cqh - 4.2cqw);border-radius:0');
+    const bar = part('left:0;right:0;top:0;height:4.2cqw;display:flex;align-items:center;gap:0.8cqw;padding-left:1.6cqw;background:#e4e6ea');
+    bar.innerHTML = ['#ff5f57', '#febc2e', '#28c840'].map((c) => `<b style="flex:none;width:1.1cqw;height:1.1cqw;border-radius:50%;background:${c}"></b>`).join('')
+      + '<b style="margin-left:2.2cqw;flex:0 1 42%;height:2.1cqw;border-radius:1.05cqw;background:#fff"></b>';
   } else if (frame === 'polaroid') {
     Object.assign(inner.style, { background: '#fbfaf6', boxShadow: '0 1.2cqw 3cqw rgba(0,0,0,.35)' });
     box('left:5%;top:4.5%;width:90%;height:77.5%');
