@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { mount, type ScenePlayer } from '@unysonplus/scene-player';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { PauseIcon, PlayIcon, ResetIcon } from './icons';
+import { withPlayableFootage } from '../lib/footage';
 
 /**
  * The scene played full screen, at the screen's real size and without the editor: how it looks on a
@@ -31,9 +32,22 @@ export function FullscreenPlayer(props: { scene: Scene; startAt: number; onClose
 
   useEffect(() => {
     const wrap = wrapRef.current!;
-    // A scroll-linked scene has nothing to scroll here, so it plays on its clock; triggers are ignored.
-    const scene: Scene = { ...props.scene, playback: { ...props.scene.playback, trigger: 'manual' } };
     let player: ScenePlayer | null = null;
+    let cleanup: (() => void) | null = null;
+    let revoke = () => {};
+    let gone = false;
+    // Full screen asks the browser first, while the click still counts as the person's own action.
+    wrap.focus();
+    wrap.requestFullscreen?.().catch(() => { /* Not allowed: it still fills the window. */ });
+    const onChange = () => { if (!document.fullscreenElement) props.onClose(); };
+    document.addEventListener('fullscreenchange', onChange);
+    // The project's pictures and videos ("local:" files) are handed over as files this page can play, as the
+    // preview gets them; without this they show as broken images here.
+    withPlayableFootage(props.scene).then((ready) => {
+      revoke = ready.revoke;
+      if (gone) { revoke(); return; }
+    // A scroll-linked scene has nothing to scroll here, so it plays on its clock; triggers are ignored.
+    const scene: Scene = { ...ready.scene, playback: { ...ready.scene.playback, trigger: 'manual' } };
     try {
       // present: in a click-to-advance scene, clicks and the keys move through the slides.
       player = mount(hostRef.current!, scene, { autoplay: false, editor: true, present: true, soundOn: true });
@@ -45,19 +59,18 @@ export function FullscreenPlayer(props: { scene: Scene; startAt: number; onClose
         player.on('pause', () => setPlaying(false)),
         player.on('update', () => setTime(player!.time)),
       ];
-      wrap.focus();
-      wrap.requestFullscreen?.().catch(() => { /* Not allowed: it still fills the window. */ });
-      const onChange = () => { if (!document.fullscreenElement) props.onClose(); };
-      document.addEventListener('fullscreenchange', onChange);
-      return () => {
-        offs.forEach((off) => off());
-        document.removeEventListener('fullscreenchange', onChange);
-        player?.destroy();
-        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-      };
+      cleanup = () => { offs.forEach((off) => off()); player?.destroy(); };
     } catch {
       props.onClose();
     }
+    });
+    return () => {
+      gone = true;
+      cleanup?.();
+      revoke();
+      document.removeEventListener('fullscreenchange', onChange);
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

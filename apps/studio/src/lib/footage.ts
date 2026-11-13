@@ -110,6 +110,27 @@ export async function withFootage(scene: Scene): Promise<{ scene: Scene; missing
   return { scene: { ...scene, layers: walk(scene.layers) as Scene['layers'] }, missing };
 }
 
+/**
+ * The scene with every "local:" file (browser footage, a workspace project's pictures and videos) as an address this
+ * page can play, for a player mounted in the Studio's own page (full screen) rather than the preview. Call revoke()
+ * when it closes.
+ */
+export async function withPlayableFootage(scene: Scene): Promise<{ scene: Scene; revoke: () => void }> {
+  const made: string[] = [];
+  const urls = new Map<string, string>();
+  await Promise.all(footageIds(scene).map(async (id) => {
+    const b = await getFootage(id);
+    if (b) { const u = URL.createObjectURL(b); made.push(u); urls.set(id, u); }
+  }));
+  const walk = (v: unknown): unknown => {
+    if (typeof v === 'string') return urls.get(v) ?? v;
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  return { scene: { ...scene, layers: walk(scene.layers) as Scene['layers'] }, revoke: () => made.forEach((u) => URL.revokeObjectURL(u)) };
+}
+
 /** A video file's length and shape. */
 export function probeVideo(file: Blob): Promise<{ duration: number; width: number; height: number }> {
   return new Promise((ok) => {
