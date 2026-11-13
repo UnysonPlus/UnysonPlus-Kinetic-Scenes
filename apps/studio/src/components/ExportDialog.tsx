@@ -4,6 +4,7 @@ import type { Scene } from '@unysonplus/scene-player/types';
 import { embedCode, exportHtml, hasLottie, hasModel, hasPainted, lottieRuntime, paintRuntime, threeRuntime, hasCodeClips } from '../lib/documents';
 import { embedFonts } from '../lib/fonts';
 import { EditorSection } from './EditorSection';
+import { WebExportSection } from './WebExportSection';
 import { VideoSection } from './VideoSection';
 import { ShareSection } from './ShareSection';
 import { DownloadIcon } from './icons';
@@ -157,6 +158,7 @@ export const ExportDialog = memoIgnoringCallbacks(function ExportDialog(props: {
 
         {props.scene.mode !== 'video' && <VideoSection scene={props.scene} open={props.open} onDone={props.onDone} onListen={props.onListen} />}
         {props.scene.mode === 'video' && <EditorSection project={props.project ?? null} onDone={props.onDone} />}
+        <WebExportSection project={props.project ?? null} onDone={props.onDone} />
 
         {error && <p className="export-error" role="alert">{error}</p>}
       </div>

@@ -324,6 +324,7 @@ export function App() {
     if (a === 'listen') setListenOpen(true);
     else if (a === 'physics') setPhysicsOpen(true);
     else if (a === 'swarm') setSwarmOpen(true);
+    else if (a === 'export') setExporting(true);
     else setStartOpen(true);
   };
   const newTag = newsUnread ? 'New' : undefined;

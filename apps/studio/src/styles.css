@@ -560,6 +560,14 @@ h1, h2, p { margin: 0; }
 .export-opt > p { font-size: 12px; color: var(--muted); max-width: 62ch; }
 .export-opt .check { align-self: flex-start; height: auto; }
 .export-row { display: flex; align-items: center; gap: 10px; }
+.webx-label { font-size: 11px; font-weight: 600; color: var(--muted); }
+.webx { display: flex; flex-direction: column; gap: 8px; }
+.webx-total { font-size: 12.5px; }
+.webx-table { max-height: 220px; overflow: auto; border: 1px solid var(--border-soft); border-radius: 6px; }
+.webx-table table { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.webx-table th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font-weight: 600; color: var(--muted); }
+.webx-table th, .webx-table td { padding: 4px 8px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.webx-table td:nth-child(2), .webx-table td:nth-child(3) { white-space: nowrap; text-align: right; }
 .export-meta { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .export-code { min-height: 110px; max-height: 160px; flex: none; resize: vertical; font-size: 11px; }
 .export-warn { font-size: 12px; color: oklch(0.88 0.09 78); }
