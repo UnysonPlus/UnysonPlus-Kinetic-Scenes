@@ -1158,15 +1158,39 @@ dialog.start-dialog { width: min(1000px, calc(100vw - 32px)); max-height: calc(1
 .start-side .link-btn { align-self: flex-start; margin-top: 4px; }
 /* Done for you: the one card that should stand out in the side column. */
 .start-dfy {
+  position: relative; overflow: hidden; isolation: isolate;
   display: flex; flex-direction: column; gap: 4px; margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; text-decoration: none;
-  color: var(--text); background: linear-gradient(135deg, color-mix(in srgb, #00b295 26%, var(--surface-2)), color-mix(in srgb, #2ad38b 12%, var(--surface-2)));
-  border: 1px solid color-mix(in srgb, #2ad38b 55%, transparent); transition: border-color .2s var(--ease), transform .2s var(--ease);
+  color: var(--text); background: linear-gradient(135deg, color-mix(in srgb, #00b295 30%, var(--surface-2)), color-mix(in srgb, #2ad38b 14%, var(--surface-2)));
+  border: 1px solid color-mix(in srgb, #2ad38b 65%, transparent); transition: border-color .2s var(--ease), transform .2s var(--ease);
+  /* A ring that pings out from the card every few seconds: it says "look here" without flashing. */
+  animation: dfy-ping 2.6s cubic-bezier(.2,.7,.3,1) infinite;
 }
-.start-dfy:hover, .start-dfy:focus-visible { border-color: #2ad38b; transform: translateY(-1px); }
+/* A band of light that sweeps across the card now and then. */
+.start-dfy::before {
+  content: ''; position: absolute; inset: -2px; z-index: -1; pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.3) 48%, rgba(42,211,139,.38) 52%, transparent 65%);
+  transform: translateX(-120%); animation: dfy-shine 5.2s ease-in-out 1s infinite;
+}
+.start-dfy:hover, .start-dfy:focus-visible { border-color: #2ad38b; transform: translateY(-2px); animation-play-state: paused; }
 .start-dfy strong { font-size: 14px; line-height: 1.3; }
 .start-dfy > span:not([class]) { font-size: 12px; line-height: 1.45; color: var(--muted); }
-.start-dfy__tag { align-self: flex-start; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #06140f; background: #2ad38b; padding: 2px 8px; border-radius: 999px; }
+.start-dfy__tag { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #06140f; background: #2ad38b; padding: 2px 9px 2px 7px; border-radius: 999px; }
+/* A "live" light in the tag. */
+.start-dfy__dot { position: relative; width: 7px; height: 7px; border-radius: 50%; background: #06140f; }
+.start-dfy__dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #06140f; animation: dfy-dot 1.6s ease-out infinite; }
 .start-dfy__go { font-size: 12.5px; font-weight: 650; color: #2ad38b; margin-top: 2px; }
+.start-dfy__arrow { display: inline-block; animation: dfy-nudge 1.6s ease-in-out infinite; }
+@keyframes dfy-ping {
+  0% { box-shadow: 0 0 0 0 rgba(42,211,139,.75), 0 8px 26px -10px rgba(42,211,139,.45); }
+  70%, 100% { box-shadow: 0 0 0 15px rgba(42,211,139,0), 0 8px 26px -10px rgba(42,211,139,.45); }
+}
+@keyframes dfy-shine { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+@keyframes dfy-dot { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes dfy-nudge { 0%, 60%, 100% { transform: translateX(0); } 30% { transform: translateX(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .start-dfy, .start-dfy::before, .start-dfy__dot::after, .start-dfy__arrow { animation: none; }
+  .start-dfy { box-shadow: 0 0 0 2px rgba(42,211,139,.35), 0 8px 26px -10px rgba(42,211,139,.45); }
+}
 .start-recent { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; text-align: left; cursor: pointer; border: 0; border-radius: var(--radius); background: transparent; transition: background-color 150ms var(--ease); }
 .start-recent:hover { background: var(--surface-2); }
 .start-recent strong { font-size: 13px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

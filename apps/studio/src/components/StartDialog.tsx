@@ -167,10 +167,10 @@ export function StartDialog(props: {
             <aside className="start-side" aria-label="Pick up where you left off">
               {/* The done-for-you service: for people who would rather have the video made for them. */}
               <a className="start-dfy" href={DFY_URL} target="_blank" rel="noopener">
-                <span className="start-dfy__tag">Done for you</span>
+                <span className="start-dfy__tag"><span className="start-dfy__dot" aria-hidden="true" />Done for you</span>
                 <strong>No time to make it? We make it for you.</strong>
                 <span>Short videos and reels for your business, from the photos you already have. From US$5 a video.</span>
-                <span className="start-dfy__go">See how it works <span aria-hidden="true">→</span></span>
+                <span className="start-dfy__go">See how it works <span className="start-dfy__arrow" aria-hidden="true">→</span></span>
               </a>
               <h3>Pick up where you left off</h3>
               {props.currentTitle && (
