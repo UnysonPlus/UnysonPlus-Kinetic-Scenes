@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchSound, makeSound, saveSoundsKey, searchSounds, soundsStatus, type FoundSound, type MadeSound } from '../lib/soundDesign';
+import { KitLink } from './KitLink';
 
 /**
  * The Sounds tab's two extras, through the AI Dev Kit: make a sound from a description, and search public-domain
@@ -37,14 +38,14 @@ export function MoreSounds(props: { onPreview: (src: string) => void; onAdd: (sr
             <button type="button" className="btn small" onClick={() => props.onAdd(made.src, made.name, made.seconds)}>Add</button>
           </div>
         )}
-        <p className="field-hint">Your AI designs it and it is made right here, free; with your own ElevenLabs key in the AI Dev Kit, it is recorded by their sound-effects model instead.</p>
+        <p className="field-hint">Your AI designs it and it is made right here, free; with your own ElevenLabs key in the <KitLink />, it is recorded by their sound-effects model instead.</p>
       </section>
 
       <section className="lib-group">
         <h3>Public-domain sounds (Freesound)</h3>
         {hasKey === false ? (
           <form className="ms-key" onSubmit={(e) => { e.preventDefault(); run('Checking the key', async () => { await saveSoundsKey(keyText.trim()); setHasKey(true); setKeyText(''); }); }}>
-            <p className="field-hint">Search hundreds of thousands of free, public-domain (CC0) sounds: nothing to license or credit. Get a free key at <a href="https://freesound.org/apiv2/apply" target="_blank" rel="noopener noreferrer">freesound.org</a> and paste it here (it stays in the AI Dev Kit on your computer).</p>
+            <p className="field-hint">Search hundreds of thousands of free, public-domain (CC0) sounds: nothing to license or credit. Get a free key at <a href="https://freesound.org/apiv2/apply" target="_blank" rel="noopener noreferrer">freesound.org</a> and paste it here (it stays in the <KitLink /> on your computer).</p>
             <div className="ms-row">
               <input value={keyText} onChange={(e) => setKeyText(e.target.value)} placeholder="Your Freesound API key" aria-label="Freesound API key" />
               <button type="submit" className="btn small" disabled={!keyText.trim() || !!busy}>Save</button>
@@ -71,7 +72,7 @@ export function MoreSounds(props: { onPreview: (src: string) => void; onAdd: (sr
             </ul>
           </>
         ) : (
-          <p className="field-hint">Start the AI Dev Kit on this computer to search free public-domain sounds.</p>
+          <p className="field-hint">Start the <KitLink /> on this computer to search free public-domain sounds.</p>
         )}
       </section>
       {(busy || error) && <p className={busy ? 'field-hint' : 'export-error'} role="status">{busy ? `${busy}…` : error}</p>}

@@ -1229,3 +1229,8 @@ dialog.start-dialog.is-step { width: min(660px, calc(100vw - 32px)); }
 @media (prefers-reduced-motion: reduce) {
   .start-option, .start-feature, .start-recent, .start-formats label { transition: none; }
 }
+
+/* "AI Dev Kit", wherever it is mentioned: a link to its GitHub page. It takes the colour of the text around it (a
+   warning stays amber, an error red) and is told apart by its underline. */
+.kit-link { color: inherit; font-weight: 650; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.kit-link:hover, .kit-link:focus-visible { color: var(--accent, #2ad38b); }

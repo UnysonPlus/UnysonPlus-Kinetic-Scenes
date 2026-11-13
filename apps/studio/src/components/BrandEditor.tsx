@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { BUILT_IN_STYLES, type SceneStyle } from '../lib/styles';
 import { formFromStyle, readLogo, styleFromForm, type BrandForm } from '../lib/brand';
+import { kitify } from './KitLink';
 
 const BLANK: BrandForm = {
   name: '', background: '#0b0f14', text: '#f4f6f8', muted: '#9aa7b4', accent: '#2ad38b', heading: 'Archivo', body: 'Inter',
@@ -67,7 +68,7 @@ export function BrandEditor(props: { style?: SceneStyle; onSave: (style: SceneSt
         </select>
       </label>
       <p className="field-hint">Fonts come from Google Fonts by name (as written there: "Space Grotesk", "DM Serif Display"). The motion and sounds are the chosen style's.</p>
-      {error && <p className="export-error" role="alert">{error}</p>}
+      {error && <p className="export-error" role="alert">{kitify(error)}</p>}
       <div className="style-btns">
         <button type="submit" className="btn small primary">Save brand kit</button>
         <button type="button" className="btn small ghost" onClick={props.onCancel}>Cancel</button>

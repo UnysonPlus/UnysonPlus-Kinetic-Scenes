@@ -6,6 +6,7 @@ import { DownloadIcon } from './icons';
 import { sortFormats } from '../lib/videoMode';
 import { browserCanRender, renderInBrowser } from '../lib/browserVideo';
 import { FfmpegNotice } from './FfmpegNotice';
+import { KitLink, kitify } from './KitLink';
 
 const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
 const KIT_REPO = 'https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit';
@@ -105,7 +106,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
         {video
           ? 'The finished video, in each format it is made in. See-through exports are graphics only, ready to lay over your footage in a video editor. '
           : 'An MP4 or WebM for social posts, presentations or anywhere HTML can\'t go. The size picks the layout: a vertical video uses the scene\'s mobile layout. '}
-        The AI Dev Kit on this computer renders it frame by frame, so every frame is exact.
+        The <KitLink /> on this computer renders it frame by frame, so every frame is exact.
       </p>
       {inBrowser && (
         <p className="export-note">
@@ -117,7 +118,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
       {check && !check.ok && check.reason !== 'ffmpeg' && !inBrowser && (
         <p className="export-warn">
           {check.reason === 'kit' && <>Video export runs through the <a href={KIT_REPO} target="_blank" rel="noopener noreferrer"><strong>AI Dev Kit</strong></a> on your computer. <a href={GUIDE} target="_blank" rel="noopener noreferrer">Set it up</a>, start it (start.bat or start.command), then open Export again.</>}
-          {check.reason === 'outdated' && <>Your AI Dev Kit needs an update for video export. Close it and start it again: it updates itself.</>}
+          {check.reason === 'outdated' && <>Your <KitLink /> needs an update for video export. Close it and start it again: it updates itself.</>}
         </p>
       )}
       <div className="video-opts">
@@ -176,7 +177,7 @@ export function VideoSection(props: { scene: Scene; open: boolean; onDone: (note
         </div>
         </>
       )}
-      {error && <p className="export-error" role="alert">{error}</p>}
+      {error && <p className="export-error" role="alert">{kitify(error)}</p>}
     </section>
   );
 }

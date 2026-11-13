@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { PHYSICS_DEFAULTS, dropWithPhysics } from '../lib/physics';
+import { kitify } from './KitLink';
 
 /**
  * Tools › Drop with physics: the selected layers fall, bounce and settle as real bodies. The motion is worked out once
@@ -65,7 +66,7 @@ export function PhysicsDialog(props: { open: boolean; scene: Scene; ids: string[
           </label>
         </div>
         <label className="start-again"><input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} /> Add a thud on the hardest landings</label>
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         <div className="export-row">
           <button type="button" className="btn small primary" disabled={!n || busy} onClick={go}>{busy ? 'Working…' : 'Drop them'}</button>
         </div>

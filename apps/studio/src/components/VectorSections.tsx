@@ -7,6 +7,7 @@ import { installVoice, speak, voiceStatus, withVoice } from '../lib/voice';
 import { useVoices } from '../lib/voices';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 import { splitImageLayer, splitPicture, splitStatus, type SplitStatus } from '../lib/split';
+import { KitLink, kitify } from './KitLink';
 
 /** Ready-made line shapes (coordinates are % of the layer's box). */
 export const LINE_SHAPES: Array<{ value: string; label: string; d: string }> = [
@@ -97,7 +98,7 @@ export function DiagramSection(props: { layer: DiagramLayer; set: (patch: Partia
       <TextField label="Connections" value={json(layer.edges ?? [])} wide mono multiline onCommit={(v) => parse('edges', v)} />
       <p className="field-hint wide">Each: from, to (node ids), kind (curve, straight or step), label, color, dashed, arrow, at.</p>
       <TextField label="Tag" value={layer.tag ? json(layer.tag) : ''} wide mono multiline placeholder={'{ "label": "HEAD", "stops": [{ "node": "a", "t": 1 }] }'} onCommit={(v) => parse('tag', v)} />
-      {note && <p className="field-hint wide" role="alert">{note}</p>}
+      {note && <p className="field-hint wide" role="alert">{kitify(note)}</p>}
       <ColorField label="Lines" value={look.color} placeholder="#8b98a8" onCommit={(v) => set({ look: { ...look, color: v || undefined } })} />
       <ColorField label="Node fill" value={look.nodeFill} placeholder="#141a21" onCommit={(v) => set({ look: { ...look, nodeFill: v || undefined } })} />
       <ColorField label="Text" value={look.textColor} placeholder="#e6edf3" onCommit={(v) => set({ look: { ...look, textColor: v || undefined } })} />
@@ -157,7 +158,7 @@ export function RepeatSection(props: { layer: RepeatLayer; set: (patch: Partial<
           ? <>The item uses {fieldList}: give each entry those fields.</>
           : <>Put placeholders like <code>{'{{title}}'}</code> in the item text and give each entry those fields.</>}
       </p>
-      {note && <p className="field-hint wide" role="alert">{note}</p>}
+      {note && <p className="field-hint wide" role="alert">{kitify(note)}</p>}
       <NumberField label="Step across" value={layer.step?.x ?? 0} step={0.5} min={-100} max={100} unit="%" onCommit={(v) => set({ step: { ...layer.step, x: v } })} />
       <NumberField label="Step down" value={layer.step?.y ?? 12} step={0.5} min={-100} max={100} unit="%" onCommit={(v) => set({ step: { ...layer.step, y: v } })} />
       <NumberField label="Columns" value={layer.columns ?? 1} step={1} min={1} max={20} onCommit={(v) => set({ columns: v && v > 1 ? Math.round(v) : undefined })} />
@@ -192,7 +193,7 @@ export function CaptionsSection(props: { scene: Scene; layer: CaptionsLayer; set
               Use this style on every caption ({others} more)
             </button>
           )}
-          {copied && <p className="field-hint wide" role="status">{copied}</p>}
+          {copied && <p className="field-hint wide" role="status">{kitify(copied)}</p>}
         </div>
       )}
       {voices.length
@@ -243,7 +244,7 @@ export function SplitImageSection(props: { scene: Scene; layer: Layer; onCommit:
         piece, and each layer gets a depth: with a camera move, a flat photo becomes a 2.5D shot.
       </p>
       {status === undefined && <div className="insp-start"><button type="button" className="btn small" onClick={check}>Check the AI Dev Kit</button></div>}
-      {status === null && <p className="field-hint wide">The AI Dev Kit is not running on this computer (or is too old to split pictures).</p>}
+      {status === null && <p className="field-hint wide">The <KitLink /> is not running on this computer (or is too old to split pictures).</p>}
       {status && (
         <>
           <p className="field-hint wide">
@@ -255,7 +256,7 @@ export function SplitImageSection(props: { scene: Scene; layer: Layer; onCommit:
           <div className="insp-start"><button type="button" className="btn small" disabled={busy || !layer.src} onClick={run}>{busy ? 'Splitting…' : 'Split into layers'}</button></div>
         </>
       )}
-      {note && <p className="field-hint wide" role="status">{note}</p>}
+      {note && <p className="field-hint wide" role="status">{kitify(note)}</p>}
     </Section>
   );
 }
@@ -325,7 +326,7 @@ export function CutOutSection(props: { scene: Scene; layer: Layer; onCommit: (sc
       <NumberField label="Width" value={r.w} step={0.5} min={0.5} max={100} unit="%" onCommit={(v) => v && setR({ ...r, w: v })} />
       <NumberField label="Height" value={r.h} step={0.5} min={0.5} max={100} unit="%" onCommit={(v) => v && setR({ ...r, h: v })} />
       <div className="insp-start"><button type="button" className="btn small" disabled={busy || !layer.src} onClick={run}>{busy ? 'Cutting…' : 'Cut it out'}</button></div>
-      {note && <p className="field-hint wide" role="alert">{note}</p>}
+      {note && <p className="field-hint wide" role="alert">{kitify(note)}</p>}
     </Section>
   );
 }
@@ -353,7 +354,7 @@ export function StepsSection(props: { scene: Scene; onCommit: (scene: Scene) => 
       </p>
       <TextField label="Steps" value={steps.length ? JSON.stringify(steps, null, 1) : ''} wide mono multiline placeholder="[]" onCommit={save} />
       {steps.length > 0 && <div className="insp-start"><button type="button" className="btn small" onClick={() => save(JSON.stringify(steps))}>Apply the steps again</button></div>}
-      {note && <p className="field-hint wide" role="status">{note}</p>}
+      {note && <p className="field-hint wide" role="status">{kitify(note)}</p>}
     </Section>
   );
 }
@@ -394,7 +395,7 @@ export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scen
       <p className="field-hint wide">{isOwn
         ? 'Speaks each line in your Voicebox voice (Voicebox must be open; the first line can take a few minutes while it loads), then times every word. Only use a voice you have the right to use.'
         : 'No microphone needed: a free voice runs on your computer through the AI Dev Kit (downloaded once, about 60 MB), and every word is timed, so scenes and captions follow it exactly. Changing one line remakes only that line. Your own voice: connect Voicebox under Add-ons.'}</p>
-      {note && <p className="field-hint wide" role="status">{note}</p>}
+      {note && <p className="field-hint wide" role="status">{kitify(note)}</p>}
     </Section>
   );
 }
@@ -518,7 +519,7 @@ export function LiveShotSection(props: { scene: Scene; layer: Layer; onCommit: (
           <div className="insp-start"><button type="button" className="btn small primary" disabled={busy} onClick={run}>{busy ? 'Working…' : 'Animate it'}</button></div>
         </>
       )}
-      {note && <p className="field-hint wide" role="alert">{note}</p>}
+      {note && <p className="field-hint wide" role="alert">{kitify(note)}</p>}
     </Section>
   );
 }

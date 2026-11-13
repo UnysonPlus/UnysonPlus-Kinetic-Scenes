@@ -8,6 +8,7 @@ import { useRef, useState } from 'react';
 import { separateClip } from '../lib/separate';
 import { identifySounds, type SoundsFound } from '../lib/identify';
 import { analyseMusic, sceneBeats, snapToBeats, strongMoments } from '../lib/beats';
+import { kitify } from './KitLink';
 
 /** The Inspector for a selected audio clip: timing, trim, volume and fades. */
 export function AudioInspector(props: {
@@ -141,7 +142,7 @@ function BeatsSection(props: { scene: Scene; clip: AudioClip; onCommit: (scene: 
         <button type="button" className="btn small" disabled={busy || !props.decode} onClick={find}>{busy ? 'Listening…' : clip.beats ? 'Find again' : 'Find the beats'}</button>
         {clip.beats && <button type="button" className="btn small" onClick={snap} title="Big reveals move up to 0.15 s onto a strong moment, smaller entrances up to 0.10 s onto a beat; at most 8 per scene">Snap reveals to the beat</button>}
       </div>
-      {note && <p className="field-hint wide" role="status">{note}</p>}
+      {note && <p className="field-hint wide" role="status">{kitify(note)}</p>}
     </Section>
   );
 }

@@ -77,6 +77,7 @@ import { Inspector, selectedIds, selectLayers, type Selection } from './componen
 import type { AlignMode, AlignTo } from './components/AlignPanel';
 import { Library } from './components/Library';
 import { Timeline } from './components/Timeline';
+import { kitify } from './components/KitLink';
 import {
   DesktopIcon, DownloadIcon, FullscreenIcon, LaptopIcon, Logo, PhoneIcon, RedoIcon, TabletIcon, UndoIcon,
 } from './components/icons';
@@ -1420,7 +1421,7 @@ export function App() {
             />
           </div>
 
-          {frameError && <p className="frame-error" role="alert">{frameError}</p>}
+          {frameError && <p className="frame-error" role="alert">{kitify(frameError)}</p>}
 
           <Transport
             time={state.time}
@@ -1552,7 +1553,7 @@ export function App() {
         onOpen={(id) => openFolderProject(id)} onCreate={newFolderProject} onCloseProject={closeFolderProject} />
       <MusicDialog open={musicOpen} onClose={() => setMusicOpen(false)} scene={scene} onCommit={commit}
         decode={(src) => audioEngine.buffer(src)} onAddons={() => setAddonsOpen(true)} />
-      {notice && <div className="toast" role="status">{notice}</div>}
+      {notice && <div className="toast" role="status">{kitify(notice)}</div>}
       {fullscreen && <FullscreenPlayer scene={scene} startAt={0} frame={format ? { width: device.width, height: device.height } : undefined} onClose={() => setFullscreen(false)} />}
     </div>
   );

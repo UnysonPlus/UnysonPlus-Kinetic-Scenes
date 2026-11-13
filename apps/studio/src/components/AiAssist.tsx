@@ -22,6 +22,7 @@ import { setAudio } from '../lib/audio';
 import { analyseMusic } from '../lib/beats';
 import { transcribe, transcribeStatus } from '../lib/transcribe';
 import { GetKit } from './GetKit';
+import { KitLink } from './KitLink';
 
 
 const START_IDEAS = [
@@ -548,7 +549,7 @@ export function AiAssist(props: {
 
           {settingsOpen && (
             <div className="assist-settings" id="assist-settings">
-              {ready && <p className="assist-settings-conn"><span className="assist-dot" aria-hidden="true" /> <span><strong>Connected:</strong> {aiName(status)}, through the AI Dev Kit {status.version}.</span></p>}
+              {ready && <p className="assist-settings-conn"><span className="assist-dot" aria-hidden="true" /> <span><strong>Connected:</strong> {aiName(status)}, through the <KitLink /> {status.version}.</span></p>}
               <div className="assist-style">
                 <label htmlFor="assist-style">Style</label>
                 <select id="assist-style" value={props.styleId ?? ''} disabled={busy} onChange={(e) => props.onStyleChange(e.target.value || null)}>
@@ -575,15 +576,15 @@ export function AiAssist(props: {
           )}
 
           {!ready && <div className={`assist-conn is-${status.state}`} role="status">
-            {status.state === 'checking' && <span>Looking for the AI Dev Kit on this computer…</span>}
-            {status.state === 'off' && <span>The AI Dev Kit is running, but no AI is set up in it. Open its dashboard (localhost:4600) and connect one in Settings.</span>}
-            {status.state === 'outdated' && <span>Your AI Dev Kit needs an update for the Studio. Close it and start it again (start.bat or start.command): it updates itself.</span>}
+            {status.state === 'checking' && <span>Looking for the <KitLink /> on this computer…</span>}
+            {status.state === 'off' && <span>The <KitLink /> is running, but no AI is set up in it. Open its dashboard (localhost:4600) and connect one in Settings.</span>}
+            {status.state === 'outdated' && <span>Your <KitLink /> needs an update for the Studio. Close it and start it again (start.bat or start.command): it updates itself.</span>}
             {status.state === 'missing' && (
               <GetKit lead="AI assist runs through the AI Dev Kit with your own AI" />
             )}
             {status.state === 'trust' && (
               <span>
-                In Safari, the AI Dev Kit needs one step the first time. With the kit running, open{' '}
+                In Safari, the <KitLink /> needs one step the first time. With the kit running, open{' '}
                 <a href={`${SECURE_KIT}/health`} target="_blank" rel="noopener noreferrer">its secure address</a>, choose
                 <strong> Show Details</strong>, then <strong>visit this website</strong> (it is your own computer), and check again.
                 Not running it yet? <a href="https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit" target="_blank" rel="noopener noreferrer">Get the AI Dev Kit</a>.
@@ -591,7 +592,7 @@ export function AiAssist(props: {
             )}
             {status.state === 'blocked' && (
               <span>
-                Your browser is stopping this site from reaching the AI Dev Kit. Click the icon left of the address, allow
+                Your browser is stopping this site from reaching the <KitLink />. Click the icon left of the address, allow
                 <strong> apps on this device</strong> (local network access), then check again.
               </span>
             )}
@@ -611,7 +612,7 @@ export function AiAssist(props: {
                 {scope !== 'new' && allLayers(scene.layers).some((l) => l.type === 'video' && !l.reference) && (
                   <div className="assist-quick">
                     <button type="button" className="btn small primary" disabled={!ready || busy} onClick={editVideo}>Edit my video</button>
-                    <p className="assist-faint">Captions and effects placed on what is said in your footage (its sound is transcribed in the AI Dev Kit first). Type what you want above to steer it.</p>
+                    <p className="assist-faint">Captions and effects placed on what is said in your footage (its sound is transcribed in the <KitLink /> first). Type what you want above to steer it.</p>
                   </div>
                 )}
                 {scope === 'new' && (
@@ -621,7 +622,7 @@ export function AiAssist(props: {
                       <input id="assist-url" type="url" placeholder="https://your-product.com" value={quickUrl} disabled={busy} onChange={(e) => setQuickUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); fromWebsite(); } }} />
                       <button type="button" className="btn small" disabled={!ready || busy || !/^https?:\/\//.test(quickUrl.trim())} onClick={() => fromWebsite()}>Make a scene</button>
                     </div>
-                    <p className="assist-faint">The AI Dev Kit reads its real words, colours, fonts and screenshots; nothing is invented.</p>
+                    <p className="assist-faint">The <KitLink /> reads its real words, colours, fonts and screenshots; nothing is invented.</p>
                   </div>
                 )}
               </div>

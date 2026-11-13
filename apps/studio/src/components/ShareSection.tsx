@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { shareLink } from '../lib/share';
+import { kitify } from './KitLink';
 
 /** Links over this length may be cut short by chat apps and email (they still work when pasted whole). */
 const LONG_LINK = 8000;
@@ -36,7 +37,7 @@ export function ShareSection(props: { scene: Scene; open: boolean }) {
       </div>
       {link.length > LONG_LINK && (
         <p className="export-warn">
-          This link is long ({kb} KB), usually because uploaded images are inside the scene. Chat apps and email may cut it
+          This link is long ({kitify(kb)} KB), usually because uploaded images are inside the scene. Chat apps and email may cut it
           short; use image addresses (https://…) for a short link, or send the project file (Save) instead.
         </p>
       )}

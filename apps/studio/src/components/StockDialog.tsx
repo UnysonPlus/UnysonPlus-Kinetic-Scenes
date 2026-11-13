@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { SOURCE_INFO, setStockKey, setStockSources, stockGet, stockSearch, stockStatus } from '../lib/stock';
 import type { SourceState, StockResult, StockSource } from '../lib/stock';
+import { kitify } from './KitLink';
 
 /**
  * Insert › Free stock…: the stock sources (switch one off and neither you nor your AI agent searches it; the keys
@@ -64,7 +65,7 @@ export function StockDialog(props: {
           agent searches it. What you add goes into the project's media folder, with its source, licence and any credit it
           needs written into the project notes.
         </p>
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
 
         <h3 className="stock-h">Sources</h3>
         <ul className="addons-list">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { kitBase } from '../lib/ai';
+import { kitify } from './KitLink';
 
 const mb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const BASE_KEY = 'upw-web-export-base';
@@ -97,7 +98,7 @@ export function WebExportSection(props: { project: string | null; onDone: (messa
           </div>
         </div>
       )}
-      {error && <p className="export-error" role="alert">{error}</p>}
+      {error && <p className="export-error" role="alert">{kitify(error)}</p>}
     </section>
   );
 }

@@ -6,6 +6,7 @@ import type { SceneStyle } from '../lib/styles';
 import { KIT_REPO } from './GetKit';
 import { WHATS_NEW } from '../lib/whatsNew';
 import { StyleGallery } from './StyleGallery';
+import { kitify } from './KitLink';
 
 /** The done-for-you video service, on the Unyson+ site. */
 const DFY_URL = 'https://www.unysonplus.com/videos/?utm_source=kinetic-scenes&utm_medium=start-screen';
@@ -158,7 +159,7 @@ export function StartDialog(props: {
                     placeholder="A reel showing how to book an appointment in two taps" />
                   <button type="submit" className="btn primary" disabled={!text.trim()}>Continue</button>
                 </div>
-                {aiNeed && <p className="start-need">{aiNeed}: the AI builds this one.</p>}
+                {aiNeed && <p className="start-need">{kitify(aiNeed)}: the AI builds this one.</p>}
               </form>
               {options('Start from something you have', HAVE)}
               {options('Start from a design', DESIGN)}
@@ -252,7 +253,7 @@ export function StartDialog(props: {
               </div>
             )}
             {props.agent && <p className="start-note">Create makes a new project and your AI agent builds it there, step by step. You can stop it at any time, and it never renders a video.</p>}
-            {aiNeed && <p className="start-need">{aiNeed}. AI assist shows how to connect it, and your request waits there.</p>}
+            {aiNeed && <p className="start-need">{kitify(aiNeed)}. AI assist shows how to connect it, and your request waits there.</p>}
             <div className="start-actions">
               <button type="button" className="btn" onClick={() => setStep('pick')}>Back</button>
               {step === 'paper' && <button type="button" className="btn start-alt" onClick={() => props.onAction('paper-template')}>Start from the template</button>}

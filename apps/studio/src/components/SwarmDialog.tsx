@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { SWARM_DEFAULTS, buildWithCursors } from '../lib/swarm';
+import { kitify } from './KitLink';
 
 /**
  * Tools › Build with cursors: a team of coloured, named cursors builds the scene's opening (boxes drawn with a size
@@ -57,7 +58,7 @@ export function SwarmDialog(props: { open: boolean; scene: Scene; at: number; on
         <label className="start-again"><input type="checkbox" checked={names} onChange={(e) => setNames(e.target.checked)} /> Name tags on the cursors</label>
         <label className="start-again"><input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} /> Soft clicks and typing sounds</label>
         <label className="start-again"><input type="checkbox" checked={fromHere} onChange={(e) => setFromHere(e.target.checked)} /> Start at the playhead ({props.at} s), not at the beginning</label>
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         <div className="export-row">
           <button type="button" className="btn small primary" onClick={go}>Build it</button>
         </div>

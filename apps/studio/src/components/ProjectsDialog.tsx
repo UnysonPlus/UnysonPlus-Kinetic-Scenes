@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { listProjects, revealProject, setWorkspaceRoot, workspaceAvailable, type ProjectInfo, type WorkspaceRoot } from '../lib/workspace';
 import { kitAgent, kitStatus } from '../lib/ai';
 import { GetKit, KIT_REPO } from './GetKit';
+import { KitLink, kitify } from './KitLink';
 
 export const AGENTS_GUIDE = 'https://docs.unysonplus.com/kinetic-scenes/ai-agents';
 
@@ -21,7 +22,7 @@ export function AgentCard(props: { compact?: boolean; kitRunning?: boolean }) {
   if (agent) {
     return (
       <p className="agent-connected" role="status">
-        <span className="assist-dot" aria-hidden="true" /> <span><strong>Connected: {agent.name}</strong>, working through your AI Dev Kit
+        <span className="assist-dot" aria-hidden="true" /> <span><strong>Connected: {agent.name}</strong>, working through your <KitLink />
         (last active {since(agent.at)}). Ask it for whole videos; AI assist is here for quick changes.</span>
       </p>
     );
@@ -32,7 +33,7 @@ export function AgentCard(props: { compact?: boolean; kitRunning?: boolean }) {
       <div className="agent-card" role="note">
         <strong>For the full result, connect your AI agent</strong>
         <p>
-          Your AI Dev Kit is running. Connect your AI agent to it, such as Claude Code, and it builds whole videos in your
+          Your <KitLink /> is running. Connect your AI agent to it, such as Claude Code, and it builds whole videos in your
           workspace: it records your screen, narrates with your own voice, adds music, checks every frame and fixes what
           it finds. You watch each step here and export when it is ready.
         </p>
@@ -47,7 +48,7 @@ export function AgentCard(props: { compact?: boolean; kitRunning?: boolean }) {
     <div className="agent-card" role="note">
       <strong>Get the full result: connect your AI agent</strong>
       <p>
-        With the free AI Dev Kit, an AI agent on your computer, such as Claude, builds whole videos in your workspace:
+        With the free <KitLink />, an AI agent on your computer, such as Claude, builds whole videos in your workspace:
         it records your screen, narrates with your own voice, adds music, checks every frame and fixes what it finds.
         You watch each step here and export when it is ready.
       </p>
@@ -128,7 +129,7 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
           A project is a folder on your computer: the scene, its media and its renders. You and your AI agent work on the
           same files, and changes the agent makes show up here straight away.
         </p>
-        {state === 'checking' && <p className="addon-detail" role="status">Looking for the AI Dev Kit…</p>}
+        {state === 'checking' && <p className="addon-detail" role="status">Looking for the <KitLink />…</p>}
         {state === 'missing' && (
           <>
             <GetKit lead="Projects are kept by the AI Dev Kit" onCheck={load} />
@@ -168,7 +169,7 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
                 <code>{root?.root}</code>
               </div>
               {root?.byEnv
-                ? <p className="addon-detail">Set by KINETIC_WORKSPACE when the AI Dev Kit starts.</p>
+                ? <p className="addon-detail">Set by KINETIC_WORKSPACE when the <KitLink /> starts.</p>
                 : (
                   <div className="export-row">
                     <button type="button" className="btn small ghost" disabled={busy} onClick={() => changeRoot()}
@@ -180,7 +181,7 @@ export function ProjectsDialog(props: { open: boolean; onClose: () => void; curr
             </div>
           </>
         )}
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         {state !== 'checking' && <AgentCard kitRunning={state === 'ready'} />}
       </div>
     </dialog>

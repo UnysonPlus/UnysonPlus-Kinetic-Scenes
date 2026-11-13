@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { kitBase } from '../lib/ai';
+import { kitify } from './KitLink';
 
 const asDataUrl = (b: Blob) => new Promise<string>((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => bad(r.error); r.readAsDataURL(b); });
 
@@ -52,7 +53,7 @@ export function LikeThisDialog(props: { open: boolean; onClose: () => void; onBr
           Give a video you like. The AI works out how it is made (its structure, pacing, text style, cuts and use of music)
           and makes your scene the same way, with your own words and pictures. Nothing from the video itself is copied.
         </p>
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         <div className="export-row">
           <button type="button" className="btn small" disabled={!!busy} onClick={() => fileRef.current?.click()}>{file ? 'Choose another video…' : 'Choose the video you like…'}</button>
           {file && <span className="addon-detail">{file.name}</span>}

@@ -6,6 +6,7 @@ import { fillScene, missingColumns, parseCsv, placeholders, rowLabel, slug } fro
 import type { Sheet } from '../lib/batch';
 import { canRender, renderVideo } from '../lib/video';
 import { FfmpegNotice } from './FfmpegNotice';
+import { kitify } from './KitLink';
 
 function save(blob: Blob, name: string) {
   const a = document.createElement('a');
@@ -91,7 +92,7 @@ export const BatchDialog = memoIgnoringCallbacks(function BatchDialog(props: {
           picture addresses, like <code>{'{{product}}'}</code> or <code>{'{{price}}'}</code>; a spreadsheet saved as CSV
           gives a column for each, one row per video.
         </p>
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         {needFfmpeg && <FfmpegNotice what="Rendering videos" onReady={() => setNeedFfmpeg(false)} />}
         <p className="addon-detail">
           {used.length ? <>This scene's placeholders: {used.map((p) => <code key={p}>{`{{${p}}}`}</code>).reduce<React.ReactNode[]>((a, c, i) => (i ? [...a, ', ', c] : [c]), [])}.</>

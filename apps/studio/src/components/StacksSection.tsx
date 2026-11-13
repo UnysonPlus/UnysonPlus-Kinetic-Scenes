@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Layer, Scene } from '@unysonplus/scene-player/types';
 import { STACKS, applyStack, sceneBeats } from '../lib/stacks';
 import { Section } from './fields';
+import { kitify } from './KitLink';
 
 /** Effect stacks: one click adds a named combination of effects to this layer, at the playhead (on the nearest beat). */
 export function StacksSection(props: { scene: Scene; layer: Layer; time: number; onCommit: (scene: Scene) => void; onSeek?: (t: number) => void }) {
@@ -30,7 +31,7 @@ export function StacksSection(props: { scene: Scene; layer: Layer; time: number;
             }}>{s.name}</button>
         ))}
       </div>
-      {note && <p className="field-hint wide" role="status">{note}</p>}
+      {note && <p className="field-hint wide" role="status">{kitify(note)}</p>}
     </Section>
   );
 }

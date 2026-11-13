@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FFMPEG_LINK, ffmpegStatus, installFfmpeg, type FfmpegInstall, type FfmpegStatus } from '../lib/ffmpeg';
+import { KitLink, kitify } from './KitLink';
 
 /**
  * FFmpeg isn't on this computer and something needs it: says so at that moment, with a button for the AI Dev Kit to
@@ -45,7 +46,7 @@ export function FfmpegNotice(props: { what: string; onReady?: () => void }) {
   return (
     <div className="ffmpeg-notice">
       <p>{props.what} needs <strong>FFmpeg</strong>, a free video tool that isn&apos;t on this computer yet.</p>
-      {!status && <p className="addon-detail">Update the AI Dev Kit and it can install FFmpeg for you, or install it yourself and restart the kit.</p>}
+      {!status && <p className="addon-detail">Update the <KitLink /> and it can install FFmpeg for you, or install it yourself and restart the kit.</p>}
       {status && !status.canInstall && <p className="addon-detail">Install it yourself, then restart the kit. On a Mac: <code>brew install ffmpeg</code>.</p>}
       {running && (
         <div className="ffmpeg-progress" role="status">
@@ -53,7 +54,7 @@ export function FfmpegNotice(props: { what: string; onReady?: () => void }) {
           <progress value={percent ?? undefined} max={100} aria-label="Installing FFmpeg" />
         </div>
       )}
-      {error && <p className="export-warn" role="alert">{error}</p>}
+      {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
       {!running && (
         <div className="export-row">
           {status?.canInstall && (

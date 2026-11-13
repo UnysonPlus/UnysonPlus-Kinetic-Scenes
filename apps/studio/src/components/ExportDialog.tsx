@@ -9,6 +9,7 @@ import { VideoSection } from './VideoSection';
 import { ShareSection } from './ShareSection';
 import { DownloadIcon } from './icons';
 import { footageIds, withFootage } from '../lib/footage';
+import { kitify } from './KitLink';
 
 const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const sizeOf = (s: string) => new Blob([s]).size;
@@ -160,7 +161,7 @@ export const ExportDialog = memoIgnoringCallbacks(function ExportDialog(props: {
         {props.scene.mode === 'video' && <EditorSection project={props.project ?? null} onDone={props.onDone} />}
         <WebExportSection project={props.project ?? null} onDone={props.onDone} />
 
-        {error && <p className="export-error" role="alert">{error}</p>}
+        {error && <p className="export-error" role="alert">{kitify(error)}</p>}
       </div>
     </dialog>
   );

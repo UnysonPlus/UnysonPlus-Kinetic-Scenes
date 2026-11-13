@@ -4,6 +4,7 @@ import { kitBase } from '../lib/ai';
 import { makeMusic } from '../lib/addons';
 import { addAudio, setAudio } from '../lib/audio';
 import { analyseMusic } from '../lib/beats';
+import { kitify } from './KitLink';
 
 const STYLES = [
   { label: 'Upbeat', prompt: 'upbeat feel-good pop instrumental, punchy drums, bright synths, motivational', bpm: 120 },
@@ -118,11 +119,11 @@ export function MusicDialog(props: { open: boolean; onClose: () => void; scene: 
           </label>
         </div>
         {error && (
-          <p className="export-warn" role="alert">{error}{' '}
+          <p className="export-warn" role="alert">{kitify(error)}{kitify(' ')}
             <button type="button" className="btn small ghost" onClick={() => { props.onClose(); props.onAddons(); }}>Open Add-ons</button>
           </p>
         )}
-        {step && <p className="addon-detail" role="status">{step}… The first one after ACE-Step starts takes a minute or so.</p>}
+        {step && <p className="addon-detail" role="status">{kitify(step)}… The first one after ACE-Step starts takes a minute or so.</p>}
         <div className="export-row">
           <button type="button" className="btn primary" disabled={!!step || !prompt.trim()} onClick={go}>{step ? 'Making…' : 'Make music'}</button>
         </div>

@@ -5,6 +5,7 @@ import { Section } from './fields';
 import { FfmpegNotice } from './FfmpegNotice';
 import { setAudio } from '../lib/audio';
 import { clipWords, installSpeech, isStrong, transcribe, transcribeStatus, type ModelKey, type TranscribeStatus } from '../lib/transcribe';
+import { kitify } from './KitLink';
 
 const GUIDE = 'https://docs.unysonplus.com/guides/set-up-ai-for-unysonplus';
 const KIT_REPO = 'https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit';
@@ -148,7 +149,7 @@ export function WordsSection(props: {
                     {cuts.length ? `Cut ${struck.size ? `${struck.size} word${struck.size === 1 ? '' : 's'}` : 'pauses'}${struck.size && pauses ? ' and pauses' : ''}: −${secs.toFixed(1)} s` : 'Nothing to cut yet'}
                   </button>
                 </div>
-                {editNote && <p className="field-hint" role="status">{editNote}</p>}
+                {editNote && <p className="field-hint" role="status">{kitify(editNote)}</p>}
               </div>
             );
           })()}
@@ -183,10 +184,10 @@ export function WordsSection(props: {
             </select>
           </label>
           {installing ? (
-            <p className="words-progress" role="status">{status.install!.step}{pct !== null ? ` · ${pct}%` : '…'}</p>
+            <p className="words-progress" role="status">{kitify(status.install!.step)}{pct !== null ? ` · ${pct}%` : '…'}</p>
           ) : ready ? (
             busy ? (
-              <p className="words-progress" role="status">{busy}… <button type="button" className="link-btn" onClick={() => abort.current?.abort()}>Stop</button></p>
+              <p className="words-progress" role="status">{kitify(busy)}… <button type="button" className="link-btn" onClick={() => abort.current?.abort()}>Stop</button></p>
             ) : (
               <button type="button" className="btn small primary" onClick={run}>{has ? 'Transcribe again' : 'Transcribe'}</button>
             )
@@ -197,8 +198,8 @@ export function WordsSection(props: {
           )}
         </div>
       )}
-      {status?.install?.state === 'error' && <p className="field-hint wide words-error" role="alert">{status.install.error}</p>}
-      {error && <p className="field-hint wide words-error" role="alert">{error}</p>}
+      {status?.install?.state === 'error' && <p className="field-hint wide words-error" role="alert">{kitify(status.install.error)}</p>}
+      {error && <p className="field-hint wide words-error" role="alert">{kitify(error)}</p>}
       {status && !has && !busy && (
         <p className="field-hint wide">
           {anyModel

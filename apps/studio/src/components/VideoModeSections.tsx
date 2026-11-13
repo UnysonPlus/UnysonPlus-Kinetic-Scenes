@@ -10,6 +10,7 @@ import { PLATFORM_LIMITS, VIDEO_FORMATS } from '@unysonplus/scene-player/video';
 import { CheckField, NumberField, Section, SelectField, TextField } from './fields';
 import { Segmented } from './Segmented';
 import { FORMAT_ORDER, setVideo, toVideo, toWeb } from '../lib/videoMode';
+import { KitLink } from './KitLink';
 
 const FORMATS = FORMAT_ORDER;
 
@@ -160,7 +161,7 @@ export function FootageKitSection(props: { scene: Scene; layer: VideoLayer; onCo
         {busy && <button type="button" className="btn small ghost" onClick={() => abort.current?.abort()}>Stop</button>}
       </div>
       {(busy || note) && <p className="field-hint wide" role="status">{busy ? `${busy}…` : note}</p>}
-      {!busy && !note && <p className="field-hint wide">These run in the AI Dev Kit on your computer; nothing is uploaded. {tracked ? 'The face is already found.' : ''}</p>}
+      {!busy && !note && <p className="field-hint wide">These run in the <KitLink /> on your computer; nothing is uploaded. {tracked ? 'The face is already found.' : ''}</p>}
     </Section>
   );
 }

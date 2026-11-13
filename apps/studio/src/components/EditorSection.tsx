@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { kitBase } from '../lib/ai';
 import { revealProject } from '../lib/workspace';
+import { kitify } from './KitLink';
 
 /**
  * Export › For another editor: the scene's cut as a project DaVinci Resolve, Final Cut Pro and Premiere Pro open
@@ -35,7 +36,7 @@ export function EditorSection(props: { project: string | null; onDone: (message:
       {props.project
         ? <button type="button" className="btn small" disabled={busy} onClick={go}>{busy ? 'Writing…' : 'Write the editor project'}</button>
         : <p className="export-note">Open a project first (File › Projects): the editor project refers to its media files where they are.</p>}
-      {error && <p className="export-error" role="alert">{error}</p>}
+      {error && <p className="export-error" role="alert">{kitify(error)}</p>}
     </section>
   );
 }

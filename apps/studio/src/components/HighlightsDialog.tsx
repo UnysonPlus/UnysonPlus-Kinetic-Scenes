@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { kitBase } from '../lib/ai';
 import { putFootage } from '../lib/footage';
+import { KitLink, kitify } from './KitLink';
 
 const asDataUrl = (b: Blob) => new Promise<string>((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => bad(r.error); r.readAsDataURL(b); });
 
@@ -59,12 +60,12 @@ export function HighlightsDialog(props: { open: boolean; onClose: () => void; on
           <button type="button" className="icon-link" aria-label="Close" onClick={props.onClose}>×</button>
         </header>
         <p className="addons-intro">
-          Give a long video (a talk, a product demo, a day's filming). The AI Dev Kit watches it and keeps the moments worth
+          Give a long video (a talk, a product demo, a day's filming). The <KitLink /> watches it and keeps the moments worth
           keeping: sharp, steady and well lit, and what is talked about when it can hear the words. It cuts them together to
           the length you ask, each part an ordinary footage clip you can swap, trim or move. This replaces the current scene;
           Undo brings it back.
         </p>
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         <div className="export-row">
           <button type="button" className="btn small" disabled={!!busy} onClick={() => fileRef.current?.click()}>{file ? 'Choose another video…' : 'Choose a video…'}</button>
           {file && <span className="addon-detail">{file.name} ({(file.size / 1048576).toFixed(0)} MB)</span>}

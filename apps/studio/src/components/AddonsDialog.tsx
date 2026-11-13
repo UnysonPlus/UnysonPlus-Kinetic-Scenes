@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { browseAddon, checkComputer, findAddon, listAddons, setAddonLocation, type Addon, type AddonField } from '../lib/addons';
 import { FfmpegNotice } from './FfmpegNotice';
 import { GetKit } from './GetKit';
+import { KitLink, kitify } from './KitLink';
 
 const STATE: Record<Addon['state'], string> = {
   connected: 'Running', ready: 'Ready', 'no-api': 'Needs its API', 'not-found': 'Not found',
@@ -99,12 +100,12 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
           <button type="button" className="icon-link" aria-label="Close" onClick={props.onClose}>×</button>
         </header>
         <p className="addons-intro">
-          Extra tools the AI Dev Kit can use on this computer. Apps you install yourself are found automatically, or
+          Extra tools the <KitLink /> can use on this computer. Apps you install yourself are found automatically, or
           tell the kit where they are once and it starts them when needed; the others download the first time you use
           them. Nothing is uploaded anywhere.
         </p>
         {noKit && <GetKit onCheck={refresh} busy={busy} />}
-        {error && <p className="export-warn" role="alert">{error}</p>}
+        {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         <ul className="addons-list">
           {(addons ?? []).map((a) => (
             <li key={a.id} className={`addon is-${a.state}`}>
@@ -169,7 +170,7 @@ function ComputerCheck() {
         <button type="button" className="btn small" disabled={state === 'checking'} onClick={run}>{state === 'checking' ? 'Checking…' : report ? 'Check again' : 'Check this computer'}</button>
         {report && <button type="button" className="btn small ghost" onClick={copy}>{state === 'copied' ? 'Copied' : 'Copy the report'}</button>}
       </div>
-      {error && <p className="export-warn" role="alert">{error}</p>}
+      {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
       {report && <pre className="computer-report" tabIndex={0} aria-label="The computer check report">{report}</pre>}
     </section>
   );

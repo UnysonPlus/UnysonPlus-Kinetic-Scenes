@@ -3,6 +3,7 @@ import { mount, type ScenePlayer } from '@unysonplus/scene-player';
 import { starterScene, type ApplyParts, type SceneStyle } from '../lib/styles';
 import { readStyleFile, styleFile } from '../lib/brand';
 import { BrandEditor } from './BrandEditor';
+import { kitify } from './KitLink';
 
 /** A style's starter scene, held on its poster frame and played while hovered. */
 function StylePreview({ style, active }: { style: SceneStyle; active: boolean }) {
@@ -81,7 +82,7 @@ export function StyleLibrary(props: {
             if (!file) return;
             try { props.onUpsert(readStyleFile(await file.text())); setFileError(null); } catch (err) { setFileError((err as Error).message); }
           }} />
-          {fileError && <p className="export-error" role="alert">{fileError}</p>}
+          {fileError && <p className="export-error" role="alert">{kitify(fileError)}</p>}
         </div>
         {editing && (
           <BrandEditor style={editing === 'new' ? undefined : editing} onCancel={() => setEditing(null)}

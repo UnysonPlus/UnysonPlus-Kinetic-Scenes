@@ -3,6 +3,7 @@ import type { Layer, Scene } from '@unysonplus/scene-player/types';
 import { footageLayers, isBehind, people, putBehind } from '../lib/behind';
 import { cutOutPerson } from '../lib/footageKit';
 import { Section } from './fields';
+import { kitify } from './KitLink';
 
 /**
  * Behind the person: a text layer placed between the footage and the person cut out of it, so the title appears to
@@ -49,8 +50,8 @@ export function BehindSection(props: { scene: Scene; layer: Layer; onCommit: (sc
           {behind ? 'Behind the person' : busy ? 'Working…' : 'Put behind the person'}
         </button>
       </div>
-      {busy && <p className="field-hint wide" role="status">{busy}…</p>}
-      {note && <p className="field-hint wide" role="status">{note}</p>}
+      {busy && <p className="field-hint wide" role="status">{kitify(busy)}…</p>}
+      {note && <p className="field-hint wide" role="status">{kitify(note)}</p>}
     </Section>
   );
 }

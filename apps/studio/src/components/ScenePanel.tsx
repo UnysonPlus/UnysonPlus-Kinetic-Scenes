@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { validateScene } from '@unysonplus/scene-player/validate';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { formatScene } from '../lib/format';
+import { kitify } from './KitLink';
 
 /**
  * The scene file as text. It follows the editor while you are not typing in it; a valid edit here
@@ -68,8 +69,8 @@ export function ScenePanel(props: { scene: Scene; onCommit: (scene: Scene) => vo
       </div>
       {(errors.length > 0 || warnings.length > 0) && (
         <ul className="issues">
-          {errors.map((e) => <li key={`e${e}`} className="issue-error">{e}</li>)}
-          {warnings.map((w) => <li key={`w${w}`} className="issue-warn">{w}</li>)}
+          {errors.map((e) => <li key={`e${e}`} className="issue-error">{kitify(e)}</li>)}
+          {warnings.map((w) => <li key={`w${w}`} className="issue-warn">{kitify(w)}</li>)}
         </ul>
       )}
       <label htmlFor="scene-json" className="sr-only">Scene file (JSON)</label>
