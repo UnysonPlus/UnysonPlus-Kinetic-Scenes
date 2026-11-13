@@ -52,20 +52,24 @@ function reducer<T>(s: State<T>, a: Action<T>): State<T> {
   }
 }
 
-export function useHistory<T>(initial: () => T) {
+/**
+ * `settle` runs on every new scene before it is kept (word pins re-timing what is pinned to a changed voice), so the
+ * editor always shows the times the scene plays at. It returns the same value when nothing changed.
+ */
+export function useHistory<T>(initial: () => T, settle: (next: T) => T = (x) => x) {
   const [state, dispatch] = useReducer(reducer as (s: State<T>, a: Action<T>) => State<T>, undefined, () => ({
-    past: [], present: initial(), future: [], gestureBase: null,
+    past: [], present: settle(initial()), future: [], gestureBase: null,
   }));
   return {
     present: state.present,
     canUndo: state.past.length > 0,
     canRedo: state.future.length > 0,
-    commit: useCallback((next: T) => dispatch({ type: 'commit', next }), []),
+    commit: useCallback((next: T) => dispatch({ type: 'commit', next: settle(next) }), [settle]),
     begin: useCallback(() => dispatch({ type: 'begin' }), []),
-    live: useCallback((next: T) => dispatch({ type: 'live', next }), []),
+    live: useCallback((next: T) => dispatch({ type: 'live', next: settle(next) }), [settle]),
     end: useCallback(() => dispatch({ type: 'end' }), []),
     undo: useCallback(() => dispatch({ type: 'undo' }), []),
     redo: useCallback(() => dispatch({ type: 'redo' }), []),
-    reset: useCallback((next: T) => dispatch({ type: 'reset', next }), []),
+    reset: useCallback((next: T) => dispatch({ type: 'reset', next: settle(next) }), [settle]),
   };
 }

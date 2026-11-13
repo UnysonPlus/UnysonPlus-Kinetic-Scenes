@@ -441,6 +441,10 @@
         },
         "params": {
           "type": "object"
+        },
+        "at": {
+          "$ref": "#/$defs/wordPin",
+          "description": "Start when the voice says the word."
         }
       }
     },
@@ -639,6 +643,14 @@
           "type": "number",
           "minimum": 0,
           "maximum": 3
+        },
+        "at": {
+          "$ref": "#/$defs/wordPin",
+          "description": "Appear when the voice says the word (the layer and its clips move)."
+        },
+        "until": {
+          "$ref": "#/$defs/wordPin",
+          "description": "Disappear when the voice says the word."
         }
       },
       "allOf": [
@@ -714,6 +726,41 @@
           }
         }
       ]
+    },
+    "wordPin": {
+      "type": "object",
+      "description": "A moment pinned to a word of a voice-over: it follows the word when the voice changes.",
+      "additionalProperties": false,
+      "required": [
+        "audio",
+        "text"
+      ],
+      "properties": {
+        "audio": {
+          "type": "string",
+          "description": "The voice clip's id."
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "The word or phrase as said."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Which occurrence, counted in words (kept up to date)."
+        },
+        "edge": {
+          "enum": [
+            "start",
+            "end"
+          ]
+        },
+        "offset": {
+          "type": "number",
+          "description": "Seconds after the moment (negative: before)."
+        }
+      }
     }
   }
 }

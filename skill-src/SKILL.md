@@ -58,6 +58,12 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    black frames, loudness, clipping; `video_check`): fix what it reports and render again before handing it over.
    To speak a script with the kit's voice engine use `voice_over`; for several takes of a line, `voice_best_take`; for
    recorded speech, `footage_cleanup`.
+5. **Time to the voice with word pins.** With a voice-over, pin what belongs to a spoken word (`at` / `until` on a
+   layer, `at` on a clip: { `audio`, `text` }) instead of typing its seconds, and keep the voice clip's `script` and
+   `voiceId`. Then a better take, a reworded line, a spreadsheet row's own narration ({{placeholders}} in the script)
+   or a translation (`scene_translate` / `kinetic-scenes translate "<project>" --to es`) re-times the scene by itself.
+   A translation is a new project: check it and look at its stills like any other (lines that got longer can run
+   into the next voice-over; it says which).
 
 ## Checklist
 

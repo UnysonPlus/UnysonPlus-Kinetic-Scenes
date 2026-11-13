@@ -21,6 +21,7 @@ import { drawCode } from './code';
 import { drawCaptions } from './captions';
 import { drawCursor } from './cursor';
 import { expandRepeats } from './repeat';
+import { applyWordPins } from './words';
 import { presetMeta } from './presets/catalog';
 
 // The measured eases, usable by name in any clip (and in custom code clips).
@@ -162,7 +163,8 @@ function validated(input: unknown): Scene {
   try { if (input && typeof input === 'object' && Array.isArray((input as Scene).layers)) expanded = expandRepeats(input as Scene); } catch { expanded = input; }
   const result = validateScene(expanded);
   if (!result.ok) throw new Error(`This scene can't be played:\n- ${result.errors.join('\n- ')}`);
-  return result.scene;
+  // Layers and clips pinned to a voice's words play on those words, whatever times the file says.
+  try { return applyWordPins(result.scene).scene; } catch { return result.scene; }
 }
 
 /**

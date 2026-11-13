@@ -1234,3 +1234,20 @@ dialog.start-dialog.is-step { width: min(660px, calc(100vw - 32px)); }
    warning stays amber, an error red) and is told apart by its underline. */
 .kit-link { color: inherit; font-weight: 650; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .kit-link:hover, .kit-link:focus-visible { color: var(--accent, #2ad38b); }
+
+/* Word pins (Inspector › Timing): pin a time to a word of the voice-over. */
+.wordpin { display: grid; gap: 8px; padding: 8px 0 4px; border-top: 1px solid var(--border); }
+.wordpin-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.wordpin-label { font-size: 12px; color: var(--muted); flex: 1 1 auto; }
+.wordpin-state { font-size: 12px; color: var(--accent); max-width: 100%; overflow-wrap: anywhere; }
+.wordpin-state.is-off { color: var(--faint); }
+.wordpin-state.is-lost { color: var(--red); }
+.wordpin-words { display: flex; flex-wrap: wrap; gap: 4px; max-height: 168px; overflow: auto; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--well); }
+.wordpin-word { font: inherit; font-size: 12px; line-height: 1.2; padding: 3px 6px; border-radius: 4px; border: 1px solid transparent; background: transparent; color: var(--ink); cursor: pointer; }
+.wordpin-word:hover { border-color: var(--border); }
+.wordpin-word:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.wordpin-word.is-on { background: var(--accent); color: var(--accent-ink); }
+
+/* Tools › Translate this video */
+.translate-warnings { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 4px; font-size: 12px; color: var(--amber); }
+.translate-dialog .field select { width: 100%; }

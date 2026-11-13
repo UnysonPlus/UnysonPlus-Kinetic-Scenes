@@ -95,6 +95,15 @@ export interface AudioClip {
    * editor; playback ignores it. */
   voice?: string;
   /**
+   * The script it was spoken from (a voice made from words): kept so it can be spoken again, in another voice or
+   * language, or with a spreadsheet's {{placeholders}} filled in. Playback ignores it.
+   */
+  script?: string;
+  /** The AI Dev Kit voice that spoke it ("kokoro:af_heart", "voicebox:<profile>", a Piper voice id): the script is spoken again in it. */
+  voiceId?: string;
+  /** The language it is spoken in (a two-letter code), when it is not English: its words are timed in it. */
+  lang?: string;
+  /**
    * An audio file: a data: URL (uploaded) or an https address (must allow loading from other sites).
    * Or a built-in sound: "sfx:<name>", optionally with a pitch, "sfx:pop@1.2".
    */
@@ -139,6 +148,24 @@ export interface SpokenWord {
   s?: number;
   /** Pause before the word, in seconds (only when noticeable). */
   p?: number;
+}
+
+/**
+ * A moment pinned to what a voice says rather than to a number of seconds: "when the voice says *database*". Set on a
+ * layer (`at`, `until`) or a clip (`at`), it re-times them whenever the voice's words change (re-recorded, reworded,
+ * trimmed, translated), so the picture stays on the word. See words.ts.
+ */
+export interface WordPin {
+  /** The audio clip (its id) whose words it follows; clips cut from one recording (same `group`) are searched too. */
+  audio: string;
+  /** The word or phrase as said ("hair gel"); matched without case or punctuation. */
+  text: string;
+  /** Which word of the clip it is (0-based): picks the right one when the text is said more than once. Kept up to date. */
+  index?: number;
+  /** start (the default): when the first word begins; end: when the last word ends. */
+  edge?: 'start' | 'end';
+  /** Seconds after that moment (negative: before it). */
+  offset?: number;
 }
 
 export interface SpeechInfo {
@@ -346,6 +373,10 @@ interface LayerBase {
   hover?: { effect: 'lift' | 'grow' | 'glow' | 'brighten' | 'shine' | 'underline' | 'color'; color?: string; css?: string };
   /** Per-breakpoint changes, keyed by breakpoint id. Layout only: clips are shared by every breakpoint. */
   overrides?: Record<string, LayerOverride>;
+  /** Appear when the voice says a word: the layer, with its clips, moves so it starts there (see WordPin). */
+  at?: WordPin;
+  /** Disappear when the voice says a word (the layer's end follows it). */
+  until?: WordPin;
   clips: Clip[];
 }
 
@@ -739,6 +770,8 @@ export interface Clip {
   sound?: ClipSound;
   /** Made from a step (the Studio's Steps): the step's id. Applying the steps again replaces these clips. */
   step?: string;
+  /** Start when the voice says a word (see WordPin): the clip's start follows it. */
+  at?: WordPin;
 }
 
 export interface ClipSound {

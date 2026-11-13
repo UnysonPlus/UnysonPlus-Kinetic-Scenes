@@ -1,6 +1,6 @@
 {
   "name": "@unysonplus/scene-player",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "private": true,
   "description": "Plays Unyson+ Kinetic Scenes scene files in any web page.",
   "type": "module",
@@ -22,6 +22,7 @@
     "./transcript": "./src/transcript.ts",
     "./camera": "./src/camera.ts",
     "./repeat": "./src/repeat.ts",
+    "./words": "./src/words.ts",
     "./video": "./src/video.ts",
     "./lottieData": "./src/lottieData.ts"
   },

@@ -2,6 +2,7 @@ import { registerWebMcp } from './lib/webmcp';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { liveValue, useStableCallbacks } from './lib/liveValue';
 import { validateScene } from '@unysonplus/scene-player/validate';
+import { applyWordPins } from '@unysonplus/scene-player/words';
 import { clearSceneLink, readSceneLink, sceneLinkUrl } from './lib/sceneLink';
 import type { HeightMode, Layer, Scene } from '@unysonplus/scene-player/types';
 import demo from './scenes/demo.json';
@@ -13,6 +14,7 @@ import { MenuBar, type Menu } from './components/MenuBar';
 import { AiAssist, type ChatMessage } from './components/AiAssist';
 import { CheckPanel } from './components/CheckPanel';
 import { FullscreenPlayer } from './components/FullscreenPlayer';
+import { TranslateDialog } from './components/TranslateDialog';
 import { kitStatus, type KitStatus } from './lib/ai';
 import { lintScene, type LintIssue } from '@unysonplus/scene-player/lint';
 import type { LayoutIssue } from '@unysonplus/scene-player/layout';
@@ -154,8 +156,11 @@ interface KeyInfo {
   alt: boolean;
 }
 
+/** Layers and clips pinned to a voice's words follow them whenever the scene changes (see the player's words.ts). */
+const settlePins = (s: Scene): Scene => { try { return applyWordPins(s).scene; } catch { return s; } };
+
 export function App() {
-  const history = useHistory<Scene>(loadInitial);
+  const history = useHistory<Scene>(loadInitial, settlePins);
   const scene = history.present;
   const [selection, setSelection] = useState<Selection>({ layerId: null, clipId: null });
   // A phone starts on the Mobile layout: a 1920 px desktop window scaled to a phone's width is too small to work on.
@@ -308,6 +313,7 @@ export function App() {
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState(false);
+  const [translateOpen, setTranslateOpen] = useState(false);
   const [highlightsOpen, setHighlightsOpen] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -326,6 +332,7 @@ export function App() {
     else if (a === 'physics') setPhysicsOpen(true);
     else if (a === 'swarm') setSwarmOpen(true);
     else if (a === 'export') setExporting(true);
+    else if (a === 'translate') setTranslateOpen(true);
     else setStartOpen(true);
   };
   const newTag = newsUnread ? 'New' : undefined;
@@ -1073,6 +1080,7 @@ export function App() {
       { label: 'Add-ons…', onSelect: () => setAddonsOpen(true), hint: 'Voicebox, ACE-Step music and other tools the AI Dev Kit can use on this computer' },
       { label: 'Make music…', onSelect: () => setMusicOpen(true) },
       { label: 'Videos from a spreadsheet…', onSelect: () => setBatchOpen(true), hint: 'One design, a video per row: fill the {{placeholders}} in the scene from a CSV, preview each row, render them all' },
+      { label: 'Translate this video…', onSelect: () => setTranslateOpen(true), badge: newTag, hint: 'A copy of the project in another language: words on screen translated, voice-overs spoken again, pinned moments on the new words' },
       { label: 'Build with cursors…', onSelect: () => setSwarmOpen(true), badge: newTag, hint: 'A team of named cursors draws every box and types every line of the opening, then the scene plays on' },
       { label: 'Drop with physics…', onSelect: () => setPhysicsOpen(true), hint: 'The selected layers fall, bounce and settle as real objects, written as keyframes you can edit' },
       { label: 'Second listener…', onSelect: () => setListenOpen(true), badge: newTag, hint: 'Gemini hears the scene\'s sound, with no render, and gives timed notes on how it comes across' },
@@ -1547,6 +1555,7 @@ export function App() {
       <BatchDialog open={batchOpen} onClose={() => setBatchOpen(false)} scene={scene} sheet={sheet.sheet} files={sheet.files}
         onSheet={(s, files) => { setSheet({ sheet: s, files }); if (!s) setRowView(null); }}
         onPreview={(i) => { setRowView(i); setBatchOpen(false); }} />
+      <TranslateDialog open={translateOpen} onClose={() => setTranslateOpen(false)} project={project?.id ?? null} scene={scene} onOpen={(id) => openFolderProject(id)} />
       <StockDialog open={stockOpen} onClose={() => setStockOpen(false)} project={project?.id ?? null} onAdd={addStock} />
       <NotesDialog open={notesOpen} onClose={() => setNotesOpen(false)} project={project?.id ?? null} outsideChange={notesChanged} />
       <ProjectsDialog open={projectsOpen} onClose={() => setProjectsOpen(false)} current={project?.id ?? null} title={scene.title || ''}

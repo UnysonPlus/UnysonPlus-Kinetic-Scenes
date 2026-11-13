@@ -1,6 +1,7 @@
 import { PLATFORM_LIMITS, isVideo, zonesFor } from './video';
 import type { VideoFormat } from './types';
 import { expandRepeats } from './repeat';
+import { applyWordPins } from './words';
 import type { Anchor, Box, Breakpoint, Clip, Layer, Scene, TextLayer } from './types';
 import { groupDuration } from './groups';
 import { presetMeta } from './presets/catalog';
@@ -182,6 +183,15 @@ export function lintScene(input: Scene): LintIssue[] {
   /** The list a generated copy belongs to (copies are named <list id>_<n>_<item layer id>), or null. */
   const copyOfList = (id: string) => lists.find((r) => id.startsWith(`${r}_`) && /^\d+_/.test(id.slice(r.length + 1))) ?? null;
   const issues: LintIssue[] = [];
+  // A pin whose voice or word is gone leaves its layer or clip at its old time.
+  for (const p of applyWordPins(input).problems) {
+    issues.push({
+      id: `pin:${p.layerId}:${p.clipId ?? ''}:${p.pin.text}`, severity: 'warn', layerId: p.layerId, clipId: p.clipId,
+      message: p.reason === 'audio'
+        ? `Pinned to the words of a voice clip that is no longer in the scene ("${p.pin.text}"), so it stays where it was. Pin it again or remove the pin.`
+        : `Pinned to "${p.pin.text}", which the voice no longer says, so it stays where it was. Pin it to another word or remove the pin.`,
+    });
+  }
   const video = isVideo(scene);
   const all = entries(scene);
   const spoken = spokenWords(scene);

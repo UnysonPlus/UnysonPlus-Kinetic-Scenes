@@ -73,10 +73,15 @@ Other layer fields:
 - `pin: "stage"`: a top-level layer placed against the stage itself (corner badges); ignores the camera.
 - `depth`: -1 (far) to 1 (near): parallax with camera pans and zooms.
 - `hover`: { `effect`: lift, grow, glow, brighten, shine, underline, color; `color` } for visitors with a mouse.
+- `at` / `until`: word pins, { `audio` (a voice clip id), `text` (the word or phrase said), `index`?, `edge`? (start,
+  end), `offset`? (seconds) }: the layer (with its clips) appears when the voice says the word / leaves when it does.
+  Pin anything that belongs to a spoken word instead of typing its seconds: a re-recorded, reworded, translated or
+  trimmed voice then re-times it by itself (the player applies pins when it plays; `index` is kept up to date).
 
 ## Clips
 
-`{ "id", "preset", "start", "duration", "ease"?, "params"?, "sound"? }`. `id` is unique in the scene; `preset` is an id
+`{ "id", "preset", "start", "duration", "ease"?, "params"?, "sound"?, "at"? }`. `at` is a word pin (see Layers): the
+clip starts when the voice says the word. `id` is unique in the scene; `preset` is an id
 from the preset list; `params` only uses keys that preset lists. `sound`: { `name` (a built-in sound), `at` (start,
 end), `delay`, `volume`, `pitch` }. Presets that enter and leave take `"direction": "in" | "out"`.
 
@@ -84,7 +89,9 @@ end), `delay`, `volume`, `pitch` }. Presets that enter and leave take `"directio
 
 - `audio`: [{ `id`, `src` (a file, or `sfx:<name>`), `start`, `offset`, `duration`, `volume`, `fadeIn`, `fadeOut`,
   `role` (voice, music, sfx), `words` (transcribed: { `w`, `t`, `d`, `s` }), `beats`, `envelope`, `group` (parts cut
-  from one recording share it: captions that follow one part follow them all) }].
+  from one recording share it: captions that follow one part follow them all), `script` (the words a voice was spoken
+  from: kept so it can be spoken again, in another language or with a spreadsheet's {{placeholders}}), `voiceId` (the
+  kit voice that spoke it: `kokoro:af_heart`, `voicebox:<profile>`, a Piper id), `lang` (its language when not English) }].
 - `markers`: [{ `id`, `t`, `label` }] for presentations and hotspots.
 - `camera.keys`: [{ `id`, `t`, `x`, `y` (pan, % of the stage), `zoom`, `roll`, `tiltX`, `tiltY`, `ease` }].
 - `steps`: [{ `id`, `label`, `hold`, `do`: [{ `layer`, `preset`, `params`, `duration`, `offset` }] }]: a walkthrough

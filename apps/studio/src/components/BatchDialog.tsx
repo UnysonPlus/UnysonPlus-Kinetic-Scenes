@@ -2,7 +2,7 @@ import { memoIgnoringCallbacks } from '../lib/liveValue';
 import { useEffect, useRef, useState } from 'react';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { VIDEO_FORMATS } from '@unysonplus/scene-player/video';
-import { fillScene, missingColumns, parseCsv, placeholders, rowLabel, slug } from '../lib/batch';
+import { fillScene, missingColumns, parseCsv, placeholders, rowLabel, slug, voiceRow } from '../lib/batch';
 import type { Sheet } from '../lib/batch';
 import { canRender, renderVideo } from '../lib/video';
 import { FfmpegNotice } from './FfmpegNotice';
@@ -64,7 +64,9 @@ export const BatchDialog = memoIgnoringCallbacks(function BatchDialog(props: {
         const label = rowLabel(sheet, i);
         setProgress(`Video ${i + 1} of ${sheet.rows.length}: ${label}`);
         try {
-          const r = await renderVideo(fillScene(props.scene, sheet.rows[i], props.files), { width: size.width, height: size.height, fps, format: 'mp4' }, (d, t) => setProgress(`Video ${i + 1} of ${sheet.rows.length}: ${label} (${t ? Math.round((d / t) * 100) : 0}%)`), ctl.signal);
+          // A voice-over whose script has placeholders is spoken again for this row (word pins follow it).
+          const filled = await voiceRow(props.scene, fillScene(props.scene, sheet.rows[i], props.files), { signal: ctl.signal, onStep: (s) => setProgress(`Video ${i + 1} of ${sheet.rows.length}: ${label}: ${s}`) });
+          const r = await renderVideo(filled, { width: size.width, height: size.height, fps, format: 'mp4' }, (d, t) => setProgress(`Video ${i + 1} of ${sheet.rows.length}: ${label} (${t ? Math.round((d / t) * 100) : 0}%)`), ctl.signal);
           save(r.blob, `${String(i + 1).padStart(2, '0')}-${slug(label) || 'video'}.mp4`);
         } catch (e) {
           if ((e as Error).name === 'AbortError') throw e;
@@ -90,7 +92,8 @@ export const BatchDialog = memoIgnoringCallbacks(function BatchDialog(props: {
         <p className="addons-intro">
           One design, a video per row: a reel for every product in a shop. Write placeholders in the scene's words and
           picture addresses, like <code>{'{{product}}'}</code> or <code>{'{{price}}'}</code>; a spreadsheet saved as CSV
-          gives a column for each, one row per video.
+          gives a column for each, one row per video. A voice-over made from a script can have placeholders too: each
+          row's line is spoken again in the same voice (with the AI Dev Kit), and whatever is pinned to its words follows.
         </p>
         {error && <p className="export-warn" role="alert">{kitify(error)}</p>}
         {needFfmpeg && <FfmpegNotice what="Rendering videos" onReady={() => setNeedFfmpeg(false)} />}

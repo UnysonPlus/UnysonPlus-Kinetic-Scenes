@@ -40,6 +40,14 @@ export function validateScene(input: unknown): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const fail = (path: string, msg: string) => errors.push(`${path}: ${msg}`);
+  // A word pin that is malformed is dropped (with a warning) rather than stopping the scene: it only times things.
+  const pinOk = (path: string, pin: unknown): boolean => {
+    if (isObj(pin) && typeof pin.audio === 'string' && pin.audio && typeof pin.text === 'string' && pin.text.trim() && pin.text.length <= 200
+      && (pin.index === undefined || (isNum(pin.index) && pin.index >= 0)) && (pin.edge === undefined || pin.edge === 'start' || pin.edge === 'end')
+      && (pin.offset === undefined || (isNum(pin.offset) && Math.abs(pin.offset) <= 600))) return true;
+    warnings.push(`${path}: a word pin needs { audio: clip id, text: the word said, index?, edge?: "start" | "end", offset?: seconds }, so it was left out.`);
+    return false;
+  };
 
   if (!isObj(input)) {
     return { ok: false, errors: ['The scene must be a JSON object.'], warnings, scene: input as Scene };
@@ -152,6 +160,9 @@ export function validateScene(input: unknown): ValidationResult {
         if (a.loop !== undefined && typeof a.loop !== 'boolean') fail(`${ap}.loop`, 'must be true or false');
         if (a.volume !== undefined && (!isNum(a.volume) || a.volume < 0 || a.volume > 2)) fail(`${ap}.volume`, 'must be 0 to 2');
         if (a.role !== undefined && !['voice', 'music', 'sfx'].includes(a.role as string)) fail(`${ap}.role`, 'must be voice, music or sfx');
+        if (a.script !== undefined && (typeof a.script !== 'string' || a.script.length > 50000)) { warnings.push(`${ap}.script: must be text (at most 50,000 characters), so it was left out.`); delete a.script; }
+        if (a.voiceId !== undefined && (typeof a.voiceId !== 'string' || a.voiceId.length > 200)) { warnings.push(`${ap}.voiceId: must be a voice id, so it was left out.`); delete a.voiceId; }
+        if (a.lang !== undefined && (typeof a.lang !== 'string' || !/^[a-z]{2}$/.test(a.lang))) { warnings.push(`${ap}.lang: must be a two-letter language code, so it was left out.`); delete a.lang; }
         if (a.words !== undefined) {
           if (!Array.isArray(a.words) || a.words.length > 20000) fail(`${ap}.words`, 'must be a list of at most 20,000 words');
           else {
@@ -398,6 +409,9 @@ export function validateScene(input: unknown): ValidationResult {
         }
       }
 
+      if (layer.at !== undefined && !pinOk(`${lp}.at`, layer.at)) delete layer.at;
+      if (layer.until !== undefined && !pinOk(`${lp}.until`, layer.until)) delete layer.until;
+
       if (!Array.isArray(layer.clips)) layer.clips = [];
       layer.clips.forEach((clip: Clip, j: number) => {
         const cp = `${lp}.clips[${j}]`;
@@ -413,6 +427,7 @@ export function validateScene(input: unknown): ValidationResult {
         }
         if (clip.ease !== undefined && (typeof clip.ease !== 'string' || !EASE_RE.test(clip.ease))) fail(`${cp}.ease`, 'is not a valid easing name');
         if (clip.params !== undefined && !isObj(clip.params)) fail(`${cp}.params`, 'must be an object');
+        if (clip.at !== undefined && !pinOk(`${cp}.at`, clip.at)) delete clip.at;
         if (clip.sound !== undefined) {
           const sd = clip.sound as unknown;
           const sp = `${cp}.sound`;

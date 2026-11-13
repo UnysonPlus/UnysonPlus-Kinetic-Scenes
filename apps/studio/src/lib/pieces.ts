@@ -288,7 +288,64 @@ export const PIECES: Piece[] = [
     id: 'giantcaps', name: 'Giant captions', description: 'Big captions from the voice-over, each word slamming in as it is said (transcribe the voice first).',
     build: () => ({ id: 'giant', type: 'captions', name: 'Giant captions', box: { x: 50, y: 62, w: 86 }, style: { fontSize: 9, fontWeight: 900, color: '#ffffff' }, uppercase: true, maxWords: 2, motion: 'slam', mode: 'word', highlight: '#ffd166', clips: [] } as Layer),
   },
+  {
+    id: 'reply', name: 'Replying to a comment', description: 'A viewer’s comment as a sticker at the top of a reel ("Reply to @name’s comment" and the question), popping in with a tilt: open a reel by answering a question. Change the name and the words.',
+    build: () => group('reply', 'Replying to a comment', [
+      rect('card', 50, 17.5, 84, 14, { radius: 2.4, fill: '#ffffff', box: { x: 50, y: 17.5, w: 84, h: 14, rotate: -2 }, clips: [withSound(C('pop', 0, 0.4, { from: 0.6 }, 'back.out(1.8)'), 'pop'), C('jiggle', 0.5, 1.2, { angle: 1.2, speed: 3 })] }),
+      { id: 'avatar', type: 'shape', shape: 'ellipse', fill: 'linear-gradient(135deg,#2ad38b,#0e7c66)', box: { x: 16, y: 14, w: 7, ratio: 1, rotate: -2 }, clips: [C('pop', 0.15, 0.3)] } as Layer,
+      text('who', 'Reply to @your.viewer’s comment', 22.5, 13.6, 3.1, { box: { anchor: 'left', rotate: -2 }, style: { fontSize: 3.1, fontWeight: 600, color: '#6b7280' }, clips: [C('fade', 0.2, 0.25)] }),
+      text('ask', 'Is there a free way to do this?', 12, 20, 4.6, { box: { anchor: 'left', w: 76, rotate: -2 }, style: { fontSize: 4.6, fontWeight: 800, color: '#111111', align: 'left', lineHeight: 1.15 }, clips: [C('text-typewriter', 0.35, 0.9)] }),
+    ]),
+  },
+  {
+    id: 'tierlist', name: 'Tier list', description: 'A tier list: S to D rows in their colours, and items that drop into their rows one by one with a sound. Change the items, the rows they land in and when.',
+    build: () => {
+      const tiers = [['S', '#ff7f7f'], ['A', '#ffbf7f'], ['B', '#ffdf7f'], ['C', '#bfff7f'], ['D', '#7fbfff']] as const;
+      const items: Array<[string, number]> = [['Speed', 0], ['Price', 1], ['Design', 0], ['Support', 2], ['Updates', 3]];
+      const rowY = (i: number) => 30 + i * 9.4;
+      const slot = new Map<number, number>();
+      return group('tierlist', 'Tier list', [
+        text('title', 'RANKED', 50, 19, 6.5, { style: { fontSize: 6.5, fontWeight: 900, color: '#ffffff', letterSpacing: 0.04 }, clips: [C('text-slam', 0, 0.45)] }),
+        ...tiers.flatMap(([t, color], i) => [
+          rect(`row${t}`, 56, rowY(i), 74, 8.6, { fill: '#1b1f26', radius: 0.8, clips: [C('wipe', 0.15 + i * 0.07, 0.35, { from: 'left' })] }),
+          rect(`tag${t}`, 13, rowY(i), 12, 8.6, { fill: color, radius: 0.8, clips: [C('pop', 0.2 + i * 0.07, 0.3)] }),
+          text(`t${t}`, t, 13, rowY(i), 5, { style: { fontSize: 5, fontWeight: 900, color: '#111111' }, clips: [C('fade', 0.25 + i * 0.07, 0.2)] }),
+        ]),
+        ...items.map(([label, tier], k) => {
+          const n = slot.get(tier) ?? 0; slot.set(tier, n + 1);
+          const at = 1 + k * 0.7;
+          return text(`it${k}`, label, 31 + n * 19, rowY(tier), 3.3, {
+            style: { fontSize: 3.3, fontWeight: 800, color: '#111111' }, pill: { fill: '#ffffff', padX: 0.7, padY: 0.45, radius: 0.4 },
+            clips: [withSound(C('stack-in', at, 0.45, { lift: 120 }, 'back.out(1.6)'), 'pop')],
+          });
+        }),
+      ]);
+    },
+  },
+  {
+    id: 'reveal', name: 'Reveal board', description: 'A numbered board whose answers are covered, then uncovered one by one with a sound, like a game show: top 5 lists, "the answers you got wrong". Change the answers and the times.',
+    build: () => {
+      const answers = ['Your first answer', 'The second one', 'A surprising third', 'The fourth', 'And the top one'];
+      const y = (i: number) => 26 + i * 11;
+      return group('reveal', 'Reveal board', [
+        text('title', 'TOP 5', 50, 15, 7, { style: { fontSize: 7, fontWeight: 900, color: '#ffffff' }, clips: [C('text-slam', 0, 0.45)] }),
+        ...answers.flatMap((a, i) => {
+          const at = 1.2 + i * 1.1;
+          return [
+            rect(`bar${i}`, 50, y(i), 86, 9, { fill: '#ffffff', radius: 1.2, clips: [C('slide', 0.15 + i * 0.08, 0.35, { from: 'right' })] }),
+            { id: `n${i}`, type: 'shape', shape: 'ellipse', fill: '#ff4a2b', box: { x: 14, y: y(i), w: 7, ratio: 1 }, clips: [C('pop', 0.3 + i * 0.08, 0.3)] } as Layer,
+            text(`d${i}`, String(i + 1), 14, y(i), 3.8, { style: { fontSize: 3.8, fontWeight: 900, color: '#ffffff' }, clips: [C('fade', 0.35 + i * 0.08, 0.2)] }),
+            text(`a${i}`, a, 22, y(i), 3.6, { box: { anchor: 'left', w: 60 }, style: { fontSize: 3.6, fontWeight: 800, color: '#111111', align: 'left' }, clips: [C('text-rise', at + 0.1, 0.4)] }),
+            rect(`cover${i}`, 55.5, y(i), 70, 6.4, { fill: '#2b3038', radius: 0.8, clips: [C('fade', 0.4 + i * 0.08, 0.2), withSound(C('wipe', at, 0.35, { direction: 'out', from: 'left' }), 'reveal')] }),
+          ];
+        }),
+      ]);
+    },
+  },
 ];
+
+/** A clip with a built-in sound that plays as it starts. */
+function withSound(c: Clip, name: string): Clip { return { ...c, sound: { name } }; }
 
 /** Inserts a piece at the playhead (in the group being edited), with ids made unique; returns its id. */
 export function insertPiece(scene: Scene, piece: Piece, at: number, scope: string | null): { scene: Scene; id: string } {

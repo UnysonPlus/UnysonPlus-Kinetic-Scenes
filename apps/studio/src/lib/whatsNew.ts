@@ -2,14 +2,18 @@
  * What's new: the list behind Help › What's new and the start screen. Add new features at the top and change NEWS_ID:
  * that brings the New tags back for everyone until they open the list.
  */
-export type NewsAction = 'listen' | 'physics' | 'paper' | 'swarm' | 'export';
+export type NewsAction = 'listen' | 'physics' | 'paper' | 'swarm' | 'export' | 'translate';
 export interface NewsItem { id: string; title: string; /** A few words for the start screen. */ short: string; text: string; doc: string; action?: NewsAction }
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-13-web-export';
+export const NEWS_ID = '2026-11-14-words';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'translate', title: 'Translate a video', short: 'The same video in another language', text: 'Tools › Translate this video makes a copy of your project in another language: every word on screen translated, every voice-over spoken again in a voice for that language (a free voice for 15 languages, or your Voicebox voice in ten), captions on the new words, and whatever is timed to a word moved to its translation. Your project stays as it is.', doc: `${DOCS}translate`, action: 'translate' },
+  { id: 'word-pins', title: 'Timed by the words', short: 'Pin a moment to what the voice says', text: 'Pin a layer, a group or a clip to a word of the voice-over (Inspector › Timing › On a word): it appears when the voice says it. Re-record the line, change its words or trim it, and everything pinned moves with the words by itself, so a better take never means re-timing the scene.', doc: `${DOCS}word-pins` },
+  { id: 'reel-pieces', title: 'Reply, rank, reveal', short: 'Three new pieces for reels', text: 'New ready-made pieces: a comment sticker to open a reel by answering a viewer’s question, a tier list whose items drop into their rows with a sound, and a top-5 board that uncovers its answers one by one. Insert › Pieces.', doc: `${DOCS}video-effects#ready-made-pieces` },
+  { id: 'batch-voice', title: 'A voice-over for every row', short: 'Spreadsheet videos with their own narration', text: 'In Videos from a spreadsheet, a voice-over made from a script can have {{placeholders}} too: each row’s line is spoken again in the same voice, only the lines that changed are made again, and whatever is pinned to its words follows.', doc: `${DOCS}batch-videos#a-voice-over-for-every-row` },
   { id: 'web-export', title: 'Light enough for a web page', short: 'Play a scene live, not as a heavy video', text: 'Export › For a web page makes a copy of your project for playing live on a site with the Unyson+ Kinetic Scene element: every picture and video sized to the largest it is shown, pictures as WebP, footage and sounds trimmed to the seconds they play. A 47-second promo went from 23 MB to under 4 MB, lighter than its MP4. Give it the address of your site and the scene is ready to paste into the element.', doc: `${DOCS}web-export`, action: 'export' },
   { id: 'scene-links', title: 'Hand over a video to change', short: 'A link that opens your scene for someone else', text: 'Put a scene and its pictures on your site and send a link: the person gets their own copy in the Studio, changes the words or photos, and exports the video in Chrome with nothing installed. Video export in Chrome now works by default, stock photos included.', doc: `${DOCS}export#scene-links-open-a-scene-from-the-web` },
   { id: 'talking-head', title: 'Talking-head effects', short: 'Code body, manga ink, blow away and more', text: 'New effects for a person on camera: turn them into code, a banknote engraving or a manga impact frame, blow them away into grains, put clones of them in a row, run words round their head, rack the focus and explode a frame into its layers. Plus new pieces: a voice note, a phone keyboard that predicts the next word, a newspaper front page, a banknote and a day dial. Cut the person out of the footage first.', doc: `${DOCS}video-effects#effects-on-a-person` },

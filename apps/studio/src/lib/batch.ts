@@ -1,4 +1,6 @@
 import type { Scene } from '@unysonplus/scene-player/types';
+import { applyWordPins } from '@unysonplus/scene-player/words';
+import { speak } from './voice';
 
 /**
  * One scene, many videos: {{placeholders}} in a scene's words and media addresses, filled from each row of a
@@ -64,6 +66,32 @@ export function fillScene(scene: Scene, row: Record<string, string>, files?: Map
     if (out !== s && files?.size) { const f = files.get(out.trim().toLowerCase()); if (f) return f; }
     return out;
   }) as Scene;
+}
+
+/** Voice clips whose script a row changes ({{placeholders}} in a voice-over made from a script). */
+export function voicesToSpeak(template: Scene, filled: Scene): string[] {
+  return (filled.audio ?? []).filter((a) => a.role === 'voice' && a.script && (template.audio ?? []).find((t) => t.id === a.id)?.script !== a.script).map((a) => a.id);
+}
+
+/**
+ * A row's voice-overs: each voice clip whose script the row changed is spoken again by the AI Dev Kit in the same voice
+ * (only the lines whose words changed are made again: the kit keeps the others), and everything pinned to its words
+ * follows (word pins). The same rule as the kit's studio-batch.mjs voiceRow: keep the two in step.
+ */
+export async function voiceRow(template: Scene, filled: Scene, opts: { signal?: AbortSignal; onStep?: (s: string) => void } = {}): Promise<Scene> {
+  const ids = voicesToSpeak(template, filled);
+  if (!ids.length) return filled;
+  const audio = [];
+  for (const a of filled.audio ?? []) {
+    if (!ids.includes(a.id)) { audio.push(a); continue; }
+    opts.onStep?.(`Speaking "${a.name || a.id}"`);
+    const v = await speak(a.script!.split(String.fromCharCode(10)).map((l) => l.trim()).filter(Boolean), { voice: a.voiceId, language: a.lang, signal: opts.signal, onStep: opts.onStep });
+    const { offset: _o, duration: _d, ...rest } = a;
+    audio.push({ ...rest, src: v.src, words: v.words, speech: v.speech });
+  }
+  const pinned = applyWordPins({ ...filled, audio }).scene;
+  const end = Math.max(0, ...audio.filter((a) => a.role === 'voice').map((a) => { const w = a.words?.[a.words.length - 1]; return w ? a.start + w.t + w.d - (a.offset ?? 0) : 0; }));
+  return end + 0.4 > pinned.duration ? { ...pinned, duration: Math.round((end + 0.4) * 100) / 100 } : pinned;
 }
 
 /** A row's label: the first column's value (a product name, usually). */

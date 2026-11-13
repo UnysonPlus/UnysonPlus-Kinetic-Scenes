@@ -13,6 +13,7 @@ import { SCROLL_DEFAULTS } from '@unysonplus/scene-player/scroll';
 import { scrollTestHtml } from '../lib/documents';
 import demo from '../scenes/demo.json';
 import { CheckField, ColorField, Field, NumberField, Section, SelectField, TextField } from './fields';
+import { WordPinField } from './WordPinField';
 import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/groups';
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
@@ -447,7 +448,9 @@ function GroupInspector({ scene, group, onCommit, onSelect, alignTo, onAlignTo, 
           onCommit={(v) => props({ end: v === undefined || v >= scene.duration ? undefined : v })} />
         <NumberField label="Opacity" value={group.opacity ?? 1} step={0.05} min={0} max={1}
           onCommit={(v) => props({ opacity: v === undefined || v >= 1 ? undefined : v })} />
-        <p className="field-hint wide">Moving the start moves everything inside. The own length is where the group's clock stops; left blank, it ends with its last clip.</p>
+        <WordPinField scene={scene} label="Starts on a word" value={group.at} onChange={(at) => props({ at })} />
+        <WordPinField scene={scene} label="Disappears on a word" value={group.until} onChange={(until) => props({ until })} />
+        <p className="field-hint wide">Moving the start moves everything inside. The own length is where the group's clock stops; left blank, it ends with its last clip.{(group.at || group.until) ? ' ' + 'While pinned, the time follows the word: move it with the Offset rather than the time.' : ''}</p>
       </Section>
 
       <TransitionSection scene={scene} group={group} onCommit={onCommit} />
@@ -684,6 +687,9 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         <NumberField label="Appears" value={layer.start ?? 0} step={0.1} min={0} max={scene.duration} unit="s" onCommit={(v) => props({ start: v || undefined })} />
         <NumberField label="Disappears" value={layer.end} placeholder={String(scene.duration)} step={0.1} min={0} max={scene.duration} unit="s" optional onCommit={(v) => props({ end: v === undefined || v >= scene.duration ? undefined : v })} />
         <NumberField label="Opacity" value={layer.opacity ?? 1} step={0.05} min={0} max={1} onCommit={(v) => props({ opacity: v === undefined || v >= 1 ? undefined : v })} />
+        <WordPinField scene={scene} label="Appears on a word" value={layer.at} onChange={(at) => props({ at })} />
+        <WordPinField scene={scene} label="Disappears on a word" value={layer.until} onChange={(until) => props({ until })} hint="Click the word it should leave on; shift-click a later word for a phrase, and set At to “When it ends” to leave after it." />
+        {(layer.at || layer.until) && <p className="field-hint wide">While pinned, the time follows the word: move it with the Offset rather than the time.</p>}
       </Section>
 
       <LinkSection layer={layer} scene={scene} onChange={(link) => props({ link })} />
@@ -775,6 +781,7 @@ function ClipInspector({ scene, layer, clipId, onCommit, onSelect, selection, ti
         />
         <NumberField label="Starts" value={clip.start} step={0.05} min={0} max={scene.duration} unit="s" onCommit={(v) => v !== undefined && set({ start: v })} />
         <NumberField label="Length" value={clip.duration} step={0.05} min={0.05} max={scene.duration} unit="s" onCommit={(v) => v && set({ duration: v })} />
+        <WordPinField scene={scene} label="Starts on a word" value={clip.at} onChange={(at) => set({ at })} hint="Click the word the clip should start on (shift-click a later word for a phrase). It then follows that word whenever the voice changes; move it with the Offset." />
         <Field label="Easing">
           {(id) => (
             <select id={id} value={knownEase ? ease : '__custom'} onChange={(e) => set({ ease: e.target.value === fallbackEase ? undefined : e.target.value })}>

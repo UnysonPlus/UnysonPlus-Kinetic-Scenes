@@ -50,9 +50,9 @@ export async function installVoice(voice: string, onStep: (s: string) => void): 
 export interface VoiceResult { src: string; duration: number; segments: Array<{ start: number; end: number; text: string }>; words: NonNullable<AudioClip['words']>; speech: AudioClip['speech']; voice: string }
 
 /** Speaks a script (one entry per line or segment); resolves with the audio and every word's time. */
-export async function speak(lines: string[], opts: { voice?: string; pace?: number; signal?: AbortSignal; onStep?: (s: string) => void } = {}): Promise<VoiceResult> {
+export async function speak(lines: string[], opts: { voice?: string; pace?: number; language?: string; signal?: AbortSignal; onStep?: (s: string) => void } = {}): Promise<VoiceResult> {
   const b = await kit();
-  const r = await fetch(`${b}/studio/voice`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lines, voice: opts.voice, pace: opts.pace }), signal: opts.signal });
+  const r = await fetch(`${b}/studio/voice`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lines, voice: opts.voice, pace: opts.pace, ...(opts.language ? { language: opts.language } : {}) }), signal: opts.signal });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
   for (;;) {
@@ -71,7 +71,9 @@ export function withVoice(scene: Scene, v: VoiceResult, name = 'Voice-over', voi
   let n = list.length + 1;
   while (list.some((a) => a.id === `a${n}`)) n++;
   const id = `a${n}`;
-  const clip: AudioClip = { id, name, src: v.src, start: 0, role: 'voice', words: v.words, speech: v.speech, ...(voice ? { voice } : {}) };
+  // The script is kept with the clip, so it can be spoken again (another voice or language, a spreadsheet's rows).
+  const script = (v.segments ?? []).map((g) => g.text.trim()).filter(Boolean).join('\n');
+  const clip: AudioClip = { id, name, src: v.src, start: 0, role: 'voice', words: v.words, speech: v.speech, ...(voice ? { voice } : {}), ...(script ? { script } : {}), ...(v.voice ? { voiceId: v.voice } : {}), ...((v as { language?: string }).language && (v as { language?: string }).language !== 'en' ? { lang: (v as { language?: string }).language } : {}) };
   return { scene: { ...scene, duration: Math.max(scene.duration, Math.ceil((v.duration + 0.8) * 10) / 10), audio: [...list, clip] }, id };
 }
 
