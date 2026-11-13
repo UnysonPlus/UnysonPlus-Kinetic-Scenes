@@ -1159,7 +1159,9 @@ dialog.start-dialog { width: min(1000px, calc(100vw - 32px)); max-height: calc(1
 /* Done for you: the one card that should stand out in the side column. */
 .start-dfy {
   position: relative; overflow: hidden; isolation: isolate;
-  display: flex; flex-direction: column; gap: 4px; margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; text-decoration: none;
+  display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 10px;
+  /* Room for the glow ring (15px) inside the scrolling column, which clips anything past its edges. */
+  margin: 16px 16px 18px 0; text-decoration: none;
   color: var(--text); background: linear-gradient(135deg, color-mix(in srgb, #00b295 30%, var(--surface-2)), color-mix(in srgb, #2ad38b 14%, var(--surface-2)));
   border: 1px solid color-mix(in srgb, #2ad38b 65%, transparent); transition: border-color .2s var(--ease), transform .2s var(--ease);
   /* A ring that pings out from the card every few seconds: it says "look here" without flashing. */
