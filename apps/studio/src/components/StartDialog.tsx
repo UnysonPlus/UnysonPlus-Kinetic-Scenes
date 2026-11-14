@@ -10,6 +10,8 @@ import { kitify } from './KitLink';
 
 /** The done-for-you video service, on the Unyson+ site. */
 const DFY_URL = 'https://www.unysonplus.com/videos/?utm_source=kinetic-scenes&utm_medium=start-screen';
+/** The Unyson+ contact form, with Kinetic Scenes already picked (no GitHub account needed). */
+export const CONTACT_URL = 'https://www.unysonplus.com/contact/?area=Kinetic%20Scenes';
 
 type Needs = 'ai' | 'kit';
 export type StartAction = 'video' | 'like' | 'recording' | 'sheet' | 'templates' | 'blank' | 'file' | 'paper-template';
@@ -173,6 +175,10 @@ export function StartDialog(props: {
                 <span>Short videos and reels for your business, from the photos you already have. From US$5 a video.</span>
                 <span className="start-dfy__go">See how it works <span className="start-dfy__arrow" aria-hidden="true">→</span></span>
               </a>
+              <p className="start-note start-contact">
+                Found a bug or have an idea for a feature?{' '}
+                <a href={CONTACT_URL} target="_blank" rel="noopener">Contact us</a>
+              </p>
               <h3>Pick up where you left off</h3>
               {props.currentTitle && (
                 <button type="button" className="start-recent" onClick={props.onClose}>

@@ -44,7 +44,7 @@ import { LikeThisDialog } from './components/LikeThisDialog';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { TemplatesDialog } from './components/TemplatesDialog';
 import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
-import { StartDialog } from './components/StartDialog';
+import { CONTACT_URL, StartDialog } from './components/StartDialog';
 import { PhysicsDialog } from './components/PhysicsDialog';
 import { SwarmDialog } from './components/SwarmDialog';
 import { ListenDialog } from './components/ListenDialog';
@@ -1097,6 +1097,7 @@ export function App() {
       { label: 'Your first scene (guide)', onSelect: () => { setFirstRunStep(0); setFirstRunOpen(true); } },
       { label: 'Keyboard shortcuts', onSelect: () => setKeysOpen(true) },
       { label: 'What is new', onSelect: link(`${DOCS}/roadmap`) },
+      { label: 'Report a bug or an idea', onSelect: link(CONTACT_URL) },
     ] },
   ];
 
