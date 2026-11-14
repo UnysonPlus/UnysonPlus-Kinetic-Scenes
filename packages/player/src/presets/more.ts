@@ -411,9 +411,14 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
       img.style.visibility = 'hidden';
       Object.assign(strip.style, {
         position: 'absolute', inset: '0', pointerEvents: 'none', borderRadius: 'inherit',
-        backgroundImage: `url("${img.src.replace(/"/g, '%22')}")`, backgroundRepeat: across ? 'repeat-x' : 'repeat-y',
+        backgroundRepeat: across ? 'repeat-x' : 'repeat-y',
         backgroundSize: across ? 'auto 100%' : '100% auto',
       });
+      // The strip shows the picture's file. A picture held back until the scene nears the screen (lazy media) has no
+      // address yet: the strip gets it when the picture loads.
+      const paint = () => { if (img.currentSrc || img.src) strip.style.backgroundImage = `url("${(img.currentSrc || img.src).replace(/"/g, '%22')}")`; };
+      paint();
+      if (!strip.style.backgroundImage) img.addEventListener('load', paint, { once: true });
       let last = 0;
       const render = (t: number) => {
         last = t;
