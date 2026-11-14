@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-14-words';
+export const NEWS_ID = '2026-11-14-tap-for-sound';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'tap-for-sound', title: 'Tap for sound, from the start', short: 'Visitors hear the story from a whole sentence', text: 'On a web page, choose what Tap for sound does (Inspector › Playback): keep playing, go back to the start of the voice line, play from the beginning like a video, or from the beginning early on and the line later. The button can also stay out of the picture until the mouse moves. And a scene on a page now loads its pictures and footage only as it comes near the screen.', doc: `${DOCS}sound#tap-for-sound` },
   { id: 'translate', title: 'Translate a video', short: 'The same video in another language', text: 'Tools › Translate this video makes a copy of your project in another language: every word on screen translated, every voice-over spoken again in a voice for that language (a free voice for 15 languages, or your Voicebox voice in ten), captions on the new words, and whatever is timed to a word moved to its translation. Your project stays as it is.', doc: `${DOCS}translate`, action: 'translate' },
   { id: 'word-pins', title: 'Timed by the words', short: 'Pin a moment to what the voice says', text: 'Pin a layer, a group or a clip to a word of the voice-over (Inspector › Timing › On a word): it appears when the voice says it. Re-record the line, change its words or trim it, and everything pinned moves with the words by itself, so a better take never means re-timing the scene.', doc: `${DOCS}word-pins` },
   { id: 'reel-pieces', title: 'Reply, rank, reveal', short: 'Three new pieces for reels', text: 'New ready-made pieces: a comment sticker to open a reel by answering a viewer’s question, a tier list whose items drop into their rows with a sound, and a top-5 board that uncovers its answers one by one. Insert › Pieces.', doc: `${DOCS}video-effects#ready-made-pieces` },

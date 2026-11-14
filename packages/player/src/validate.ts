@@ -131,6 +131,9 @@ export function validateScene(input: unknown): ValidationResult {
       fail('playback.posterTime', 'must be within the scene');
     }
     if (pb.advance !== undefined && pb.advance !== 'auto' && pb.advance !== 'click') fail('playback.advance', 'must be auto or click');
+    if (pb.onSound !== undefined && !['continue', 'line', 'start', 'auto'].includes(pb.onSound as string)) { warnings.push('playback.onSound: must be continue, line, start or auto, so the sound just turns on.'); delete pb.onSound; }
+    if (pb.onSoundWithin !== undefined && (!isNum(pb.onSoundWithin) || pb.onSoundWithin < 0)) { warnings.push('playback.onSoundWithin: must be 0 or more seconds, so 15 is used.'); delete pb.onSoundWithin; }
+    if (pb.soundButton !== undefined && pb.soundButton !== 'always' && pb.soundButton !== 'hover') { warnings.push('playback.soundButton: must be always or hover, so it always shows.'); delete pb.soundButton; }
     if (pb.loopFrom !== undefined && (!isNum(pb.loopFrom) || pb.loopFrom < 0 || pb.loopFrom >= scene.duration)) fail('playback.loopFrom', 'must be a moment before the end of the scene');
     if (pb.scroll !== undefined) {
       const sc = pb.scroll;

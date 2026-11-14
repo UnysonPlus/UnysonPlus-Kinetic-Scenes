@@ -77,6 +77,9 @@ body.admin-bar .upw-scene{--upw-offset-extra:32px}
 .upw-sound svg{width:18px;height:18px;flex:none}
 .upw-sound[data-on="1"]{padding:0;width:34px;justify-content:center;opacity:.75}
 .upw-sound:hover,.upw-sound:focus-visible{opacity:1;background:rgba(10,13,17,.82)}
+.upw-sound{transition:opacity .35s ease,background-color .2s}
+.upw-scene[data-sound-ui="hover"]:not([data-pointer]) .upw-sound:not(:focus-visible){opacity:0;pointer-events:none}
+@media (hover:none){.upw-scene[data-sound-ui="hover"] .upw-sound{opacity:1!important;pointer-events:auto!important}}
 .upw-sound:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .upw-safe{position:absolute;pointer-events:none;border:1px dashed rgba(255,255,255,.6);box-shadow:0 0 0 1px rgba(0,0,0,.35);z-index:2147483000;display:none}
 .upw-scene[data-safe] .upw-safe{display:block}

@@ -3,7 +3,7 @@ import { loadPaint } from './paintLayer';
 import { gsap } from 'gsap';
 import type { Box, Breakpoint, Clip, LottieLayer, ModelLayer, Scene, TextStyle } from './types';
 import { validateScene } from './validate';
-import { applyLayout, buildText, createLayer, createStage, flatRefs, layoutTree, measureGroup, resolveLayer, type LayerRefs } from './dom';
+import { applyLayout, buildText, createLayer, createStage, flatRefs, layoutTree, measureGroup, releaseMedia, resolveLayer, type LayerRefs } from './dom';
 import { groupDuration } from './groups';
 import { injectFonts, injectStyles } from './styles';
 import { presets, presetRand, type Timeline } from './presets';
@@ -55,6 +55,12 @@ export interface MountOptions {
    * so a graphics-only export leaves it out; a full composite turns it on.
    */
   reference?: boolean;
+  /**
+   * Load the scene's pictures and footage only when it comes near the screen (about one screen away), not when the
+   * page opens. The stage, its size and the transcript are there from the start, so nothing on the page moves.
+   * autoMount() turns it on unless the host says data-upw-load="page"; whenReady() loads everything at once.
+   */
+  lazy?: boolean;
 }
 
 export type PlayerEvent = 'update' | 'play' | 'pause' | 'complete' | 'breakpoint' | 'rebuild';
@@ -175,6 +181,14 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   let scene = validated(input);
   const doc = host.ownerDocument;
   const win = doc.defaultView ?? window;
+  // Pictures and footage wait until the scene comes near the screen (options.lazy; see releaseHeld).
+  let holding = !!options.lazy && 'IntersectionObserver' in win;
+  function releaseHeld() {
+    if (!holding) return;
+    holding = false;
+    nearWatch?.disconnect();
+    releaseMedia(root);
+  }
 
   injectStyles(doc);
 
@@ -334,12 +348,70 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         e.stopPropagation();
         if (!sound) return;
         if (sound.on) sound.disable();
-        else sound.enable().then(syncAudio);
+        else {
+          // The sound is turned on at once (browsers allow it only straight from the tap); where to play from is
+          // worked out meanwhile (a voice clip's length may come from its decoded file).
+          const at = tl ? tl.time() : 0;
+          Promise.all([sound.enable(), soundJump(at)]).then(([, to]) => (to === null ? syncAudio() : jumpTo(to)), syncAudio);
+        }
         paintSound();
       });
     }
+    // Shown while the mouse moves over the scene (playback.soundButton "hover"), then faded out.
+    if (scene.playback.soundButton === 'hover' && !options.editor) {
+      root.dataset.soundUi = 'hover';
+      if (!hoverWired) {
+        hoverWired = true;
+        const wake = () => { root.dataset.pointer = ''; win.clearTimeout(hoverTimer); hoverTimer = win.setTimeout(() => { delete root.dataset.pointer; }, 2600); };
+        root.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') wake(); });
+        root.addEventListener('pointerleave', () => { win.clearTimeout(hoverTimer); hoverTimer = win.setTimeout(() => { delete root.dataset.pointer; }, 600); });
+        wake(); // shown for the first seconds, so visitors know there is sound
+      }
+    } else delete root.dataset.soundUi;
     root.appendChild(soundBtn);
     paintSound();
+  }
+  let hoverWired = false;
+  let hoverTimer = 0;
+  /** Where to play from when the sound is turned on (playback.onSound), or null to keep playing. */
+  async function soundJump(t: number): Promise<number | null> {
+    if (!tl || options.editor || !sound) return null;
+    const mode = scene.playback.onSound ?? 'continue';
+    if (mode === 'continue') return null;
+    const within = scene.playback.onSoundWithin ?? 15;
+    if (mode === 'start' || (mode === 'auto' && t < within)) return t > 0.5 ? 0 : null;
+    // The voice line being spoken (or just ended): a short voice clip is one line, so from its start; in a long
+    // voice-over, from the start of the sentence being said (after the last word ending in . ! or ?).
+    for (const c of scene.audio ?? []) {
+      if (c.role !== 'voice') continue;
+      const off = c.offset ?? 0;
+      const words = (c.words ?? []).filter((w) => w.t >= off && (c.duration === undefined || w.t - off <= c.duration));
+      const file = c.duration === undefined && !words.length ? await sound.durationOf(c.src).catch(() => null) : null;
+      // A file that can't be read (another site's, without permission): the line runs to the next voice clip.
+      const next = Math.min(scene.duration, ...(scene.audio ?? []).filter((o) => o.role === 'voice' && o.start > c.start).map((o) => o.start));
+      const end = c.duration !== undefined ? c.start + c.duration : words.length ? c.start + words[words.length - 1].t + words[words.length - 1].d - off
+        : file ? c.start + Math.max(0, file - off) : Math.min(next - 0.5, c.start + 20);
+      if (t < c.start || t > end + 0.5) continue;
+      let from = c.start + (words.length ? words[0].t - off : 0);
+      if (end - c.start > 20 && words.length) {
+        for (let i = 1; i < words.length; i++) {
+          const at = c.start + words[i].t - off;
+          if (at > t) break;
+          if (/[.!?]["'”)]*$/.test(words[i - 1].w)) from = at;
+        }
+      }
+      return t - from > 0.3 ? Math.max(0, from - 0.3) : null;
+    }
+    return null;
+  }
+  /** A quick fade out, the jump, and a fade back in. */
+  function jumpTo(to: number) {
+    const fade = (a: number, b: number, ms: number) => root.animate?.([{ opacity: a }, { opacity: b }], { duration: ms, easing: 'ease-out', fill: 'forwards' })?.finished ?? Promise.resolve();
+    fade(1, 0, 160).then(() => {
+      player.seek(to);
+      player.play();
+      return fade(0, 1, 260);
+    }).then(() => root.getAnimations?.().forEach((a) => a.cancel()), () => { root.style.opacity = ''; });
   }
   function paintSound() {
     if (!soundBtn || !sound) return;
@@ -438,7 +510,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     if (soundBtn) soundBtn = null; // the old button went with the old stage
     root.appendChild(stage);
     layers = scene.layers.map((layer, i) => {
-      const refs = createLayer(doc, layer, i + 1);
+      const refs = createLayer(doc, layer, i + 1, false, holding);
       // Pinned layers go in the pin space: placed against the stage, not moved by the camera.
       (refs.pinned ? pins : camNode).appendChild(refs.outer);
       return refs;
@@ -666,6 +738,12 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   });
   resizeObserver.observe(root);
 
+  // Held-back media: released when the scene is within about one screen of the window.
+  const nearWatch = holding
+    ? new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) releaseHeld(); }, { rootMargin: '100% 0px 100% 0px' })
+    : null;
+  nearWatch?.observe(root);
+
   // Pause looping scenes while they are off screen; play "view" scenes when they arrive.
   let inView = false;
   const io = new IntersectionObserver((entries) => {
@@ -699,6 +777,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     get waiting() { return waiting; },
     setCamera(on: boolean) { cameraOn = on; applyCamera(); },
     async whenReady(limitMs = 20000) {
+      // Whoever waits for the scene to be ready wants all of it now (a renderer, a screenshot).
+      releaseHeld();
       const missing: string[] = [];
       const until = <T,>(p: Promise<T>, ms: number, what: string) => new Promise<void>((done) => {
         const timer = setTimeout(() => { missing.push(what); done(); }, ms);
@@ -928,6 +1008,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       resizeObserver.disconnect();
       pinWatch.disconnect();
       io.disconnect();
+      nearWatch?.disconnect();
       listeners.clear();
       root.remove();
     },

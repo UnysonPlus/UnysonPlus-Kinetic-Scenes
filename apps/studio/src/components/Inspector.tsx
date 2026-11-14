@@ -178,7 +178,10 @@ function SceneInspector({ scene, onCommit, time }: Props) {
             }}>Try scrolling in a test page</button>
           </>
         ) : (
-          <EndBehaviour scene={scene} time={time} onPlayback={setPlayback} />
+          <>
+            <EndBehaviour scene={scene} time={time} onPlayback={setPlayback} />
+            <SoundBehaviour scene={scene} onPlayback={setPlayback} />
+          </>
         )}
         {scene.playback.loop && scene.playback.trigger !== 'scroll' && (
           <NumberField label="Pause between loops" value={scene.playback.repeatDelay ?? 0} unit="s" step={0.1} min={0} onCommit={(v) => setPlayback({ repeatDelay: v ?? 0 })} />
@@ -284,6 +287,43 @@ function SceneInspector({ scene, onCommit, time }: Props) {
  * Search engines and screen readers: the scene's words as plain text, in reading order. Shown here so the
  * author sees exactly what Google and a screen reader get.
  */
+/** The sound button: what turning the sound on does (play on, from the line, from the start), and when the button shows. */
+function SoundBehaviour({ scene, onPlayback }: { scene: Scene; onPlayback: (p: Partial<Scene['playback']>) => void }) {
+  const pb = scene.playback;
+  if (!(scene.audio ?? []).length || pb.trigger === 'scroll') return null;
+  const hasVoice = (scene.audio ?? []).some((a) => a.role === 'voice');
+  const mode = pb.onSound ?? 'continue';
+  return (
+    <>
+      <SelectField
+        label="When sound is turned on"
+        value={mode}
+        options={[
+          { value: 'continue', label: 'Keep playing' },
+          ...(hasVoice ? [{ value: 'line', label: 'From the start of the line' }] : []),
+          { value: 'start', label: 'From the beginning' },
+          ...(hasVoice ? [{ value: 'auto', label: 'From the beginning early on, else the line' }] : []),
+        ] as Array<{ value: NonNullable<Scene['playback']['onSound']>; label: string }>}
+        onChange={(v) => onPlayback({ onSound: v === 'continue' ? undefined : v, ...(v !== 'auto' ? { onSoundWithin: undefined } : {}) })}
+      />
+      {mode === 'auto' && (
+        <NumberField label="Early on: the first" value={pb.onSoundWithin ?? 15} step={1} min={1} max={scene.duration} unit="s"
+          onCommit={(v) => onPlayback({ onSoundWithin: v === undefined || v === 15 ? undefined : v })} />
+      )}
+      <SelectField
+        label="Sound button"
+        value={pb.soundButton ?? 'always'}
+        options={[{ value: 'always', label: 'Always shown' }, { value: 'hover', label: 'Shown when the mouse moves' }]}
+        onChange={(v) => onPlayback({ soundButton: v === 'always' ? undefined : v as 'hover' })}
+      />
+      <p className="field-hint wide">
+        A visitor who turns the sound on mid-story hears it from a whole sentence (the line) or from the start. With the
+        mouse option the button shows for the first seconds and whenever the mouse moves over the scene; on phones it always shows.
+      </p>
+    </>
+  );
+}
+
 /** What happens at the end: stop, loop everything, or loop only the last part. */
 function EndBehaviour({ scene, time, onPlayback }: { scene: Scene; time: number; onPlayback: (p: Partial<Scene['playback']>) => void }) {
   const pb = scene.playback;

@@ -261,6 +261,20 @@ export interface Playback {
    * (and at the end) until the visitor clicks, taps or presses an arrow key. Ignored with the scroll trigger.
    */
   advance?: 'auto' | 'click';
+  /**
+   * When a visitor turns the sound on (Tap for sound): continue (the default) keeps playing where it is; line goes back
+   * to the start of the voice line being spoken, so the visitor hears a whole sentence; start plays the scene from the
+   * beginning, like a video; auto plays from the beginning when the sound is turned on in the first `onSoundWithin`
+   * seconds, else from the start of the line. A quick fade covers the jump.
+   */
+  onSound?: 'continue' | 'line' | 'start' | 'auto';
+  /** auto: the seconds within which turning the sound on starts the scene again. Defaults to 15. */
+  onSoundWithin?: number;
+  /**
+   * The sound button: always (the default) shows it all the time; hover shows it while the mouse moves over the scene
+   * (and for the first seconds), then fades it out. On touch screens, and while it has keyboard focus, it always shows.
+   */
+  soundButton?: 'always' | 'hover';
 }
 
 export interface ScrollSettings {

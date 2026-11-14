@@ -35,7 +35,10 @@ scene plays, seeks and exports the same way.
   `heightOffset` (px) subtracts a site header; `fit: "contain"` shows the whole shape on short windows.
 - `playback.trigger`: `load`, `view`, `manual` or `scroll` (`scroll: { pin, length, smooth }`); `loop`,
   `repeatDelay`; `loopFrom` (loop only the last part); `posterTime` (the still frame); `advance: "click"` (a
-  presentation that stops at each marker).
+  presentation that stops at each marker). With sound on a web page: `onSound` (`continue`, `line`: back to the start
+  of the voice line, `start`: from the beginning, `auto`: from the beginning in the first `onSoundWithin` seconds,
+  default 15, else the line; use `auto` or `line` for a narrated scene) and `soundButton` (`always`, `hover`: shown
+  while the mouse moves).
 
 ## Video mode
 

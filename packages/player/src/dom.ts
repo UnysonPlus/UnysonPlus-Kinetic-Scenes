@@ -92,7 +92,30 @@ function addLink(doc: Document, outer: HTMLElement, link: LayerLink) {
   outer.appendChild(a);
 }
 
-export function createLayer(doc: Document, layer: Layer, z: number, pinned = false): LayerRefs {
+/**
+ * Gives a picture or footage element its file or, when the scene's media are held back (a page loads them only as
+ * the scene comes near the screen), keeps the address in data-upw-src for releaseMedia() to set later.
+ */
+function setMediaSrc(m: HTMLImageElement | HTMLVideoElement, src: string, hold: boolean) {
+  if (hold && !/^(data|blob):/.test(src)) {
+    m.dataset.upwSrc = src;
+    if (m instanceof HTMLVideoElement) m.preload = 'none';
+  } else m.src = src;
+}
+
+/** Sets every held-back file inside root (see setMediaSrc). Returns how many were released. */
+export function releaseMedia(root: ParentNode): number {
+  const held = Array.from(root.querySelectorAll<HTMLImageElement | HTMLVideoElement>('img[data-upw-src], video[data-upw-src]'));
+  for (const m of held) {
+    const src = m.dataset.upwSrc!;
+    delete m.dataset.upwSrc;
+    if (m instanceof HTMLVideoElement) m.preload = 'auto';
+    m.src = src;
+  }
+  return held.length;
+}
+
+export function createLayer(doc: Document, layer: Layer, z: number, pinned = false, hold = false): LayerRefs {
   const outer = doc.createElement('div');
   outer.className = `upw-layer upw-${layer.type}`;
   outer.dataset.layer = layer.id;
@@ -118,7 +141,7 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
     inner.appendChild(proxy);
     refs.proxy = proxy;
     refs.children = layer.layers.map((child, i) => {
-      const c = createLayer(doc, child, i + 1, refs.pinned);
+      const c = createLayer(doc, child, i + 1, refs.pinned, hold);
       proxy.appendChild(c.outer);
       return c;
     });
@@ -194,7 +217,7 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
       m.setAttribute('aria-hidden', layer.alt ? 'false' : 'true');
     } else m.alt = layer.alt ?? '';
     if (layer.alt && m instanceof HTMLVideoElement) m.setAttribute('aria-label', layer.alt);
-    m.src = layer.src;
+    setMediaSrc(m, layer.src, hold);
     m.style.cssText = `width:100%;height:100%;display:block;object-fit:${layer.fit ?? 'cover'}`;
     inner.style.borderRadius = `${layer.radius ?? 0}cqw`;
     inner.style.overflow = 'hidden';
@@ -203,7 +226,7 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
     frameMedia(doc, inner, m, layer.frame, layer.radius);
   } else if (layer.type === 'image') {
     const img = doc.createElement('img');
-    img.src = layer.src;
+    setMediaSrc(img, layer.src, hold);
     img.alt = layer.alt ?? '';
     img.decoding = 'async';
     img.draggable = false;
