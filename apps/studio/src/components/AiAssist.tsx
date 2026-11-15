@@ -4,6 +4,8 @@ import { changedFields, pointContext, setField } from '../lib/pointEdit';
 import type { PointField } from '../lib/pointEdit';
 import { findLayer } from '../lib/sceneOps';
 import { AgentCard } from './ProjectsDialog';
+import { KeyFrames } from './PlanFrames';
+import { KEYFRAMES_BRIEF, framesContext, keyFrames } from '../lib/planFrames';
 import { cancelSteps, startSteps, stepsAvailable, stepsJob, type StepsCreate } from '../lib/agent';
 import { applySteps } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
@@ -105,6 +107,8 @@ export interface ChatMessage {
   issues?: number;
   /** AI turns that are a plan waiting to be built. */
   plan?: boolean;
+  /** AI turns that show a plan's key frames: a scene with one group per part ("kf-1"…). */
+  frames?: Scene;
   model?: string;
   /** Point turns: the element pointed at, and the values the AI changed on it, to adjust by hand. */
   pointed?: string;
@@ -222,6 +226,8 @@ export function AiAssist(props: {
   useEffect(() => { if (props.settingsRequest) setSettingsOpen(true); }, [props.settingsRequest]);
   const [kind, setKind] = useState<Kind>('storyboard');
   const [pending, setPending] = useState<{ prompt: string; extra: Exclude<QueuedRequest, string> | null } | null>(null);
+  /** The plan's key frames, once shown: Build it then builds each part to look like its frame. */
+  const [frames, setFrames] = useState<Scene | null>(null);
   const [planText, setPlanText] = useState('');
   const [phase, setPhase] = useState('');
   const [quickUrl, setQuickUrl] = useState('');
@@ -308,6 +314,7 @@ export function AiAssist(props: {
         });
         setPending({ prompt: revising ? pending!.prompt : ask, extra: revising ? pending!.extra : extra });
         setPlanText(planAsText(plan));
+        setFrames(null);
         push({ role: 'ai', text: `The plan${plan.title ? `: ${plan.title}` : ''}. Change it below, or tell me what to change, then build it.`, plan: true });
         return;
       }
@@ -397,16 +404,51 @@ export function AiAssist(props: {
     }
   };
 
+  /** Shows the plan's key frames: each part as a still in the real style, to agree before anything moves. */
+  const showFrames = async () => {
+    if (!pending || busy) return;
+    if (status.state !== 'ready') { props.onRecheck(); return; }
+    const p = pending;
+    setBusy(true);
+    setElapsed(0);
+    setPhase('Drawing the key frames');
+    const ctl = new AbortController();
+    abort.current = ctl;
+    try {
+      const style = props.styles.find((s) => s.id === props.styleId) ?? null;
+      const assets = new Map(p.extra?.assets ?? []);
+      if (style?.logo) assets.set('brand:logo', style.logo);
+      const r = await askForScene({
+        mode: 'create', prompt: p.prompt, scene, selection: [], signal: ctl.signal, assets, additions: p.extra?.additions,
+        brief: [KEYFRAMES_BRIEF, p.extra?.brief, style ? styleBrief(style) : '', p.extra?.direction ? directionBrief(p.extra.direction) : ''].filter(Boolean).join('\n\n'),
+        context: [p.extra?.context, `THE APPROVED PLAN\n${planText}`].filter(Boolean).join('\n\n'),
+      });
+      const sc = style ? applyStyle(r.scene, style, { look: true, motion: false, sound: false }) : r.scene;
+      const n = keyFrames(sc).length;
+      if (!n) { push({ role: 'error', text: 'The answer had no key frames to show. Try again, or build it straight away.' }); return; }
+      setFrames(sc);
+      push({ role: 'ai', text: `${n} key frames, one for each part, as each looks once it has landed. Build it to animate them, or change the plan and show them again.`, frames: sc, model: r.model });
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') push({ role: 'error', text: 'Stopped.' });
+      else push({ role: 'error', text: (e as Error).message });
+    } finally {
+      setBusy(false);
+      setPhase('');
+      abort.current = null;
+    }
+  };
+
   /** Builds the agreed plan. */
   const buildPlan = () => {
     if (!pending) return;
     const p = pending;
     setPending(null);
+    setFrames(null);
     const extraBrief = kind === 'explainer' ? EXPLAINER_BRIEF : kind === 'tutorial' ? TUTORIAL_BRIEF : '';
     send(p.prompt, 'new', {
       ...(p.extra ?? {}), text: p.prompt, approved: true,
       brief: [p.extra?.brief, extraBrief].filter(Boolean).join('\n\n') || undefined,
-      context: [p.extra?.context, `THE APPROVED PLAN (build exactly this)\n${planText}`].filter(Boolean).join('\n\n'),
+      context: [p.extra?.context, `THE APPROVED PLAN (build exactly this)\n${planText}`, frames ? framesContext(frames) : ''].filter(Boolean).join('\n\n'),
     });
   };
 
@@ -642,6 +684,7 @@ export function AiAssist(props: {
                     {m.before && <button type="button" className="link-btn" disabled={busy} onClick={() => props.onRestore(m.before!, m.after!)}>Go back to before this</button>}
                   </div>
                 )}
+                {m.role === 'ai' && m.frames && <KeyFrames scene={m.frames} />}
                 {m.role === 'ai' && !!m.directions?.length && (
                   <div className="assist-dirs">
                     {m.directions.map((d) => (
@@ -679,9 +722,10 @@ export function AiAssist(props: {
                 <label htmlFor="assist-plan" className="sr-only">The plan</label>
                 <textarea id="assist-plan" rows={12} value={planText} onChange={(e) => setPlanText(e.target.value)} />
                 <div className="assist-msg-actions">
-                  <button type="button" className="btn primary small" disabled={!ready} onClick={buildPlan}>Build it</button>
+                  <button type="button" className="btn primary small" disabled={!ready} onClick={buildPlan}>{frames ? 'Build it from the key frames' : 'Build it'}</button>
+                  <button type="button" className="btn small" disabled={!ready} onClick={showFrames} title="Each part as a still frame in the real style, to agree before anything is animated">{frames ? 'Show the key frames again' : 'Show the key frames'}</button>
                   {kind !== 'storyboard' && <button type="button" className="btn small" disabled={!ready} onClick={buildWithVoice} title="A free voice on your computer speaks the script; the scene is timed to its words">Build with a voice-over</button>}
-                  <button type="button" className="link-btn" onClick={() => setPending(null)}>Start over</button>
+                  <button type="button" className="link-btn" onClick={() => { setPending(null); setFrames(null); }}>Start over</button>
                   <span className="assist-faint">Or type what to change below.</span>
                 </div>
               </div>

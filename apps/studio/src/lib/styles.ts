@@ -487,7 +487,7 @@ export function starterScene(style: SceneStyle, base?: Scene): Scene {
   // A motion-design style shows its signature effect: an ambient look on the glow (liquid) or on the headline once it
   // has landed (boil, scanlines, halftone, the text looks). Entrance presets are already in the style's motion.
   // Only looks count as a signature: ambient ones run until the exit, the others ease in once and hold.
-  const LONG = ['boil', 'liquid', 'scanlines', 'text-gradient', 'float', 'drift', 'gradient-flow'];
+  const LONG = ['boil', 'liquid', 'scanlines', 'film', 'pulse', 'text-gradient', 'float', 'drift', 'gradient-flow'];
   const SHORT = ['halftone', 'text-outline', 'text-3d', 'text-skew', 'glow', 'sheen', 'spotlight', 'jiggle'];
   const sigClip = (layerType: Layer['type'], from: number): Clip[] => {
     const id = style.signature?.preset;
@@ -496,8 +496,8 @@ export function starterScene(style: SceneStyle, base?: Scene): Scene {
     return [{ id: `${layerType}-signature`, preset: id, start: from, duration: dur, params: { ...(style.signature!.params ?? {}) } }];
   };
   const onGlow = style.signature?.preset === 'liquid';
-  // Screen-wide looks (VHS, CRT) go on a see-through layer over the whole stage instead of one layer's box.
-  const onStage = style.signature?.preset === 'scanlines';
+  // Screen-wide looks (VHS, CRT, projected film) go on a see-through layer over the whole stage instead of one layer's box.
+  const onStage = style.signature?.preset === 'scanlines' || style.signature?.preset === 'film';
 
   return {
     format: 'unysonplus-scene', version: 1, title: `${style.name} title`, duration,

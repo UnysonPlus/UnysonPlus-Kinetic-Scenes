@@ -1070,6 +1070,11 @@ dialog.start-dialog:not(.is-step) .start-body { flex: 1 1 auto; min-height: 0; o
 .assist-dir-look { border-radius: 6px; padding: 14px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 800; }
 .assist-dir-look i { display: flex; gap: 4px; }
 .assist-dir-look b { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.3); }
+/* Key frames: a plan's parts as stills in the real style, two to a row. */
+.keyframes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.keyframe { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.keyframe-stage { position: relative; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 1px var(--line, rgba(127,127,127,.25)); background: #000; }
+.keyframe figcaption { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Presets by goal: the plain-words hint under each goal. */
 .lib-goal-hint { font-size: 11px; line-height: 1.4; color: var(--faint); margin: -2px 4px 8px; }

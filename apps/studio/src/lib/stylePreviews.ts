@@ -15,10 +15,10 @@ export const POSTER_TIME = 3.1;
 
 /** The start screen's filters, in the order they are shown. Explainers come first: most people start there. */
 export const STYLE_GROUPS: Array<{ id: string; label: string; styles: string[] }> = [
-  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric'] },
+  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint'] },
   { id: 'clean', label: 'Clean and bold', styles: ['clean', 'swiss', 'editorial', 'bauhaus', 'kinetic', 'social-captions', 'luxe'] },
-  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour'] },
-  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid'] },
+  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut'] },
+  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show'] },
 ];
 
 const svgUrl = (body: string, w: number, h: number) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`)}`;
@@ -228,6 +228,64 @@ export function stylePreview(style: SceneStyle): Scene | null {
     'toy-3d': () => [
       ...[[28, 56, 26, P.accent], [54, 46, 34, P.accent2], [78, 60, 20, P.accent]].map(([x, y, w, col], i) => dot(`s${i}`, x as number, y as number, w as number, `radial-gradient(circle at 34% 28%, #ffffff 0%, ${col} 34%, ${col} 62%, rgba(0,0,0,0.22) 100%)`, [c('pop', 0.2 + i * 0.22, 0.5, { direction: 'in', from: 0.2 }), c('float', 0.8, PREVIEW_SECONDS - 0.8, { height: 6, cycles: 2 })])),
       head(50, 87, 5.4, { t: 'Play is serious.', at: 1 }),
+    ],
+    newsreel: () => [
+      rect('b1', 50, 50, 80, 76, 'transparent', [c('fade', 0.1, 0.4, { direction: 'in' })], { stroke: P.accent, strokeWidth: 0.3 }),
+      rect('b2', 50, 50, 76, 70, 'transparent', [c('fade', 0.2, 0.4, { direction: 'in' })], { stroke: P.accent, strokeWidth: 0.12 }),
+      text('k', 'The world this week', 50, 28, 2.8, P.muted, [c('fade', 0.4, 0.5, { direction: 'in', y: 0 })], { body: true }),
+      head(50, 49, 7, { t: 'Progress marches on!', at: 0.5, w: 68 }),
+      rect('rule', 50, 64, 14, 0.4, P.accent, [c('grow', 1.4, 0.5, { direction: 'in', axis: 'x', origin: 'center' })]),
+      text('s', 'Scenes from the modern age.', 50, 72, 2.6, P.muted, [c('fade', 1.7, 0.5, { direction: 'in', y: 0 })], { body: true }),
+      rect('film', 50, 50, 100, 100, 'transparent', [c('film', 0, PREVIEW_SECONDS, { sprockets: true, grain: 0.4, flicker: 0.15 })]),
+    ],
+    whiteboard: () => {
+      const sk = (at: number, color = P.text) => c('sketch', at, PREVIEW_SECONDS - at, { style: 'none', roughness: 1.4, weight: 2.2, color, fps: 0 });
+      return [
+        head(50, 15, 6.2, { t: 'Draw what you mean.', at: 0.1 }),
+        { id: 'under', type: 'path', d: 'M0 60 C30 40 70 70 100 45', stroke: P.accent2, strokeWidth: 0.45, box: { x: 50, y: 24, w: 44, h: 4 }, clips: [c('draw', 0.9, 0.5, { direction: 'in' })] } as unknown as Layer,
+        rect('box', 26, 60, 24, 24, 'transparent', [sk(1.2), c('wipe', 1.2, 0.4, { direction: 'in', from: 'left' })], { stroke: P.text, strokeWidth: 0.35 }),
+        text('t1', 'Idea', 26, 60, 4, P.accent, [c('wipe', 1.5, 0.4, { direction: 'in', from: 'left' })], { body: true, weight: 700 }),
+        { id: 'arr', type: 'path', d: 'M0 60 C30 20 70 20 100 55 M84 40 L100 55 L80 62', stroke: P.accent2, strokeWidth: 0.45, box: { x: 51, y: 56, w: 18, h: 16 }, clips: [c('draw', 1.9, 0.6, { direction: 'in' })] } as unknown as Layer,
+        dot('res', 76, 60, 20, 'transparent', [sk(2.4), c('wipe', 2.4, 0.4, { direction: 'in', from: 'left' })], { stroke: P.text, strokeWidth: 0.35 }),
+        text('t2', 'Result', 76, 60, 3.4, P.accent2, [c('wipe', 2.7, 0.4, { direction: 'in', from: 'left' })], { body: true, weight: 700 }),
+      ];
+    },
+    blueprint: () => [
+      text('k', 'Fig. 1  ·  Scale 1:20', 8, 10, 2, P.muted, [c('fade', 0.1, 0.4, { direction: 'in', y: 0 })], { body: true, align: 'left' }),
+      head(50, 16, 5.2, { t: 'How it fits together.', at: 0.2 }),
+      { id: 'part', type: 'path', d: 'M5 20 H95 V80 H5 Z M33 50 A17 17 0 1 0 67 50 A17 17 0 1 0 33 50 M5 35 H20 M80 65 H95', stroke: P.text, strokeWidth: 0.25, box: { x: 42, y: 56, w: 40, h: 46 }, clips: [c('draw', 0.6, 1.4, { direction: 'in' })] } as unknown as Layer,
+      { id: 'dim', type: 'path', d: 'M0 50 H100 M0 10 V90 M100 10 V90', stroke: P.muted, strokeWidth: 0.15, box: { x: 42, y: 85, w: 36, h: 4 }, clips: [c('draw', 1.9, 0.5, { direction: 'in' })] } as unknown as Layer,
+      text('dimt', '320 mm', 42, 90.5, 2, P.muted, [c('fade', 2.3, 0.3, { direction: 'in', y: 0 })], { body: true }),
+      { id: 'lead', type: 'path', d: 'M100 0 L0 100', stroke: P.accent2, strokeWidth: 0.2, box: { x: 64, y: 41, w: 12, h: 12 }, clips: [c('draw', 2.4, 0.4, { direction: 'in' })] } as unknown as Layer,
+      dot('co', 72, 33, 5, 'transparent', [pop(2.2, 0.6)], { stroke: P.accent2, strokeWidth: 0.25 }),
+      text('con', '1', 72, 33, 2.4, P.accent2, [pop(2.3, 0.6)], { body: true }),
+      text('cot', 'Housing', 77, 33, 2, P.accent2, [c('fade', 2.6, 0.3, { direction: 'in', y: 0 })], { body: true, align: 'left' }),
+    ],
+    woodcut: () => [
+      art('cut', '<rect width="160" height="100" fill="#efe6d2"/><circle cx="118" cy="30" r="16" fill="#8a8a8a"/><polygon points="0,100 0,70 38,28 70,64 96,40 160,92 160,100" fill="#222"/><polygon points="0,100 0,88 50,62 92,84 160,76 160,100" fill="#555"/>', 160, 100, 50, 52, 56, [c('fade', 0.1, 0.4, { direction: 'in' }), c('engrave', 0.1, PREVIEW_SECONDS - 0.1, { ink: P.text, paper: '', lines: 80, wave: 0.4 })]),
+      { ...text('head2', 'Carved by hand.', 50, 17, 7.6, P.accent, [c('fade', 1.6, 0.2, { direction: 'in', y: 0 })]), box: { x: 50.5, y: 17.8 }, opacity: 0.9 } as Layer,
+      head(50, 17, 7.6, { t: 'Carved by hand.', at: 0.9 }),
+      rect('band', 50, 89, 56, 7, P.accent, [c('wipe', 1.9, 0.4, { direction: 'in', from: 'top' })]),
+      text('sub', 'Black ink, red ink', 50, 89, 2.8, P.background, [c('fade', 2.2, 0.3, { direction: 'in', y: 0 })], { body: true, weight: 700 }),
+    ],
+    'neon-sign': () => {
+      const glow = (t: number, color: string, flicker: boolean) => c('glow', t, PREVIEW_SECONDS - t, { direction: 'in', color, size: 1.6, strength: 1.2, flicker });
+      const on = (t: number) => ({ ...c('fade', t, 0.35, { direction: 'in', y: 0 }), ease: 'steps(4)' });
+      return [
+        dot('halo', 50, 48, 76, `radial-gradient(closest-side, ${P.accent}55, transparent)`, [c('fade', 0.5, 0.6, { direction: 'in' })], { opacity: 0.55 }),
+        text('open', 'Open late', 50, 25, 3.4, P.accent2, [on(1.5), glow(1.5, P.accent2, false)], { body: true, weight: 700 }),
+        text('head', 'Light it up.', 50, 48, 9.5, '#ffe6f4', [on(0.3), glow(0.3, P.accent, true)]),
+        { id: 'tube', type: 'path', d: 'M0 50 H100', stroke: P.accent2, strokeWidth: 0.5, box: { x: 50, y: 66, w: 40, h: 2 }, clips: [c('draw', 1.9, 0.5, { direction: 'in' }), glow(1.9, P.accent2, false)] } as unknown as Layer,
+      ];
+    },
+    'game-show': () => [
+      head(50, 16, 6.4, { t: 'Three tips. Go!', at: 0.1 }),
+      ...range(3).flatMap((i) => [
+        rect(`card${i}`, 24 + i * 26, 56, 22, 36, i === 1 ? P.accent2 : P.accent, [c('pop', 0.7 + i * 0.45, 0.35, { direction: 'in', from: 0.2 }), c('pulse', 2.2 + i * 0.15, 1.6, { scale: 1.05, times: 2 })], { radius: 2.4, stroke: '#ffffff', strokeWidth: 0.6 }),
+        text(`n${i}`, String(i + 1), 24 + i * 26, 56, 11, i === 1 ? '#ffffff' : '#12063f', [c('pop', 0.85 + i * 0.45, 0.35, { direction: 'in', from: 0.3 })]),
+      ]),
+      rect('timer-bg', 50, 89, 62, 3, 'rgba(255,255,255,0.18)', [c('fade', 0.4, 0.3, { direction: 'in' })], { radius: 1.5 }),
+      rect('timer', 50, 89, 62, 3, P.accent, [c('grow', 0.4, 3.4, { direction: 'in', axis: 'x', origin: 'start' })], { radius: 1.5 }),
     ],
     playful: () => [
       ...range(5).map((i) => dot(`d${i}`, 18 + i * 16, 30, 11, i % 2 ? P.accent2 : P.accent, [c('pop', 0.2 + i * 0.12, 0.35, { direction: 'in', from: 0.2 }), c('float', 0.9, PREVIEW_SECONDS - 0.9, { height: 12, cycles: 2 })])),
