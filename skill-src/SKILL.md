@@ -16,7 +16,7 @@ ordinary layers and clips the person can keep editing. This skill is generated f
 - [Presets](reference/presets.md): every preset, what it does, what it applies to and its settings.
 - [Motion rules](reference/motion-rules.md): timing, layout, sound and craft rules the Studio's own AI follows.
 - [Styles](reference/styles.md): the built-in looks (colours, fonts, motion) a scene can be made in, including about twenty
-  named motion-design styles (synthwave, line art, Swiss grid, risograph, VHS, pixel art, newsreel, whiteboard, blueprint, woodcut, neon sign, rhythm game show…) with what makes each recognisable
+  named motion-design styles (synthwave, line art, Swiss grid, risograph, VHS, pixel art, newsreel, whiteboard, blueprint, woodcut, neon sign, rhythm game show, chalkboard, ink wash, stained glass, rubber-hose cartoon, CRT terminal, transit map, radar…) with what makes each recognisable
   and how to build it.
 - [Sounds](reference/sounds.md): the built-in sound effects.
 

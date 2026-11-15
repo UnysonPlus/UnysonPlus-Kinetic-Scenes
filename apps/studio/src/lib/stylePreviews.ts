@@ -15,10 +15,10 @@ export const POSTER_TIME = 3.1;
 
 /** The start screen's filters, in the order they are shown. Explainers come first: most people start there. */
 export const STYLE_GROUPS: Array<{ id: string; label: string; styles: string[] }> = [
-  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint'] },
+  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint', 'crt-terminal', 'radar', 'transit-map'] },
   { id: 'clean', label: 'Clean and bold', styles: ['clean', 'swiss', 'editorial', 'bauhaus', 'kinetic', 'social-captions', 'luxe'] },
-  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut'] },
-  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show'] },
+  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut', 'chalkboard', 'ink-wash', 'stained-glass'] },
+  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show', 'rubber-hose'] },
 ];
 
 const svgUrl = (body: string, w: number, h: number) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`)}`;
@@ -286,6 +286,87 @@ export function stylePreview(style: SceneStyle): Scene | null {
       ]),
       rect('timer-bg', 50, 89, 62, 3, 'rgba(255,255,255,0.18)', [c('fade', 0.4, 0.3, { direction: 'in' })], { radius: 1.5 }),
       rect('timer', 50, 89, 62, 3, P.accent, [c('grow', 0.4, 3.4, { direction: 'in', axis: 'x', origin: 'start' })], { radius: 1.5 }),
+    ],
+    chalkboard: () => {
+      return [
+        head(50, 14, 6, { t: 'Show your working.', at: 0.1 }),
+        text('eq', 'a² + b² = c²', 32, 54, 6.4, P.text, [c('wipe', 0.9, 0.9, { direction: 'in', from: 'left' })], { body: true }),
+        { id: 'ring', type: 'path', d: 'M6 50 C6 8 94 8 94 50 C94 92 6 92 6 50', stroke: P.accent, strokeWidth: 0.35, box: { x: 32, y: 54, w: 40, h: 22 }, clips: [c('draw', 2.3, 0.6, { direction: 'in' })] } as unknown as Layer,
+        { id: 'tri', type: 'path', d: 'M10 90 L90 90 L10 12 Z', stroke: P.text, strokeWidth: 0.35, box: { x: 74, y: 56, w: 26, h: 44 }, clips: [c('draw', 1.4, 0.8, { direction: 'in' }), c('boil', 2.2, PREVIEW_SECONDS - 2.2, { amount: 1, fps: 6 })] } as unknown as Layer,
+        text('la', 'a', 61.5, 60, 3.4, P.accent2, [c('fade', 2, 0.3, { direction: 'in', y: 0 })], { body: true }),
+        text('lb', 'b', 74, 84, 3.4, P.accent2, [c('fade', 2.1, 0.3, { direction: 'in', y: 0 })], { body: true }),
+        text('lc', 'c', 78, 50, 3.4, P.accent2, [c('fade', 2.2, 0.3, { direction: 'in', y: 0 })], { body: true }),
+        rect('smudge', 50, 50, 100, 100, 'radial-gradient(40% 30% at 30% 70%, rgba(255,255,255,0.05), transparent)', []),
+      ];
+    },
+    'ink-wash': () => [
+      art('hills', `<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2a2a" stop-opacity=".85"/><stop offset="1" stop-color="#2a2a2a" stop-opacity="0"/></linearGradient><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#777" stop-opacity=".55"/><stop offset="1" stop-color="#777" stop-opacity="0"/></linearGradient><filter id="s"><feGaussianBlur stdDeviation="1.2"/></filter><radialGradient id="f" cx=".5" cy=".45" r=".55"><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient><mask id="m"><rect width="160" height="100" fill="url(#f)"/></mask></defs><g mask="url(#m)"><path filter="url(#s)" fill="url(#b)" d="M0 70 C30 40 50 30 70 52 C90 30 120 20 160 55 L160 100 L0 100Z"/><path filter="url(#s)" fill="url(#a)" d="M20 100 C40 60 60 40 80 62 C95 48 110 50 130 100Z"/></g>`, 160, 100, 58, 56, 70, [c('brush', 0.2, 1.8, { direction: 'in', strokes: 3 })]),
+      { id: 'enso', type: 'path', d: 'M50 6 C80 6 94 30 94 52 C94 80 70 94 48 94 C22 94 6 74 6 50 C6 26 24 10 44 8', stroke: P.text, strokeWidth: 1.1, box: { x: 26, y: 40, w: 22, h: 39 }, clips: [c('draw', 1.2, 1.3, { direction: 'in' })] } as unknown as Layer,
+      text('t', 'Still water.', 26, 84, 4.6, P.text, [c('fade', 2.2, 0.8, { direction: 'in', y: 4, blur: 0.4 })]),
+      rect('seal', 86, 82, 5.5, 9.8, P.accent, [pop(2.9, 0.6)], { radius: 0.4 }),
+      rect('seal-in', 86, 82, 4, 7.2, 'transparent', [pop(2.95, 0.6)], { stroke: P.background, strokeWidth: 0.2, radius: 0.2 }),
+    ],
+    'stained-glass': () => {
+      const panes = [
+        ['M0 100 L0 40 L40 20 L40 100Z', '#9b1d2a'], ['M40 20 L80 0 L120 20 L80 50Z', '#e8b33c'], ['M40 20 L80 50 L80 100 L40 100Z', '#2f6fd1'],
+        ['M80 50 L120 20 L120 100 L80 100Z', '#1f8a5a'], ['M120 20 L160 40 L160 100 L120 100Z', '#7a2fa8'],
+      ];
+      const body = `<defs><clipPath id="w"><path d="M0 100 L0 40 Q0 0 80 0 Q160 0 160 40 L160 100Z"/></clipPath></defs><g clip-path="url(#w)"><rect width="160" height="100" fill="#22356f"/><path d="M0 40 Q0 0 80 0 L40 20 L0 40Z M160 40 Q160 0 80 0 L120 20 L160 40Z" fill="#b5651d" stroke="#0c0a0e" stroke-width="3.5"/>${panes.map(([d, f]) => `<path d="${d}" fill="${f}" stroke="#0c0a0e" stroke-width="3.5" stroke-linejoin="round"/>`).join('')}<circle cx="80" cy="48" r="18" fill="#f1d27a" stroke="#0c0a0e" stroke-width="3.5"/></g><path d="M0 100 L0 40 Q0 0 80 0 Q160 0 160 40 L160 100Z" fill="none" stroke="#0c0a0e" stroke-width="5"/>`;
+      return [
+        dot('halo', 50, 44, 80, `radial-gradient(closest-side, ${P.accent}55, transparent)`, [c('fade', 0.4, 1, { direction: 'in' })]),
+        art('win', body, 160, 100, 50, 44, 62, [c('iris', 0.1, 1.2, { direction: 'in', x: 50, y: 50 }), c('sheen', 1.6, 1.2, { angle: 120, width: 26, strength: 0.45, color: '#ffffff' })]),
+        text('t', 'Let the light in.', 50, 88, 4.8, P.text, [c('fade', 1.8, 0.7, { direction: 'in', y: 0 }), c('glow', 2.2, PREVIEW_SECONDS - 2.2, { direction: 'in', color: P.accent, size: 0.9, strength: 0.8 })]),
+      ];
+    },
+    'rubber-hose': () => [
+      { id: 'armL', type: 'path', d: 'M100 20 C60 10 30 60 0 40', stroke: P.text, strokeWidth: 1.2, box: { x: 34, y: 54, w: 16, h: 16 }, clips: [c('pop', 0.6, 0.3, { direction: 'in', from: 0.3 }), c('jiggle', 0.9, PREVIEW_SECONDS - 0.9)] } as unknown as Layer,
+      { id: 'armR', type: 'path', d: 'M0 20 C40 10 70 60 100 40', stroke: P.text, strokeWidth: 1.2, box: { x: 66, y: 54, w: 16, h: 16 }, clips: [c('pop', 0.6, 0.3, { direction: 'in', from: 0.3 }), c('jiggle', 0.9, PREVIEW_SECONDS - 0.9)] } as unknown as Layer,
+      dot('gl', 26, 58, 7, '#ffffff', [pop(0.7, 0.3)], { stroke: P.text, strokeWidth: 0.4 }),
+      dot('gr', 74, 58, 7, '#ffffff', [pop(0.7, 0.3)], { stroke: P.text, strokeWidth: 0.4 }),
+      dot('body', 50, 54, 24, P.text, [c('pop', 0.2, 0.5, { direction: 'in', from: 0.2 }), c('pulse', 0.8, PREVIEW_SECONDS - 0.8, { scale: 1.05, times: 4 })]),
+      dot('e1', 45.5, 47, 5, '#ffffff', [pop(0.5, 0.3)]),
+      dot('e2', 54.5, 47, 5, '#ffffff', [pop(0.55, 0.3)]),
+      { id: 'p1', type: 'shape', shape: 'ellipse', box: { x: 46, y: 48.5, w: 2.4, ratio: 0.55 }, fill: `conic-gradient(from 20deg, transparent 0 14%, ${P.text} 14% 100%)`, clips: [pop(0.6, 0.3)] } as unknown as Layer,
+      { id: 'p2', type: 'shape', shape: 'ellipse', box: { x: 55, y: 48.5, w: 2.4, ratio: 0.55 }, fill: `conic-gradient(from 20deg, transparent 0 14%, ${P.text} 14% 100%)`, clips: [pop(0.65, 0.3)] } as unknown as Layer,
+      dot('smile', 50, 60, 9, P.accent2, [pop(0.75, 0.3)]),
+      head(50, 88, 5.6, { t: 'Swing time!', at: 1.1 }),
+      rect('film', 50, 50, 100, 100, 'transparent', [c('film', 0, PREVIEW_SECONDS, { sprockets: false, grain: 0.3, flicker: 0.1 })]),
+    ],
+    'crt-terminal': () => {
+      const line = (id: string, t: string, y: number, at: number, color = P.text) => text(id, t, 8, y, 3.6, color, [c('text-typewriter', at, 0.6, { direction: 'in' }), c('glow', at, PREVIEW_SECONDS - at, { direction: 'in', color: P.text, size: 0.6, strength: 0.7 })], { body: true, align: 'left' });
+      return [
+        line('l1', 'C:\\> RUN IDEA.EXE', 14, 0.1),
+        line('l2', 'LOADING STORY ......... OK', 24, 0.8, P.muted),
+        line('l3', 'CHECKING FRAMES ...... OK', 32, 1.4, P.muted),
+        text('ready', 'READY.', 8, 56, 12, P.accent, [c('text-typewriter', 2, 0.5, { direction: 'in' }), c('glow', 2, PREVIEW_SECONDS - 2, { direction: 'in', color: P.text, size: 1, strength: 1 })], { align: 'left' }),
+        rect('cur', 44, 58, 3, 9, P.text, [c('fade', 2.5, 0.1, { direction: 'in' }), c('pulse', 2.6, PREVIEW_SECONDS - 2.6, { scale: 1, times: 4 })]),
+        rect('tex', 50, 50, 100, 100, 'transparent', [c('scanlines', 0, PREVIEW_SECONDS, { bleed: 0.08, jitter: 0.05 })]),
+      ];
+    },
+    'transit-map': () => {
+      const stop = (id: string, x: number, y: number, at: number) => dot(id, x, y, 2.6, '#ffffff', [pop(at, 0.3)], { stroke: P.text, strokeWidth: 0.35 });
+      return [
+        head(8, 12, 4.6, { t: 'Every stop, one map.', at: 0.1, align: 'left' }),
+        { id: 'red', type: 'path', d: 'M0 60 H40 L60 25 H100', stroke: P.accent, strokeWidth: 1.6, box: { x: 50, y: 52, w: 84, h: 44 }, clips: [c('draw', 0.5, 1.6, { direction: 'in' })] } as unknown as Layer,
+        { id: 'blue', type: 'path', d: 'M30 0 V45 L50 75 V100', stroke: P.accent2, strokeWidth: 1.6, box: { x: 50, y: 56, w: 84, h: 60 }, clips: [c('draw', 1, 1.6, { direction: 'in' })] } as unknown as Layer,
+        stop('s1', 8, 58.4, 0.6), stop('s2', 25, 58.4, 1), stop('s3', 75, 41, 1.9), stop('s4', 92, 41, 2.1), stop('s5', 33.2, 35, 1.1), stop('s6', 50, 80, 2.4),
+        { id: 'swap', type: 'shape', shape: 'rect', box: { x: 33.2, y: 50, w: 3.4, h: 9 }, fill: '#ffffff', stroke: P.text, strokeWidth: 0.35, radius: 1.7, clips: [pop(1.6, 0.4), c('pulse', 2.2, 1.6, { scale: 1.15, times: 2 })] } as unknown as Layer,
+        text('n1', 'Start', 8, 64, 2.2, P.muted, [c('fade', 0.8, 0.3, { direction: 'in', y: 0 })], { body: true }),
+        text('n2', 'Change here', 21, 47, 2.2, P.text, [c('fade', 1.8, 0.3, { direction: 'in', y: 0 })], { body: true, align: 'right', w: 18 }),
+        text('n3', 'Done', 92, 35, 2.2, P.muted, [c('fade', 2.3, 0.3, { direction: 'in', y: 0 })], { body: true }),
+      ];
+    },
+    radar: () => [
+      ...[62, 42, 22].map((w, i) => dot(`ring${i}`, 50, 52, w, 'transparent', [c('fade', 0.1 + i * 0.1, 0.4, { direction: 'in' })], { stroke: P.muted, strokeWidth: 0.15 })),
+      rect('h', 50, 52, 62, 0.15, P.muted, [c('fade', 0.2, 0.4, { direction: 'in' })]),
+      rect('v', 50, 52, 0.12, 110, P.muted, [c('fade', 0.2, 0.4, { direction: 'in' })]),
+      dot('sweep', 50, 52, 62, `conic-gradient(from 0deg, ${P.accent}aa 0deg, transparent 80deg, transparent 360deg)`, [c('fade', 0.3, 0.3, { direction: 'in' }), { ...c('drift', 0.3, PREVIEW_SECONDS - 0.3, { x: 0, y: 0, scale: 1, rotate: 380 }), ease: 'none' }]),
+      dot('b1', 60, 40, 1.6, P.accent, [pop(0.9, 0.2), c('pulse', 1.1, 2.5, { scale: 1.4, times: 3 })]),
+      dot('b2', 38, 66, 1.6, P.accent, [pop(1.9, 0.2), c('pulse', 2.1, 1.8, { scale: 1.4, times: 2 })]),
+      dot('b3', 66, 70, 2, P.accent2, [pop(2.6, 0.2), c('pulse', 2.8, 1.3, { scale: 1.5, times: 2 })]),
+      text('l3', '[ CONTACT 3 ]', 70, 76, 1.8, P.accent2, [c('text-typewriter', 2.4, 0.5, { direction: 'in' })], { body: true, align: 'left' }),
+      text('k', 'Sector 7  ·  0400 hrs', 6, 10, 2, P.muted, [c('fade', 0.2, 0.4, { direction: 'in', y: 0 })], { body: true, align: 'left' }),
+      head(6, 17, 4.4, { t: 'Three contacts.', at: 0.5, align: 'left' }),
     ],
     playful: () => [
       ...range(5).map((i) => dot(`d${i}`, 18 + i * 16, 30, 11, i % 2 ? P.accent2 : P.accent, [c('pop', 0.2 + i * 0.12, 0.35, { direction: 'in', from: 0.2 }), c('float', 0.9, PREVIEW_SECONDS - 0.9, { height: 12, cycles: 2 })])),
