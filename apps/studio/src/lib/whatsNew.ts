@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-15-seven-styles';
+export const NEWS_ID = '2026-11-15-false-colour';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'false-colour', title: 'Thermal, X-ray and four more styles', short: 'A heat camera, an X-ray scan, sketchnotes', text: 'A new False colour effect turns any picture or footage into a thermal camera view (cold purple to white hot), an X-ray (glowing blue-white) or night vision, fading in like a grade. With it come six styles: Thermal camera, X-ray, Sketchnote, Ukiyo-e, Silent film and Exploded view. 49 styles in all.', doc: `${DOCS}motion-styles#the-styles` },
   { id: 'seven-styles', title: 'Seven more styles', short: 'Chalkboard, ink wash, CRT terminal and more', text: 'Chalkboard (sums and diagrams worked out in chalk), Ink wash (black ink on rice paper with a red seal), Stained glass, a 1930s Rubber-hose cartoon, CRT terminal (green phosphor text typing line by line), Transit map (every step a stop on the line) and Radar briefing. 43 styles in all; hover them on the start screen to watch them.', doc: `${DOCS}motion-styles#the-styles` },
   { id: 'key-frames', title: 'See the key frames first', short: 'Each part as a still, before it moves', text: 'With Plan first on, Show the key frames draws every part of the plan as one still frame in the real style, side by side in the chat. Agree the look, change the plan if a frame is wrong, then Build it from the key frames: each part is animated to end exactly on its frame.', doc: `${DOCS}ai#key-frames-first` },
   { id: 'six-styles', title: 'Six new styles', short: 'Newsreel, whiteboard, blueprint and more', text: 'Newsreel (black-and-white film with grain, flicker and sprocket holes), Whiteboard (marker drawings written on as the voice speaks), Blueprint (white drafting lines, measurements and callouts), Woodcut print, Neon sign and Rhythm game show (cards that slam in on the beat). Hover them on the start screen to watch them.', doc: `${DOCS}motion-styles#the-styles` },

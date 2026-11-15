@@ -1,6 +1,6 @@
 # Presets
 
-Generated from the Studio 0.1.54. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.1.55. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text
@@ -43,6 +43,7 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `jiggle` | **Jiggle.** The phone home-screen wobble: quick, slight back-and-forth tilting, as before a delete or to say "you can change this". | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 1.2 s | `angle`: number 0.5 to 12 °; `speed`: number 1 to 15 |
 | `tick` | **Tick.** A tick drawn in a circle beside it: a checklist item done. Give each item of a list this in turn for a checklist that ticks off. | text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor | 0.5 s | `direction`: `in` / `out`; `side`: `left` / `right`; `color`: color |
 | `grade` | **Colour grade.** A colour grade fades in on the picture (not on words over it): black and white, noir, warm, cool, film, vivid, faded, teal and orange. | video, image, shape, group | 0.6 s | `direction`: `in` / `out`; `look`: `bw` / `noir` / `warm` / `cool` / `film` / `vivid` / `faded` / `teal` |
+| `false-colour` | **False colour.** The picture's brightness shown as a colour scale, fading in like a grade: a thermal camera (cold purple to white hot), an X-ray (bright where it is dense, on blue) or night vision (green phosphor). | video, image, shape, group | 0.6 s | `direction`: `in` / `out`; `look`: `thermal` / `xray` / `night-vision` |
 | `grade-wipe` | **Grade wipe.** A colour grade sweeps across behind a line with a handle, before on one side, after on the other: a grade slider (across), a mood curtain (down). It stays graded when the line has passed. | video, image, shape, group | 1.2 s | `direction`: `in` / `out`; `look`: `bw` / `noir` / `warm` / `cool` / `film` / `vivid` / `faded` / `teal`; `axis`: `x` / `y`; `labels`: boolean |
 | `glass` | **Liquid glass.** A lens of liquid glass glides across the picture, blurring, brightening and saturating what is under it, with a bright rim and a slight wobble. | video, image, shape, group | 1.4 s | `size`: number 5 to 100 %; `fromX`: number -50 to 150 %; `fromY`: number -50 to 150 %; `toX`: number -50 to 150 %; `toY`: number -50 to 150 % |
 | `sticker` | **Sticker outline.** A white outline grows round the shape with a soft shadow and a slight pop, like a cut-out sticker: a person cut out of footage on a coloured backdrop (paper cut-out), a logo, an icon. | video, image, shape, text, model, group | 0.4 s | `direction`: `in` / `out`; `width`: number 0.1 to 3 su; `color`: color |

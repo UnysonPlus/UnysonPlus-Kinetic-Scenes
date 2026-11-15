@@ -15,10 +15,10 @@ export const POSTER_TIME = 3.1;
 
 /** The start screen's filters, in the order they are shown. Explainers come first: most people start there. */
 export const STYLE_GROUPS: Array<{ id: string; label: string; styles: string[] }> = [
-  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint', 'crt-terminal', 'radar', 'transit-map'] },
+  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint', 'crt-terminal', 'radar', 'transit-map', 'thermal', 'xray', 'exploded'] },
   { id: 'clean', label: 'Clean and bold', styles: ['clean', 'swiss', 'editorial', 'bauhaus', 'kinetic', 'social-captions', 'luxe'] },
-  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut', 'chalkboard', 'ink-wash', 'stained-glass'] },
-  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show', 'rubber-hose'] },
+  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut', 'chalkboard', 'ink-wash', 'stained-glass', 'sketchnote', 'ukiyo-e'] },
+  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show', 'rubber-hose', 'silent-film'] },
 ];
 
 const svgUrl = (body: string, w: number, h: number) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`)}`;
@@ -368,6 +368,95 @@ export function stylePreview(style: SceneStyle): Scene | null {
       text('k', 'Sector 7  ·  0400 hrs', 6, 10, 2, P.muted, [c('fade', 0.2, 0.4, { direction: 'in', y: 0 })], { body: true, align: 'left' }),
       head(6, 17, 4.4, { t: 'Three contacts.', at: 0.5, align: 'left' }),
     ],
+    thermal: () => {
+      const house = '<rect width="160" height="100" fill="#3a3f48"/><rect y="78" width="160" height="22" fill="#2c3037"/><path d="M40 78 V44 L80 18 L120 44 V78Z" fill="#70757d"/><rect x="52" y="50" width="16" height="14" fill="#e6e1d6"/><rect x="92" y="50" width="16" height="14" fill="#c9c3b6"/><rect x="72" y="58" width="16" height="20" fill="#b9b2a4"/><rect x="60" y="22" width="8" height="14" fill="#f7f3ea"/><ellipse cx="80" cy="76" rx="40" ry="3" fill="#8d8b86"/>';
+      return [
+        art('scene', house, 160, 100, 50, 50, 100, [c('false-colour', 0.4, 0.8, { direction: 'in', look: 'thermal' })]),
+        rect('ch', 50, 50, 6, 0.25, '#ffffff', [c('fade', 1, 0.3, { direction: 'in' })]),
+        rect('cv', 50, 50, 0.14, 10.6, '#ffffff', [c('fade', 1, 0.3, { direction: 'in' })]),
+        text('temp', '41.2°C', 56, 44, 2.6, '#ffffff', [c('text-count', 1.2, 1, { direction: 'in' })], { body: true, align: 'left' }),
+        rect('scale', 94, 50, 1.6, 60, 'linear-gradient(180deg, #ffe36a, #ff8a1f, #e0305a, #6a1c86, #07040f)', [c('wipe', 1, 0.5, { direction: 'in', from: 'top' })], { radius: 0.4 }),
+        text('hi', '45°', 86, 21, 2, '#ffffff', [c('fade', 1.4, 0.3, { direction: 'in', y: 0 })], { body: true, align: 'right', w: 8 }),
+        text('lo', '12°', 86, 79, 2, '#ffffff', [c('fade', 1.4, 0.3, { direction: 'in', y: 0 })], { body: true, align: 'right', w: 8 }),
+        head(6, 10, 3.6, { t: 'Find the heat.', at: 1.6, align: 'left' }),
+      ];
+    },
+    xray: () => {
+      const hand = '<defs><radialGradient id="xf" cx=".5" cy=".5" r=".55"><stop offset=".6" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient><mask id="xm"><rect width="160" height="100" fill="url(#xf)"/></mask></defs><g mask="url(#xm)"><rect width="160" height="100" fill="#d9dde3"/><path d="M58 100 C56 80 50 70 46 52 C44 44 52 42 55 50 L60 62 L58 22 C58 14 67 14 67 22 L69 50 L72 16 C72 8 81 8 81 16 L80 50 L85 20 C86 12 95 13 94 21 L90 54 L98 32 C101 25 109 28 106 36 L96 70 C93 84 92 92 92 100Z" fill="#8a9099"/>'
+        + [[63, 24, 60], [76, 18, 54], [89, 23, 56], [101, 34, 62]].map(([x, y1, y2]) => `<rect x="${x - 2.4}" y="${y1}" width="4.8" height="${y2 - y1}" rx="2.4" fill="#25282d"/>`).join('')
+        + '<rect x="70" y="62" width="22" height="34" rx="6" fill="#30343a"/><path d="M50 50 L58 66" stroke="#25282d" stroke-width="5" stroke-linecap="round"/></g>';
+      return [
+        art('scan', hand, 160, 100, 44, 52, 70, [c('false-colour', 0, 0.1, { direction: 'in', look: 'xray' }), c('wipe', 0.2, 1.4, { direction: 'in', from: 'top' })]),
+        rect('bar', 44, 14, 70, 0.5, P.accent, [c('slide', 0.2, 1.4, { direction: 'out', from: 'bottom', distance: 160 }), c('glow', 0.2, 1.4, { direction: 'in', color: P.accent, size: 1, strength: 1 })]),
+        dot('pin', 49, 33, 1.8, P.accent2, [pop(1.9, 0.4)]),
+        { id: 'lead', type: 'path', d: 'M0 100 L100 0', stroke: P.accent2, strokeWidth: 0.15, box: { x: 61, y: 27, w: 22, h: 10 }, clips: [c('draw', 2, 0.4, { direction: 'in' })] } as unknown as Layer,
+        text('lab', 'Middle finger · intact', 74, 22, 2, P.accent2, [c('text-typewriter', 2.3, 0.6, { direction: 'in' })], { body: true, align: 'left' }),
+        head(84, 70, 4.4, { t: 'Look inside.', at: 1.6, w: 26 }),
+      ];
+    },
+    sketchnote: () => {
+      const box = (id: string, x: number, at: number, hi: string, label: string, icon: string) => [
+        dot(`${id}-hi`, x + 2, 58, 18, `${hi}55`, [pop(at, 0.6)]),
+        { id: `${id}-box`, type: 'shape', shape: 'rect', box: { x, y: 56, w: 22, h: 30 }, fill: 'transparent', stroke: P.text, strokeWidth: 0.3, radius: 2, clips: [c('sketch', at, PREVIEW_SECONDS - at, { style: 'none', roughness: 1.2, weight: 2, color: P.text, fps: 0 }), pop(at, 0.7)] } as unknown as Layer,
+        art(`${id}-ic`, icon, 40, 40, x, 52, 9, [pop(at + 0.15, 0.5)]),
+        text(`${id}-t`, label, x, 66, 2.6, P.text, [c('fade', at + 0.3, 0.3, { direction: 'in', y: 4 })], { body: true, weight: 700 }),
+      ];
+      const ink = P.text;
+      const bulb = `<path d="M20 4 C10 4 5 12 7 19 C8 23 12 26 13 30 H27 C28 26 32 23 33 19 C35 12 30 4 20 4Z" fill="#ffd54a" stroke="${ink}" stroke-width="2"/><path d="M14 33 H26 M15 37 H25" stroke="${ink}" stroke-width="2"/>`;
+      const person = `<circle cx="20" cy="11" r="7" fill="none" stroke="${ink}" stroke-width="2"/><path d="M6 37 C6 26 12 21 20 21 C28 21 34 26 34 37" fill="none" stroke="${ink}" stroke-width="2"/>`;
+      const talk = `<path d="M5 8 H35 V26 H18 L10 33 V26 H5Z" fill="#fff" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/><path d="M11 15 H29 M11 20 H24" stroke="${ink}" stroke-width="2"/>`;
+      return [
+        rect('rib', 50, 17, 56, 10, P.accent, [c('wipe', 0.1, 0.5, { direction: 'in', from: 'left' })], { radius: 0.6 }),
+        rect('rib-l', 20, 19, 6, 8, '#d9603f', [c('fade', 0.4, 0.2, { direction: 'in' })]),
+        rect('rib-r', 80, 19, 6, 8, '#d9603f', [c('fade', 0.4, 0.2, { direction: 'in' })]),
+        text('title', 'Big ideas, small doodles', 50, 17, 4.6, '#ffffff', [c('wipe', 0.4, 0.6, { direction: 'in', from: 'left' })]),
+        ...box('a', 22, 1, P.accent2, 'Notice', bulb),
+        ...box('b', 50, 1.5, P.accent, 'People', person),
+        ...box('c', 78, 2, '#7bd389', 'Share it', talk),
+        { id: 'ar1', type: 'path', d: 'M0 60 C30 20 70 20 100 50 M86 34 L100 50 L82 56', stroke: P.text, strokeWidth: 0.3, box: { x: 36, y: 40, w: 6, h: 8 }, clips: [c('draw', 1.4, 0.4, { direction: 'in' })] } as unknown as Layer,
+        { id: 'ar2', type: 'path', d: 'M0 60 C30 20 70 20 100 50 M86 34 L100 50 L82 56', stroke: P.text, strokeWidth: 0.3, box: { x: 64, y: 40, w: 6, h: 8 }, clips: [c('draw', 1.9, 0.4, { direction: 'in' })] } as unknown as Layer,
+      ];
+    },
+    'ukiyo-e': () => {
+      const sea = '<path d="M0 64 C20 58 40 70 60 62 C80 54 100 66 120 60 C140 54 150 60 160 58 V100 H0Z" fill="#1f4f8a" stroke="#1b2440" stroke-width="1.2"/>'
+        + '<path d="M20 100 C10 70 30 34 66 30 C92 28 104 44 98 58 C92 46 76 44 70 54 C64 66 76 80 92 84 L100 100Z" fill="#1b3a6b" stroke="#1b2440" stroke-width="1.2"/>'
+        + '<path d="M66 30 C80 24 96 30 100 40 M100 40 C94 38 92 44 96 46 M98 58 C102 54 106 56 104 60" fill="none" stroke="#f7f1e2" stroke-width="2.4" stroke-linecap="round"/>'
+        + [70, 78, 86, 94].map((x, i) => `<path d="M${x} ${32 + i * 2} q4 -6 8 0" fill="none" stroke="#f7f1e2" stroke-width="1.8" stroke-linecap="round"/>`).join('')
+        + '<path d="M118 60 L130 44 L142 60Z" fill="#e9e2d0" stroke="#1b2440" stroke-width="1"/><rect x="0" y="12" width="160" height="5" fill="#d9c9a4" opacity=".7"/>';
+      return [
+        dot('sun', 78, 26, 9, P.accent, [c('fade', 0.2, 0.8, { direction: 'in', y: 0 }), c('drift', 0.2, PREVIEW_SECONDS - 0.2, { x: 0, y: -4, scale: 1, rotate: 0 })]),
+        art('sea', sea, 160, 100, 50, 50, 100, [c('wipe', 0.1, 0.9, { direction: 'in', from: 'bottom' }), c('drift', 1, PREVIEW_SECONDS - 1, { x: 0, y: 1, scale: 1.02, rotate: -1 })]),
+        rect('cart', 14, 12, 20, 7, '#efe2c4', [c('fade', 1.2, 0.5, { direction: 'in' })], { stroke: P.text, strokeWidth: 0.2 }),
+        text('ct', 'The great wave', 14, 12, 2.4, P.text, [c('fade', 1.4, 0.5, { direction: 'in', y: 0 })], { body: true }),
+      ];
+    },
+    'silent-film': () => [
+      rect('o1', 50, 50, 78, 74, 'transparent', [c('fade', 0.1, 0.4, { direction: 'in' })], { stroke: P.text, strokeWidth: 0.35 }),
+      rect('o2', 50, 50, 74, 68, 'transparent', [c('fade', 0.2, 0.4, { direction: 'in' })], { stroke: P.text, strokeWidth: 0.12 }),
+      ...[[13, 18], [87, 18], [13, 82], [87, 82]].map(([x, y], i) => dot(`orn${i}`, x, y, 2.4, P.text, [pop(0.4 + i * 0.05, 0.4)])),
+      text('t', '“Not today!”', 50, 46, 8, P.text, [{ ...c('fade', 0.6, 0.6, { direction: 'in', y: 0 }), ease: 'steps(8)' }]),
+      text('s', 'said the baker, closing the door.', 50, 62, 2.8, P.muted, [{ ...c('fade', 1.4, 0.6, { direction: 'in', y: 0 }), ease: 'steps(8)' }], { body: true }),
+      rect('film', 50, 50, 100, 100, 'transparent', [c('film', 0, PREVIEW_SECONDS, { sprockets: false, grain: 0.45, flicker: 0.2 })]),
+    ],
+    exploded: () => {
+      // A slab drawn at an angle (top, left and right faces); its box height on a 16:9 stage, for moving it.
+      const slab = (top: string, left: string, right: string) => `<polygon points="4,10 50,0 96,10 50,20" fill="${top}"/><polygon points="4,10 50,20 50,30 4,20" fill="${left}"/><polygon points="96,10 50,20 50,30 96,20" fill="${right}"/>`;
+      const part = (id: string, w: number, faces: [string, string, string], dy: number, at: number): Layer[] => {
+        const h = w * 0.32 * (16 / 9);
+        return [art(id, slab(...faces), 100, 32, 42, 56, w, [c('fade', 0.1, 0.3, { direction: 'in' }), { ...c('drift', at, 1.1, { x: 0, y: Math.round((dy / h) * 1000) / 10, scale: 1, rotate: 0 }), ease: 'power3.inOut' }])];
+      };
+      return [
+        { id: 'shadow', type: 'shape', shape: 'ellipse', box: { x: 42, y: 90, w: 30, h: 4 }, fill: 'radial-gradient(closest-side, rgba(20,30,50,0.22), transparent)', clips: [c('fade', 0.6, 1, { direction: 'in' })] } as unknown as Layer,
+        ...part('base', 30, ['#a9b3c7', '#6f7a92', '#566078'], 22, 0.6),
+        ...part('board', 26, ['#5fe09a', '#24a35f', '#1c844c'], 6, 0.7),
+        ...part('cell', 18, ['#ffc77d', '#ff8a2a', '#e46d10'], -10, 0.8),
+        ...part('lid', 30, ['#ffffff', '#d7deea', '#bcc6d8'], -28, 0.9),
+        ...[[1, 28], [2, 46], [3, 62], [4, 78]].map(([n, y], i) => dot(`n${n}`, 74, y, 3.6, i === 1 ? P.accent2 : P.accent, [pop(1.9 + i * 0.15, 0.5)])),
+        ...[[1, 28], [2, 46], [3, 62], [4, 78]].map(([n, y], i) => text(`nt${n}`, String(n), 74, y, 2, '#ffffff', [pop(1.95 + i * 0.15, 0.5)], { body: true, weight: 600 })),
+        ...[[28, 'Lid'], [46, 'Battery cell'], [62, 'Circuit board'], [78, 'Base']].map(([y, t], i) => text(`pl${i}`, String(t), 78, Number(y), 2.2, P.text, [c('fade', 2 + i * 0.15, 0.3, { direction: 'in', y: 0 })], { body: true, align: 'left' })),
+        head(6, 10, 4.6, { t: 'Every part, apart.', at: 0.2, align: 'left' }),
+      ];
+    },
     playful: () => [
       ...range(5).map((i) => dot(`d${i}`, 18 + i * 16, 30, 11, i % 2 ? P.accent2 : P.accent, [c('pop', 0.2 + i * 0.12, 0.35, { direction: 'in', from: 0.2 }), c('float', 0.9, PREVIEW_SECONDS - 0.9, { height: 12, cycles: 2 })])),
       head(50, 64, 11, { t: 'Say yum!', at: 0.8 }),

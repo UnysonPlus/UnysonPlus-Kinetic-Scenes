@@ -52,6 +52,17 @@ export const LOOKS: Record<string, Grade> = {
   teal: { saturate: 1.25, hue: -18, contrast: 1.1 },
 };
 const LOOK_IDS = Object.keys(LOOKS) as Array<keyof typeof LOOKS>;
+
+/** False colour: each channel's value along the picture's brightness, dark to bright (an SVG table). */
+const FALSE_COLOURS: Record<'thermal' | 'xray' | 'night-vision', [number[], number[], number[]]> = {
+  // Cold black-purple, blue, magenta, red, orange, yellow, white hot.
+  thermal: [[0.02, 0.18, 0.55, 0.9, 1, 1, 1], [0, 0.02, 0.05, 0.2, 0.55, 0.85, 1], [0.12, 0.45, 0.6, 0.25, 0.05, 0.2, 1]],
+  // Inverted on blue: dense (dark) parts glow white-blue, empty parts fall to deep navy.
+  xray: [[0.9, 0.62, 0.36, 0.16, 0.05, 0.01], [0.96, 0.78, 0.52, 0.27, 0.1, 0.03], [1, 0.92, 0.75, 0.5, 0.26, 0.1]],
+  // Green phosphor: black to bright green, a little white in the highlights.
+  'night-vision': [[0, 0.02, 0.08, 0.2, 0.55], [0.02, 0.25, 0.55, 0.85, 1], [0, 0.04, 0.12, 0.25, 0.55]],
+};
+let falseColourSeq = 0;
 /** A CSS filter for a look, part of the way there (0 = untouched, 1 = the full look). */
 export function gradeFilter(look: string, k: number): string {
   const g = LOOKS[look] ?? LOOKS.bw;
@@ -416,6 +427,47 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     const look = pick(p, 'look', LOOK_IDS as readonly string[], 'bw');
     const target = mediaOf(ctx.el) ?? ctx.el;
     chain(ctx, (e) => setPart(target, 'filter', ctx.clip.preset, gradeFilter(look, out ? 1 - e : e)));
+  },
+
+  'false-colour'(ctx) {
+    // Brightness mapped to a colour scale: a thermal camera (cold purple to white hot), an X-ray (bright where the
+    // picture is dark, on blue) or night vision (green phosphor). An SVG filter whose tables are blended from "no
+    // change" to the full look as the clip eases in, so it fades in like a grade.
+    const p = ctx.params;
+    const out = isOut(p);
+    const look = pick(p, 'look', ['thermal', 'xray', 'night-vision'] as const, 'thermal');
+    const target = mediaOf(ctx.el) ?? ctx.el;
+    const T = FALSE_COLOURS[look];
+    const holder = owned(ctx, 'upw-fcolour');
+    const id = holder.dataset.fid || (holder.dataset.fid = `upw-fc-${++falseColourSeq}`);
+    if (!holder.firstChild) {
+      holder.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="${id}" color-interpolation-filters="sRGB">`
+        + '<feColorMatrix type="matrix"/><feComponentTransfer><feFuncR type="table"/><feFuncG type="table"/><feFuncB type="table"/></feComponentTransfer></filter></svg>';
+    }
+    Object.assign(holder.style, { position: 'absolute', width: '0', height: '0', overflow: 'hidden', pointerEvents: 'none' });
+    const matrix = holder.querySelector('feColorMatrix')!;
+    const funcs = Array.from(holder.querySelectorAll('feFuncR, feFuncG, feFuncB'));
+    // Luminance into every channel (k = 1), or the picture as it is (k = 0).
+    const LUM = [0.2126, 0.7152, 0.0722];
+    let last = -1;
+    chain(ctx, (e) => {
+      const k = clamp01(out ? 1 - e : e);
+      if (Math.abs(k - last) < 1e-4) return;
+      last = k;
+      if (k <= 0.001) { setPart(target, 'filter', ctx.clip.preset, null); return; }
+      const rows: number[] = [];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) rows.push((r === c ? 1 - k : 0) + LUM[c] * k);
+        rows.push(0, 0);
+      }
+      rows.push(0, 0, 0, 1, 0);
+      matrix.setAttribute('values', rows.map((v) => v.toFixed(4)).join(' '));
+      funcs.forEach((f, ch) => {
+        const tab = T[ch];
+        f.setAttribute('tableValues', tab.map((v, i) => ((i / (tab.length - 1)) * (1 - k) + v * k).toFixed(4)).join(' '));
+      });
+      setPart(target, 'filter', ctx.clip.preset, `url(#${id})`);
+    });
   },
 
   'grade-wipe'(ctx) {

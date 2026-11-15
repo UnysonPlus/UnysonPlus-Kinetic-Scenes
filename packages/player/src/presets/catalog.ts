@@ -599,6 +599,13 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [DIRECTION, { key: 'look', label: 'Look', type: 'select', options: LOOK_OPTIONS }],
   },
   {
+    id: 'false-colour', label: 'False colour', category: 'emphasis', appliesTo: ['video', 'image', 'shape', 'group'],
+    description: 'The picture\'s brightness shown as a colour scale, fading in like a grade: a thermal camera (cold purple to white hot), an X-ray (bright where it is dense, on blue) or night vision (green phosphor).',
+    defaultEase: 'power2.inOut', defaultDuration: 0.6,
+    defaults: { direction: 'in', look: 'thermal' },
+    fields: [DIRECTION, { key: 'look', label: 'Look', type: 'select', options: [{ value: 'thermal', label: 'Thermal camera' }, { value: 'xray', label: 'X-ray' }, { value: 'night-vision', label: 'Night vision' }] }],
+  },
+  {
     id: 'grade-wipe', label: 'Grade wipe', category: 'emphasis', appliesTo: ['video', 'image', 'shape', 'group'],
     description: 'A colour grade sweeps across behind a line with a handle, before on one side, after on the other: a grade slider (across), a mood curtain (down). It stays graded when the line has passed.',
     defaultEase: 'power2.inOut', defaultDuration: 1.2,
