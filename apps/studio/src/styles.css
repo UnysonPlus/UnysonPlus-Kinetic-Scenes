@@ -1258,3 +1258,39 @@ dialog.start-dialog.is-step { width: min(660px, calc(100vw - 32px)); }
 /* Tools › Translate this video */
 .translate-warnings { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 4px; font-size: 12px; color: var(--amber); }
 .translate-dialog .field select { width: 100%; }
+
+/* The start box's styles: a heading with the library link, and the "See all styles" tile. */
+.gallery-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.gallery-all-frame { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: linear-gradient(135deg, var(--surface-3), var(--surface-2)) !important; }
+.gallery-all-frame strong { font-size: 26px; line-height: 1; color: var(--ink); }
+.gallery-all-frame span { font-size: 12px; color: var(--muted); }
+.gallery-tile.selected .gallery-frame { outline: 2px solid var(--accent); }
+
+/* The Style library window: search and filters on top, the styles on the left, the picked one large on the right. */
+dialog.style-lib-dialog { width: min(1180px, calc(100vw - 32px)); height: calc(100dvh - 32px); max-height: calc(100dvh - 32px); }
+dialog.style-lib-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+dialog.style-lib-dialog .export-inner { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.style-lib-tools { display: grid; gap: 8px; }
+.style-lib-tools input[type="search"] { width: 100%; max-width: 420px; height: 36px; padding: 0 12px; font-size: 14px; color: var(--ink); border: 1px solid var(--border); border-radius: var(--radius); background: var(--well); }
+.style-lib-tools input[type="search"]::placeholder { color: var(--faint); }
+.style-lib-tools .gallery-filters { margin-bottom: 0; }
+.style-lib-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; }
+.style-lib-grid-wrap { min-height: 0; overflow-y: auto; padding: 2px 6px 12px 2px; }
+.style-lib-grid { display: grid; list-style: none; margin: 0; padding: 0; gap: 14px 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.style-lib-empty { color: var(--muted); font-size: 13px; }
+.style-lib-detail { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-left: 16px; border-left: 1px solid var(--border-soft); font-size: 13px; }
+.style-lib-detail h3 { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 16px; }
+.style-lib-detail p { margin: 0; line-height: 1.5; }
+.style-lib-big .gallery-frame { display: block; }
+.style-lib-big .gallery-live { opacity: 1; }
+.style-lib-signs { color: var(--muted); font-size: 12px; }
+.style-lib-fonts { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.style-lib-detail > .btn.primary { align-self: flex-start; }
+.style-lib-hint { display: grid; gap: 10px; color: var(--muted); }
+@media (max-width: 760px) {
+  .style-lib-body { display: block; overflow-y: auto; }
+  .style-lib-detail { margin-bottom: 16px; }
+  .style-lib-grid-wrap, .style-lib-detail { overflow: visible; }
+  .style-lib-detail { padding-left: 0; border-left: 0; border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 12px; }
+  .style-lib-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

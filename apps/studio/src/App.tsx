@@ -28,7 +28,9 @@ import { removeCameraKey } from './lib/cameraOps';
 import type { QueuedRequest } from './components/AiAssist';
 import { beatsText, voiceBase, voiceBeats, voiceBrief, voiceRequest } from './lib/voiceScene';
 import { StyleLibrary } from './components/StyleLibrary';
-import { BUILT_IN_STYLES, applyStyle, loadCustomStyles, saveCustomStyles, starterScene, styleFromScene, type SceneStyle } from './lib/styles';
+import { StyleLibraryDialog } from './components/StyleLibraryDialog';
+import { noteStyle } from './lib/styleRecent';
+import { BUILT_IN_STYLES, applyStyle, loadCustomStyles, saveCustomStyles, starterScene, styleFromScene, type ApplyParts, type SceneStyle } from './lib/styles';
 import { sfxMeta, sfxSrc, soundTrack } from '@unysonplus/scene-player/sfx';
 import { AudioInspector } from './components/AudioInspector';
 import { useEditorConnection } from './lib/connection';
@@ -324,6 +326,9 @@ export function App() {
   const [swarmOpen, setSwarmOpen] = useState(false);
   const [listenOpen, setListenOpen] = useState(false);
   const [newsOpen, setNewsOpen] = useState(false);
+  /** The Style library window, and a style picked in it to start something new in (the start box's step). */
+  const [styleLibOpen, setStyleLibOpen] = useState(false);
+  const [pickStyle, setPickStyle] = useState<{ id: string; n: number } | null>(null);
   const [newsUnread, setNewsUnread] = useState(() => newsUnseen(readNewsSeen()));
   const openNews = () => { setStartOpen(false); setNewsOpen(true); setNewsUnread(false); markNewsSeen(); };
   const tryNews = (a: NewsAction) => {
@@ -1000,6 +1005,32 @@ export function App() {
       .catch(() => setNotice('The browser did not allow copying. Use File › Save and attach the file instead.'));
   };
   const canUseAgent = kit.state === 'ready' && buildAvailable();
+  /* Styles: the same actions from the Styles panel and the Style library window. */
+  const applyStyleTo = (style: SceneStyle, parts: ApplyParts) => {
+    noteStyle(style.id);
+    commit(applyStyle(latest.current.scene, style, parts));
+    const what = [parts.look && 'colours and fonts', parts.motion && 'motion', parts.sound && 'sounds'].filter(Boolean).join(', ');
+    setNotice(`Applied ${style.name} (${what}). Undo (Ctrl+Z) brings back the previous look.`);
+  };
+  const useStyleForAi = (id: string | null) => {
+    setAiStyle(id);
+    noteStyle(id);
+    const s = allStyles.find((x) => x.id === id);
+    setNotice(s ? `AI assist now follows the ${s.name} style.` : 'AI assist no longer follows a style.');
+  };
+  const deleteStyle = (id: string) => {
+    const next = customStyles.filter((s) => s.id !== id);
+    setCustomStyles(next);
+    saveCustomStyles(next);
+    if (aiStyle === id) setAiStyle(null);
+  };
+  const upsertStyle = (style: SceneStyle) => {
+    const exists = customStyles.some((s) => s.id === style.id);
+    const next = exists ? customStyles.map((s) => (s.id === style.id ? style : s)) : [...customStyles, style];
+    setCustomStyles(next);
+    setNotice(saveCustomStyles(next) ? `${exists ? 'Updated' : 'Added'} the style “${style.name}”.` : `Added “${style.name}” for now; this browser won't keep it after closing.`);
+  };
+
   const menus: Menu[] = [
     { label: 'File', items: [
       { label: 'Projects…', onSelect: () => setProjectsOpen(true), hint: 'Project folders on this computer (AI Dev Kit), shared with your AI agent' },
@@ -1063,6 +1094,7 @@ export function App() {
     ] },
     { label: 'Scene', items: [
       { label: 'Scene settings', onSelect: () => showSceneSection(), hint: 'Length, playback, stage, layouts and fonts' },
+      { label: 'Style library…', onSelect: () => setStyleLibOpen(true), hint: 'Every style, playing: search, filter, start something new in one or apply it' },
       { label: 'Styles and brand kit', onSelect: () => setLibraryAsk({ kind: 'styles', n: Date.now() }) },
       'sep',
       { label: 'Check scene', onSelect: () => setTab('check') },
@@ -1256,11 +1288,7 @@ export function App() {
               styles={allStyles}
               aiStyle={allStyles.some((s) => s.id === aiStyle) ? aiStyle : null}
               hasScene={scene.layers.length > 0}
-              onApply={(style, parts) => {
-                commit(applyStyle(latest.current.scene, style, parts));
-                const what = [parts.look && 'colours and fonts', parts.motion && 'motion', parts.sound && 'sounds'].filter(Boolean).join(', ');
-                setNotice(`Applied ${style.name} (${what}). Undo (Ctrl+Z) brings back the previous look.`);
-              }}
+              onApply={applyStyleTo}
               onNew={(style) => {
                 commit(starterScene(style, latest.current.scene));
                 setScope(null);
@@ -1268,29 +1296,16 @@ export function App() {
                 post({ type: 'seek', time: 0 });
                 setNotice(`New scene in the ${style.name} style. Edit the words, or ask AI assist to build on it. Undo brings back the one you had.`);
               }}
-              onUseForAi={(id) => {
-                setAiStyle(id);
-                const s = allStyles.find((x) => x.id === id);
-                setNotice(s ? `AI assist now follows the ${s.name} style.` : 'AI assist no longer follows a style.');
-              }}
+              onUseForAi={useStyleForAi}
               onSave={(name) => {
                 const style = styleFromScene(latest.current.scene, name);
                 const next = [...customStyles, style];
                 setCustomStyles(next);
                 setNotice(saveCustomStyles(next) ? `Saved the style “${name}”.` : `Saved “${name}” for now; this browser won't keep it after closing.`);
               }}
-              onDelete={(id) => {
-                const next = customStyles.filter((s) => s.id !== id);
-                setCustomStyles(next);
-                saveCustomStyles(next);
-                if (aiStyle === id) setAiStyle(null);
-              }}
-              onUpsert={(style) => {
-                const exists = customStyles.some((s) => s.id === style.id);
-                const next = exists ? customStyles.map((s) => (s.id === style.id ? style : s)) : [...customStyles, style];
-                setCustomStyles(next);
-                setNotice(saveCustomStyles(next) ? `${exists ? 'Updated' : 'Added'} the style “${style.name}”.` : `Added “${style.name}” for now; this browser won't keep it after closing.`);
-              }}
+              onDelete={deleteStyle}
+              onUpsert={upsertStyle}
+              onBrowse={() => setStyleLibOpen(true)}
               onAddLogo={(logo) => {
                 const s = latest.current.scene;
                 const layer = logoLayer(s, logo);
@@ -1499,7 +1514,7 @@ export function App() {
       <LikeThisDialog open={likeOpen} onClose={() => { fromStart.current = false; setLikeOpen(false); }}
         onBrief={(r) => { leaveForNew(); setLikeOpen(false); setQueued({ text: r.about, brief: r.brief, context: r.context, scope: 'new' }); openAssist(true); setNotice(`How the video is made: ${r.summary} AI assist is making yours.`); }} />
       <ShortcutsDialog open={keysOpen} onClose={() => setKeysOpen(false)} />
-      <StartDialog open={startOpen} onClose={() => setStartOpen(false)} status={kit} agent={canUseAgent} styles={allStyles} styleId={aiStyle}
+      <StartDialog open={startOpen} onClose={() => { setStartOpen(false); setPickStyle(null); }} onLibrary={() => setStyleLibOpen(true)} pickStyle={pickStyle} status={kit} agent={canUseAgent} styles={allStyles} styleId={aiStyle}
         currentTitle={scene === DEMO || !scene.layers.length ? '' : scene.title || 'This scene'} projectOpen={!!project}
         onAi={startWithAi} onProject={(id) => { setStartOpen(false); openFolderProject(id); }}
         onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }} onNews={openNews}
@@ -1532,6 +1547,11 @@ export function App() {
           }
           else { leaveForNew(); startNew(); guideFirstScene(); }
         }} />
+      <StyleLibraryDialog open={styleLibOpen} onClose={() => setStyleLibOpen(false)} styles={allStyles}
+        aiStyle={allStyles.some((s) => s.id === aiStyle) ? aiStyle : null} hasScene={scene.layers.length > 0 && scene !== DEMO}
+        onStart={(style) => { noteStyle(style.id); setStyleLibOpen(false); setPickStyle({ id: style.id, n: Date.now() }); setStartOpen(true); }}
+        onApply={(style, parts) => { applyStyleTo(style, parts); setStyleLibOpen(false); }}
+        onUseForAi={useStyleForAi} onDelete={deleteStyle} onUpsert={upsertStyle} />
       <WhatsNewDialog open={newsOpen} onClose={() => setNewsOpen(false)} onTry={tryNews} />
       <ListenDialog open={listenOpen} scene={scene} onClose={() => setListenOpen(false)} onSeek={seek} />
       <PhysicsDialog open={physicsOpen} scene={scene} ids={selectedIds(selection)} at={+state.time.toFixed(2)} onClose={() => setPhysicsOpen(false)}

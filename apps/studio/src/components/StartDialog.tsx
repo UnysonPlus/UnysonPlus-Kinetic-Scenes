@@ -6,6 +6,7 @@ import type { SceneStyle } from '../lib/styles';
 import { KIT_REPO } from './GetKit';
 import { WHATS_NEW } from '../lib/whatsNew';
 import { StyleGallery } from './StyleGallery';
+import { featuredStyles, noteStyle } from '../lib/styleRecent';
 import { kitify } from './KitLink';
 
 /** The done-for-you video service, on the Unyson+ site. */
@@ -77,6 +78,10 @@ export function StartDialog(props: {
   onNews: () => void;
   /** A new scene in this style, with no AI. */
   onStyleNew: (style: SceneStyle) => void;
+  /** Opens the Style library (every style). */
+  onLibrary: () => void;
+  /** A style picked in the Style library: go to its "Make it in …" step. */
+  pickStyle?: { id: string; n: number } | null;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [step, setStep] = useState<'pick' | 'describe' | 'website' | 'paper' | 'style'>('pick');
@@ -110,6 +115,15 @@ export function StartDialog(props: {
     if (props.open) ref.current?.querySelector<HTMLElement>('input:not([type="checkbox"]):not([type="radio"]), textarea')?.focus();
   }, [props.open, step]);
 
+  // A style chosen in the Style library (opened from here or from the menu) lands on its own step.
+  useEffect(() => {
+    if (!props.pickStyle || !props.open) return;
+    setText('');
+    if (props.pickStyle.id === 'paper') setStep('paper'); else { setStyleId(props.pickStyle.id); setStep('style'); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.pickStyle?.n, props.open]);
+
+  const featured = featuredStyles(props.styles);
   const format = START_FORMATS.find((f) => f.id === formatId) ?? START_FORMATS[0];
   const picked = props.styles.find((s) => s.id === styleId) ?? null;
   const goodUrl = startUrl(url);
@@ -165,7 +179,7 @@ export function StartDialog(props: {
               </form>
               {options('Start from something you have', HAVE)}
               {options('Start from a design', DESIGN)}
-              <StyleGallery styles={props.styles} onPick={(s) => { setText(''); if (s.id === 'paper') setStep('paper'); else { setStyleId(s.id); setStep('style'); } }} />
+              <StyleGallery styles={featured} total={props.styles.length} onAll={props.onLibrary} onPick={(s) => { noteStyle(s.id); setText(''); if (s.id === 'paper') setStep('paper'); else { setStyleId(s.id); setStep('style'); } }} />
             </div>
             <aside className="start-side" aria-label="Pick up where you left off">
               {/* The done-for-you service: for people who would rather have the video made for them. */}

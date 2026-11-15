@@ -44,6 +44,8 @@ export function StyleLibrary(props: {
   onDelete: (id: string) => void;
   /** Adds a style, or replaces the one with the same id (a brand kit edited, a style imported). */
   onUpsert: (style: SceneStyle) => void;
+  /** Opens the Style library window (every style, large). */
+  onBrowse: () => void;
   /** Puts a style's logo into the scene. */
   onAddLogo: (logo: string) => void;
 }) {
@@ -71,6 +73,7 @@ export function StyleLibrary(props: {
           A style is a look to build from: colours, fonts, how things move and sound. Apply one to this scene, start a new
           scene in it, or give it to AI assist as art direction.
         </p>
+        <button type="button" className="btn small" onClick={props.onBrowse}>Browse all styles</button>
       </div>
       <div className="lib-scroll">
         <div className="brand-start">
