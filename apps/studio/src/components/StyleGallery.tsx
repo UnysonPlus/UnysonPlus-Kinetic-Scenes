@@ -70,7 +70,7 @@ export function StyleGallery(props: { styles: SceneStyle[]; total: number; onPic
     <section className="start-group gallery" aria-labelledby="gallery-title">
       <div className="gallery-head">
         <h3 id="gallery-title">Start from a style</h3>
-        <button type="button" className="link-btn" onClick={props.onAll}>Style library</button>
+        <button type="button" className="link-btn" onClick={props.onAll}>Browse all {props.total} styles <span aria-hidden="true">→</span></button>
       </div>
       <ul className="gallery-grid">
         {props.styles.map((s) => <Tile key={s.id} style={s} onPick={props.onPick} />)}
