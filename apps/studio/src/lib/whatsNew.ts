@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-15-style-library';
+export const NEWS_ID = '2026-11-15-cut-out';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'cut-out', title: 'Cut out the object', short: 'Lift a dish or a product off its photo', text: 'Select a picture and choose Cut out the object (Inspector): the AI Dev Kit cuts the subject out along its outline, on your computer, and adds it as a new layer exactly over the photo, ready to lift off, float or turn into a sticker. Drag a box to pick one thing among several, and paint it out of the photo behind if you like. It tells you how clean the cut is. A scene made of photos stops looking like a slideshow.', doc: `${DOCS}photo-cutouts` },
   { id: 'style-library', title: 'The Style library', short: 'All 49 styles, searchable, in one window', text: 'Scene › Style library… shows every style large and playing: search by any word (chalk, retro film, data), filter by group, then start something new in a style, apply it to your scene or give it to AI assist. The start screen now shows seven styles, your own and the ones you used last first, and See all styles opens the library.', doc: `${DOCS}style-library` },
   { id: 'false-colour', title: 'Thermal, X-ray and four more styles', short: 'A heat camera, an X-ray scan, sketchnotes', text: 'A new False colour effect turns any picture or footage into a thermal camera view (cold purple to white hot), an X-ray (glowing blue-white) or night vision, fading in like a grade. With it come six styles: Thermal camera, X-ray, Sketchnote, Ukiyo-e, Silent film and Exploded view. 49 styles in all.', doc: `${DOCS}motion-styles#the-styles` },
   { id: 'seven-styles', title: 'Seven more styles', short: 'Chalkboard, ink wash, CRT terminal and more', text: 'Chalkboard (sums and diagrams worked out in chalk), Ink wash (black ink on rice paper with a red seal), Stained glass, a 1930s Rubber-hose cartoon, CRT terminal (green phosphor text typing line by line), Transit map (every step a stop on the line) and Radar briefing. 43 styles in all; hover them on the start screen to watch them.', doc: `${DOCS}motion-styles#the-styles` },

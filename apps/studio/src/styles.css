@@ -1294,3 +1294,14 @@ dialog.style-lib-dialog .export-inner { flex: 1 1 auto; min-height: 0; display: 
   .style-lib-detail { padding-left: 0; border-left: 0; border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 12px; }
   .style-lib-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Cut out the object: drag a box on the picture to pick one thing; the kit's verdict on the cut. */
+.cutobj-pick { display: grid; gap: 4px; grid-column: 1 / -1; }
+.cutobj-pick-img { position: relative; border-radius: 6px; overflow: hidden; cursor: crosshair; touch-action: none; box-shadow: 0 0 0 1px var(--border-soft); user-select: none; }
+.cutobj-pick-img img { display: block; width: 100%; height: auto; pointer-events: none; }
+.cutobj-box { position: absolute; border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); box-shadow: 0 0 0 9999px rgba(0,0,0,.35); pointer-events: none; }
+.cutobj-verdict { grid-column: 1 / -1; font-size: 12px; line-height: 1.45; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-soft); }
+.cutobj-verdict ul { margin: 4px 0 0; padding-left: 16px; color: var(--muted); }
+.cutobj-verdict.is-good { border-color: color-mix(in srgb, #2ad38b 60%, transparent); }
+.cutobj-verdict.is-check { border-color: color-mix(in srgb, #f5a524 60%, transparent); }
+.cutobj-verdict.is-poor { border-color: color-mix(in srgb, #f04e5e 60%, transparent); }

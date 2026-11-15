@@ -58,6 +58,8 @@ ordinary layers and clips the person can keep editing. This skill is generated f
    black frames, loudness, clipping; `video_check`): fix what it reports and render again before handing it over.
    To speak a script with the kit's voice engine use `voice_over`; for several takes of a line, `voice_best_take`; for
    recorded speech, `footage_cleanup`.
+   When a scene is made from photos only (no footage), read `scene_guide` topic `cutouts` and cut the subject out of the
+   photos with `image_cutout`, so they move as layers (lift, depth, a camera push) instead of reading as a slideshow.
 5. **Time to the voice with word pins.** With a voice-over, pin what belongs to a spoken word (`at` / `until` on a
    layer, `at` on a clip: { `audio`, `text` }) instead of typing its seconds, and keep the voice clip's `script` and
    `voiceId`. Then a better take, a reworded line, a spreadsheet row's own narration ({{placeholders}} in the script)

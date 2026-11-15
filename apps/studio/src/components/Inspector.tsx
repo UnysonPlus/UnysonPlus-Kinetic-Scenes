@@ -20,6 +20,7 @@ import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
 import { CameraPath } from './CameraPath';
 import { LottieSection } from './LottieSection';
+import { CutObjectSection } from './CutObjectSection';
 import { CaptionsSection, CodeSection, CursorSection, CutOutSection, LiveShotSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, ScriptVoiceSection, SplitImageSection, StepsSection } from './VectorSections';
 import { focusCamera } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
@@ -682,7 +683,10 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         </Section>
       )}
       {layer.type === 'image' && (
-        <SplitImageSection scene={scene} layer={layer} onCommit={onCommit} />
+        <>
+          <SplitImageSection scene={scene} layer={layer} onCommit={onCommit} />
+          <CutObjectSection key={layer.id} scene={scene} layer={layer} onCommit={onCommit} onSelect={(id) => onSelect({ layerId: id, clipId: null })} />
+        </>
       )}
       {layer.type === 'image' && <LiveShotSection scene={scene} layer={layer} onCommit={onCommit} onSelect={(id) => onSelect({ layerId: id, clipId: null })} />}
       {layer.type === 'image' && <CutOutSection scene={scene} layer={layer} onCommit={onCommit} onSelect={(id) => onSelect({ layerId: id, clipId: null })} />}
