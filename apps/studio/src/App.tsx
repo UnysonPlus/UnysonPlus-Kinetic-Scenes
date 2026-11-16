@@ -46,6 +46,7 @@ import { LikeThisDialog } from './components/LikeThisDialog';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { TemplatesDialog } from './components/TemplatesDialog';
 import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
+import { WelcomeDialog, welcomeSeen } from './components/WelcomeDialog';
 import { CONTACT_URL, StartDialog } from './components/StartDialog';
 import { PhysicsDialog } from './components/PhysicsDialog';
 import { SwarmDialog } from './components/SwarmDialog';
@@ -322,6 +323,8 @@ export function App() {
   const [firstRunOpen, setFirstRunOpen] = useState(false);
   const [firstRunStep, setFirstRunStep] = useState(0);
   const [startOpen, setStartOpen] = useState(() => shouldShowStart(location.search));
+  /** The welcome video: once, in front of the start box, for a first visit that did not come through a link. */
+  const [welcomeOpen, setWelcomeOpen] = useState(() => shouldShowStart(location.search) && !welcomeSeen());
   const [physicsOpen, setPhysicsOpen] = useState(false);
   const [swarmOpen, setSwarmOpen] = useState(false);
   const [listenOpen, setListenOpen] = useState(false);
@@ -338,6 +341,7 @@ export function App() {
     else if (a === 'swarm') setSwarmOpen(true);
     else if (a === 'export') setExporting(true);
     else if (a === 'translate') setTranslateOpen(true);
+    else if (a === 'intro') setWelcomeOpen(true);
     else setStartOpen(true);
   };
   const newTag = newsUnread ? 'New' : undefined;
@@ -1126,6 +1130,7 @@ export function App() {
       { label: 'What\'s new', onSelect: openNews, badge: newTag },
       { label: 'The manual', onSelect: link(DOCS) },
       { label: 'Connect your AI agent', onSelect: link(AGENTS_GUIDE) },
+      { label: 'Watch the intro (3 min)', onSelect: () => setWelcomeOpen(true), hint: 'A quick tour: the workspace, HTML vs MP4, and how to connect your AI' },
       { label: 'Your first scene (guide)', onSelect: () => { setFirstRunStep(0); setFirstRunOpen(true); } },
       { label: 'Keyboard shortcuts', onSelect: () => setKeysOpen(true) },
       { label: 'What is new', onSelect: link(`${DOCS}/roadmap`) },
@@ -1517,7 +1522,7 @@ export function App() {
       <StartDialog open={startOpen} onClose={() => { setStartOpen(false); setPickStyle(null); }} onLibrary={() => setStyleLibOpen(true)} pickStyle={pickStyle} status={kit} agent={canUseAgent} styles={allStyles} styleId={aiStyle}
         currentTitle={scene === DEMO || !scene.layers.length ? '' : scene.title || 'This scene'} projectOpen={!!project}
         onAi={startWithAi} onProject={(id) => { setStartOpen(false); openFolderProject(id); }}
-        onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }} onNews={openNews}
+        onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }} onNews={openNews} onIntro={() => setWelcomeOpen(true)}
         onStyleNew={(style) => {
           setStartOpen(false);
           leaveForNew();
@@ -1553,6 +1558,7 @@ export function App() {
         onApply={(style, parts) => { applyStyleTo(style, parts); setStyleLibOpen(false); }}
         onUseForAi={useStyleForAi} onDelete={deleteStyle} onUpsert={upsertStyle} />
       <WhatsNewDialog open={newsOpen} onClose={() => setNewsOpen(false)} onTry={tryNews} />
+      <WelcomeDialog open={welcomeOpen} onClose={() => setWelcomeOpen(false)} />
       <ListenDialog open={listenOpen} scene={scene} onClose={() => setListenOpen(false)} onSeek={seek} />
       <PhysicsDialog open={physicsOpen} scene={scene} ids={selectedIds(selection)} at={+state.time.toFixed(2)} onClose={() => setPhysicsOpen(false)}
         onScene={(s, note) => { commit(s); setPhysicsOpen(false); setNotice(note); post({ type: 'seek', time: state.time }); }} />

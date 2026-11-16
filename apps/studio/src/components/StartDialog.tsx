@@ -76,6 +76,8 @@ export function StartDialog(props: {
   onProject: (id: string) => void;
   onAllProjects: () => void;
   onNews: () => void;
+  /** Opens the welcome video (the 3-minute tour). */
+  onIntro?: () => void;
   /** A new scene in this style, with no AI. */
   onStyleNew: (style: SceneStyle) => void;
   /** Opens the Style library (every style). */
@@ -189,6 +191,11 @@ export function StartDialog(props: {
                 <span>Short videos and reels for your business, from the photos you already have. From US$5 a video.</span>
                 <span className="start-dfy__go">See how it works <span className="start-dfy__arrow" aria-hidden="true">→</span></span>
               </a>
+              {props.onIntro && (
+                <p className="start-note start-intro">
+                  New here? <button type="button" className="start-intro-btn" onClick={props.onIntro}>Watch the 3-minute tour</button>
+                </p>
+              )}
               <p className="start-note start-contact">
                 Found a bug or have an idea for a feature?{' '}
                 <a href={CONTACT_URL} target="_blank" rel="noopener">Contact us</a>
