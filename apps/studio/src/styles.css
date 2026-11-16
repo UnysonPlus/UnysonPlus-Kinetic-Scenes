@@ -1307,9 +1307,9 @@ dialog.style-lib-dialog .export-inner { flex: 1 1 auto; min-height: 0; display: 
 .cutobj-verdict.is-poor { border-color: color-mix(in srgb, #f04e5e 60%, transparent); }
 
 /* The welcome video (WelcomeDialog): the 3-minute tour, shown once in front of the start box. */
-dialog.welcome-dialog { width: min(980px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; }
+dialog.welcome-dialog { width: min(1280px, calc(100vw - 32px), calc((100dvh - 210px) * 16 / 9 + 38px)); max-height: calc(100dvh - 32px); overflow: auto; }
 .welcome-lead { margin: -6px 0 0; color: var(--text-dim, #9aa3ad); font-size: 13px; }
-.welcome-video { position: relative; width: min(100%, calc((100dvh - 230px) * 16 / 9)); margin: 0 auto; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
+.welcome-video { position: relative; width: min(100%, calc((100dvh - 210px) * 16 / 9)); margin: 0 auto; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
 .welcome-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .welcome-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .welcome-actions { display: flex; gap: 8px; margin-left: auto; }
