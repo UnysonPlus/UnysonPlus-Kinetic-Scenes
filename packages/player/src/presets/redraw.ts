@@ -330,6 +330,56 @@ export const REDRAW_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     });
   },
 
+  'low-poly'(ctx) {
+    // Low poly: the picture rebuilt from flat triangles, each one the colour of the picture under it and lit a little
+    // differently from its neighbours, like a 1990s 3D game. The triangles are fixed (seeded), so a still picture holds
+    // still and footage moves through them. Transparent parts stay transparent.
+    const p = ctx.params;
+    const jitter = clamp01(num(p, 'jitter', 0.6));
+    const shade = clamp01(num(p, 'shade', 0.14));
+    const edges = typeof p.edges === 'string' && p.edges ? p.edges : '';
+    const fit = (ctx.layer as { fit?: string }).fit ?? 'cover';
+    replaceLook(ctx, 'upw-lowpoly', (g, w, h, m, _t, r) => {
+      const cell = Math.max(5, (Math.max(0.6, num(p, 'size', 3.2)) / 100) * stageWidth(ctx.el) * r);
+      const cols = Math.max(1, Math.ceil(w / cell)), rows = Math.max(1, Math.ceil(h / cell));
+      const sc = cols * 3, sr = rows * 3;
+      const d = sample(ctx, m, sc, sr, fit);
+      if (!d) return false;
+      const cw = w / cols, ch = h / rows;
+      // Corner points, pushed off the grid (the outer ones stay on the edge).
+      const V = (i: number, j: number): [number, number] => [
+        i * cw + (i > 0 && i < cols ? (ctx.rand(i, j, 1) - 0.5) * cw * jitter : 0),
+        j * ch + (j > 0 && j < rows ? (ctx.rand(i, j, 2) - 0.5) * ch * jitter : 0),
+      ];
+      g.lineJoin = 'round';
+      const tri = (a: [number, number], b: [number, number], c: [number, number], n: number) => {
+        const cx = (a[0] + b[0] + c[0]) / 3, cy = (a[1] + b[1] + c[1]) / 3;
+        const i = (Math.min(sr - 1, Math.max(0, Math.floor((cy / h) * sr))) * sc + Math.min(sc - 1, Math.max(0, Math.floor((cx / w) * sc)))) * 4;
+        if (d[i + 3] < 128) return;
+        const f = 1 + (ctx.rand(n, 7) - 0.5) * 2 * shade;
+        const col = `rgb(${Math.min(255, Math.round(d[i] * f))},${Math.min(255, Math.round(d[i + 1] * f))},${Math.min(255, Math.round(d[i + 2] * f))})`;
+        g.beginPath();
+        g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(c[0], c[1]);
+        g.closePath();
+        g.fillStyle = col;
+        g.fill();
+        // A hairline in the same colour closes the seams between triangles (or a chosen colour draws the wireframe).
+        g.strokeStyle = edges || col;
+        g.lineWidth = edges ? Math.max(1, r) : 1;
+        g.stroke();
+      };
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          const a = V(i, j), b = V(i + 1, j), c = V(i + 1, j + 1), e = V(i, j + 1);
+          const n = j * (cols + 1) + i;
+          if (ctx.rand(i, j, 3) > 0.5) { tri(a, b, c, n * 2); tri(a, c, e, n * 2 + 1); }
+          else { tri(a, b, e, n * 2); tri(b, c, e, n * 2 + 1); }
+        }
+      }
+      return true;
+    });
+  },
+
   'blow-away'(ctx) {
     // Blow away: the picture crumbles into grains that the wind carries off, sweeping across it (In: they blow back
     // together). On a person cut out of the footage, over a shot of the empty room, the person is blown away and the

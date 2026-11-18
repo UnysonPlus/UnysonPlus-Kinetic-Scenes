@@ -23,7 +23,8 @@ export interface SampleMascot {
 
 export const SAMPLE_MASCOTS = (catalogue as { samples: SampleMascot[] }).samples;
 
-const at = (path: string) => new URL(`mascots/${path}`, document.baseURI).href;
+// Outside a browser (tests, scripts) the pictures are the published Studio's.
+const at = (path: string) => new URL(`mascots/${path}`, typeof document !== 'undefined' ? document.baseURI : 'https://kinetic-scenes.unysonplus.com/').href;
 
 /** A sample as a mascot file (the same shape as a saved or imported mascot). */
 export function sampleFile(id: string): MascotFile {

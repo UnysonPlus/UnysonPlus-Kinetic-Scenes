@@ -50,6 +50,24 @@ const firstColour = (fill: unknown) => (typeof fill === 'string' ? /#[0-9a-f]{3,
 /** A steady number from a layer's id, so each shape has its own scribble and keeps it. */
 const seedOf = (id: string) => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 99991, 7) + 1;
 
+/**
+ * How strongly a look that restyles the whole layer shows at the current time: 0 before its clip, blending in over
+ * "fade" seconds, and out again before the clip ends unless it stays ("hold"). Read from the clip's own clock, so a
+ * clip that starts with the scene is fully on at the first frame when fade is 0.
+ */
+function lookStrength(ctx: PresetContext): number {
+  const p = ctx.params;
+  const t = ctx.now() - ctx.at;
+  const hold = p.hold === true;
+  const fade = Math.max(0, Math.min(ctx.duration / 2, num(p, 'fade', 0.25)));
+  if (t < 0 || (!hold && t >= ctx.duration)) return 0;
+  let k = fade > 0 ? clamp01(t / fade) : 1;
+  if (!hold && fade > 0) k = Math.min(k, clamp01((ctx.duration - t) / fade));
+  return k;
+}
+const hex = (v: unknown, d: string) => (typeof v === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v.trim()) ? v.trim() : d);
+const stagePx = (el: HTMLElement) => el.closest<HTMLElement>('.upw-canvas')?.clientWidth || 640;
+
 export const LOOK_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   sketch(ctx) {
     // Hand-drawn: the shape is redrawn with wobbly pencil lines and a scribbled fill (Rough.js). The seed fixes every line,
@@ -284,6 +302,96 @@ export const LOOK_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
       morph.setAttribute('radius', String(Math.floor(size / 2)));
       filterPart(ctx.el, ctx.clip.id, `url(#${id})`);
     });
+  },
+
+  silhouette(ctx) {
+    // Silhouette: everything on the layer in one flat ink, its outline kept (a figure against a sunset, a shadow
+    // puppet). "Keep the light parts" leaves what is nearly white (eyes, teeth, a highlight) in a second colour, so a
+    // face still reads. It is a filter on the whole layer, so a mascot keeps talking and blinking inside it.
+    const p = ctx.params;
+    const ink = hex(p.ink, '#111111');
+    const light = hex(p.light, '#ffffff');
+    const keep = p.keep !== false;
+    const level = Math.max(0.3, Math.min(0.99, num(p, 'level', 0.9)));
+    const K = 24;
+    const { id, root } = svgFilter(ctx, 'upw-silhouette', `<feFlood flood-color="${ink}" result="ink"/><feComposite in="ink" in2="SourceAlpha" operator="in" result="shape"/>`
+      + `<feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  ${(K * 0.299).toFixed(3)} ${(K * 0.587).toFixed(3)} ${(K * 0.114).toFixed(3)} 0 ${(-K * level).toFixed(3)}" result="lm"/><feComposite in="lm" in2="SourceAlpha" operator="in" result="lm2"/>`
+      + `<feFlood flood-color="${light}" flood-opacity="${keep ? 1 : 0}" result="lc"/><feComposite in="lc" in2="lm2" operator="in" result="lights"/>`
+      + '<feMerge result="out"><feMergeNode in="shape"/><feMergeNode in="lights"/></feMerge><feComposite class="mix" in="out" in2="SourceGraphic" operator="arithmetic" k1="0" k2="1" k3="0" k4="0"/>');
+    const mix = root.querySelector('.mix')!;
+    // A mascot's mouth (its drawn mouth shapes, or the opening of a mouth cut from the picture) turns light as a
+    // whole, so the silhouette is still seen talking.
+    const mouth = () => (keep ? Array.from(ctx.el.querySelectorAll<HTMLElement>('.upw-mascot-mouth, .upw-mascot-hole')) : []);
+    const render = () => {
+      const k = lookStrength(ctx);
+      mouth().forEach((m) => filterPart(m, ctx.clip.id, k > 0.5 ? 'brightness(0) invert(1)' : null));
+      if (k <= 0) { filterPart(ctx.el, ctx.clip.id, null); return; }
+      mix.setAttribute('k2', k.toFixed(3));
+      mix.setAttribute('k3', (1 - k).toFixed(3));
+      filterPart(ctx.el, ctx.clip.id, `url(#${id})`);
+    };
+    drive(ctx, render, { ease: false, always: true });
+  },
+
+  'pixel-art'(ctx) {
+    // Pixel art that stays: the layer is redrawn in square pixels with hard edges, like a 16-bit game sprite, for as
+    // long as the clip lasts ("colors" above 1 also cuts it to a short palette, that many levels of each colour). The pixels grow in and shrink out. The
+    // pixel size follows the stage, so a preview and a 1080 px export show the same blocks.
+    const p = ctx.params;
+    const size = Math.max(0.2, Math.min(8, num(p, 'size', 0.7)));
+    const colors = Math.max(0, Math.min(16, Math.round(num(p, 'colors', 0))));
+    const table = colors >= 2 ? Array.from({ length: colors }, (_, i) => (i / (colors - 1)).toFixed(3)).join(' ') : '';
+    const fn = (c: string) => (table ? `<feFunc${c} type="discrete" tableValues="${table}"/>` : '');
+    const { id, root } = svgFilter(ctx, 'upw-pixart', '<feFlood x="0" y="0" width="1" height="1"/><feComposite width="8" height="8"/><feTile result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/><feMorphology operator="dilate" radius="4"/>'
+      + `<feComponentTransfer>${fn('R')}${fn('G')}${fn('B')}<feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>`);
+    const [flood, comp, , , morph] = Array.from(root.querySelectorAll('filter > *'));
+    const render = () => {
+      const k = lookStrength(ctx);
+      const px = Math.round(1 + k * (Math.max(2, (size / 100) * stagePx(ctx.el)) - 1));
+      if (k <= 0 || px <= 1) { filterPart(ctx.el, ctx.clip.id, null); return; }
+      flood.setAttribute('x', String(Math.floor(px / 2)));
+      flood.setAttribute('y', String(Math.floor(px / 2)));
+      comp.setAttribute('width', String(px));
+      comp.setAttribute('height', String(px));
+      morph.setAttribute('radius', String(Math.floor(px / 2)));
+      filterPart(ctx.el, ctx.clip.id, `url(#${id})`);
+    };
+    drive(ctx, render, { ease: false, always: true });
+  },
+
+  'line-drawing'(ctx) {
+    // Line drawing: the layer as its outlines only, a line wherever two colours meet and round its outer edge, in one
+    // line colour (white lines for a blueprint, dark for a pencil drawing), see-through between the lines or filled
+    // with one colour. Best on flat drawn art (a mascot, an icon, an illustration); a photo gives a busier drawing.
+    // The line weight follows the stage, so a preview and an export match.
+    const p = ctx.params;
+    const line = hex(p.color, '#ffffff');
+    const fill = hex(p.fill, '');
+    const weight = Math.max(0.05, Math.min(2, num(p, 'weight', 0.18)));
+    // More detail: a smaller difference between two colours already makes a line.
+    const detail = clamp01(num(p, 'detail', 0.8));
+    const T = 0.9 - 0.8 * detail, K = 10;
+    const { id, root } = svgFilter(ctx, 'upw-linedraw', '<feFlood flood-color="#ffffff" result="w"/><feMerge result="flat"><feMergeNode in="w"/><feMergeNode in="SourceGraphic"/></feMerge>'
+      + '<feMorphology class="r" in="flat" operator="dilate" radius="1" result="d"/><feMorphology class="r" in="flat" operator="erode" radius="1" result="e"/><feBlend in="d" in2="e" mode="difference" result="g"/>'
+      + `<feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  ${K} ${K} ${K} 0 ${(-K * T).toFixed(3)}" result="em"/>`
+      + '<feMorphology class="r" in="SourceAlpha" operator="dilate" radius="1" result="ad"/><feMorphology class="r" in="SourceAlpha" operator="erode" radius="1" result="ae"/>'
+      + '<feComposite in="em" in2="ad" operator="in" result="inner"/><feComposite in="ad" in2="ae" operator="out" result="ring"/>'
+      + '<feMerge result="mask"><feMergeNode in="inner"/><feMergeNode in="ring"/></feMerge>'
+      + `<feFlood flood-color="${line}" result="lc"/><feComposite in="lc" in2="mask" operator="in" result="lines"/>`
+      + `<feFlood flood-color="${fill || '#000000'}" flood-opacity="${fill ? 1 : 0}" result="fc"/><feComposite in="fc" in2="SourceAlpha" operator="in" result="fill"/>`
+      + '<feMerge result="out"><feMergeNode in="fill"/><feMergeNode in="lines"/></feMerge><feComposite class="mix" in="out" in2="SourceGraphic" operator="arithmetic" k1="0" k2="1" k3="0" k4="0"/>');
+    const radii = Array.from(root.querySelectorAll('.r'));
+    const mix = root.querySelector('.mix')!;
+    const render = () => {
+      const k = lookStrength(ctx);
+      if (k <= 0) { filterPart(ctx.el, ctx.clip.id, null); return; }
+      const r = String(Math.max(1, Math.round(((weight / 100) * stagePx(ctx.el)) / 2)));
+      radii.forEach((m) => m.setAttribute('radius', r));
+      mix.setAttribute('k2', k.toFixed(3));
+      mix.setAttribute('k3', (1 - k).toFixed(3));
+      filterPart(ctx.el, ctx.clip.id, `url(#${id})`);
+    };
+    drive(ctx, render, { ease: false, always: true });
   },
 
   brush(ctx) {

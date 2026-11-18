@@ -17,8 +17,8 @@ export const POSTER_TIME = 3.1;
 export const STYLE_GROUPS: Array<{ id: string; label: string; styles: string[] }> = [
   { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint', 'crt-terminal', 'radar', 'transit-map', 'thermal', 'xray', 'exploded'] },
   { id: 'clean', label: 'Clean and bold', styles: ['clean', 'swiss', 'editorial', 'bauhaus', 'kinetic', 'social-captions', 'luxe'] },
-  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut', 'chalkboard', 'ink-wash', 'stained-glass', 'sketchnote', 'ukiyo-e'] },
-  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show', 'rubber-hose', 'silent-film'] },
+  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut', 'chalkboard', 'ink-wash', 'stained-glass', 'sketchnote', 'ukiyo-e', 'silhouette'] },
+  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show', 'rubber-hose', 'silent-film', 'low-poly'] },
 ];
 
 const svgUrl = (body: string, w: number, h: number) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`)}`;
@@ -455,6 +455,40 @@ export function stylePreview(style: SceneStyle): Scene | null {
         ...[[1, 28], [2, 46], [3, 62], [4, 78]].map(([n, y], i) => text(`nt${n}`, String(n), 74, y, 2, '#ffffff', [pop(1.95 + i * 0.15, 0.5)], { body: true, weight: 600 })),
         ...[[28, 'Lid'], [46, 'Battery cell'], [62, 'Circuit board'], [78, 'Base']].map(([y, t], i) => text(`pl${i}`, String(t), 78, Number(y), 2.2, P.text, [c('fade', 2 + i * 0.15, 0.3, { direction: 'in', y: 0 })], { body: true, align: 'left' })),
         head(6, 10, 4.6, { t: 'Every part, apart.', at: 0.2, align: 'left' }),
+      ];
+    },
+    silhouette: () => {
+      const ink = P.text;
+      const land = `<path d="M0 62 Q24 52 48 60 T98 57 Q128 50 160 60 V90 H0Z" fill="${ink}"/>`
+        + `<rect x="24" y="34" width="2.6" height="26" fill="${ink}"/><circle cx="25" cy="30" r="9" fill="${ink}"/><circle cx="18" cy="35" r="6" fill="${ink}"/><circle cx="32" cy="35" r="6.5" fill="${ink}"/>`
+        + `<rect x="132" y="42" width="2" height="16" fill="${ink}"/><path d="M133 26 L141 46 H125Z" fill="${ink}"/>`;
+      const figure = `<circle cx="30" cy="12" r="8.5" fill="${ink}"/><path d="M20 25 Q30 20 40 25 L42 50 H18Z" fill="${ink}"/><rect x="20" y="47" width="8" height="24" rx="3" fill="${ink}"/><rect x="32" y="47" width="8" height="24" rx="3" fill="${ink}"/>`
+        + `<path d="M39 28 Q52 22 50 6" stroke="${ink}" stroke-width="5.5" stroke-linecap="round" fill="none"/><path d="M21 28 Q12 37 14 48" stroke="${ink}" stroke-width="5.5" stroke-linecap="round" fill="none"/>`;
+      return [
+        dot('glow', 50, 60, 62, `radial-gradient(circle, ${P.accent2}99 0%, ${P.accent2}00 68%)`, [c('fade', 0, 0.9, { direction: 'in' })]),
+        dot('sun', 50, 60, 30, P.accent2, [c('slide', 0, 1.6, { direction: 'in', from: 'bottom', distance: 18 }), c('drift', 1.6, PREVIEW_SECONDS - 1.6, { x: 0, y: -2, scale: 1.03, rotate: 0 })]),
+        { id: 'b1', type: 'path', d: 'M0 60 Q25 0 50 50 Q75 0 100 60', stroke: ink, strokeWidth: 0.35, box: { x: 72, y: 24, w: 5, h: 3 }, clips: [c('fade', 1.2, 0.5, { direction: 'in' }), c('drift', 1.2, PREVIEW_SECONDS - 1.2, { x: 4, y: -2, scale: 1, rotate: 0 })] } as unknown as Layer,
+        { id: 'b2', type: 'path', d: 'M0 60 Q25 0 50 50 Q75 0 100 60', stroke: ink, strokeWidth: 0.3, box: { x: 79, y: 30, w: 3.6, h: 2.2 }, clips: [c('fade', 1.4, 0.5, { direction: 'in' }), c('drift', 1.4, PREVIEW_SECONDS - 1.4, { x: 4, y: -1, scale: 1, rotate: 0 })] } as unknown as Layer,
+        art('land', land, 160, 90, 50, 50, 100, [c('slide', 0.2, 0.9, { direction: 'in', from: 'bottom', distance: 24 })]),
+        art('fig', figure, 60, 72, 50, 51, 15, [c('slide', 0.7, 0.7, { direction: 'in', from: 'bottom', distance: 30 })]),
+        head(50, 15, 5.4, { at: 1.3 }),
+      ];
+    },
+    'low-poly': () => {
+      // Each object: a light side and a dark side, flat faces only.
+      const world = '<path d="M20 62 L52 22 L70 62Z" fill="#7d93b8"/><path d="M52 22 L70 62 L86 62Z" fill="#5b7198"/><path d="M52 22 L45 31 L52 34 L58 30Z" fill="#f4f8ff"/>'
+        + '<path d="M78 62 L108 30 L124 62Z" fill="#8ea3c6"/><path d="M108 30 L124 62 L140 62Z" fill="#647ba3"/>'
+        + '<path d="M0 62 L42 56 L60 66 L0 74Z" fill="#4fc26d"/><path d="M42 56 L104 60 L60 66Z" fill="#3fae5d"/><path d="M104 60 L160 54 L160 70 L96 72Z" fill="#56c973"/>'
+        + '<path d="M0 74 L60 66 L96 72 L70 90 L0 90Z" fill="#35a053"/><path d="M96 72 L160 70 L160 90 L70 90Z" fill="#2f9049"/><path d="M60 66 L104 60 L96 72Z" fill="#47b866"/>';
+      const tree = '<path d="M20 4 L34 26 L6 26Z" fill="#2aa457"/><path d="M20 4 L34 26 L20 26Z" fill="#1f8746"/><path d="M20 16 L38 42 L2 42Z" fill="#259a50"/><path d="M20 16 L38 42 L20 42Z" fill="#1b7a3f"/><path d="M17 42 H23 V54 H17Z" fill="#8a5a33"/><path d="M20 42 H23 V54 H20Z" fill="#6f4627"/>';
+      const sun = `<path d="M20 2 L32 8 L38 20 L32 32 L20 38 L8 32 L2 20 L8 8Z" fill="${P.accent}"/><path d="M20 2 L32 8 L20 20Z" fill="#ffb347"/><path d="M8 8 L20 2 L20 20Z" fill="#ffc567"/><path d="M2 20 L8 8 L20 20Z" fill="#ffab3a"/>`;
+      const cloud = '<path d="M4 20 L14 8 L26 12 L34 4 L48 10 L56 20Z" fill="#ffffff"/><path d="M26 12 L34 4 L40 20 L20 20Z" fill="#e6f3ff"/>';
+      return [
+        art('sun', sun, 40, 40, 82, 24, 11, [c('pop', 0.3, 0.45, { direction: 'in', from: 0.3 }), c('float', 0.9, PREVIEW_SECONDS - 0.9, { height: 3, cycles: 2 })]),
+        art('cl1', cloud, 60, 24, 20, 30, 15, [c('slide', 0.2, 0.7, { direction: 'in', from: 'left', distance: 20 }), c('drift', 0.9, PREVIEW_SECONDS - 0.9, { x: 3, y: 0, scale: 1, rotate: 0 })]),
+        art('world', world, 160, 90, 50, 50, 100, [c('slide', 0, 0.7, { direction: 'in', from: 'bottom', distance: 30 })]),
+        ...[[24, 66, 9], [38, 72, 12], [68, 70, 10], [86, 76, 13]].map(([x, y, w], i) => art(`t${i}`, tree, 40, 56, x, y, w, [{ ...c('slide', 0.6 + i * 0.14, 0.55, { direction: 'in', from: 'top', distance: 40 }), ease: 'back.out(1.6)' }])),
+        head(50, 14, 5.4, { at: 1.2 }),
       ];
     },
     playful: () => [

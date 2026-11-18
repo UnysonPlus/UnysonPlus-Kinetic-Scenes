@@ -8,7 +8,7 @@ description: Make motion-graphics scenes for Unyson+ Kinetic Scenes (animated we
 Kinetic Scenes (https://kinetic-scenes.unysonplus.com/) plays **scene files**: JSON data with a stage, layers and
 clips (presets placed on a timeline). You write data, never code, so whatever you make lands in the Studio as
 ordinary layers and clips the person can keep editing. This skill is generated from the Studio's own code
-(version 0.1.63), so the presets, settings and rules here are exactly what the player understands.
+(version 0.1.64), so the presets, settings and rules here are exactly what the player understands.
 
 ## Read first
 
@@ -16,7 +16,7 @@ ordinary layers and clips the person can keep editing. This skill is generated f
 - [Presets](reference/presets.md): every preset, what it does, what it applies to and its settings.
 - [Motion rules](reference/motion-rules.md): timing, layout, sound and craft rules the Studio's own AI follows.
 - [Styles](reference/styles.md): the built-in looks (colours, fonts, motion) a scene can be made in, including about twenty
-  named motion-design styles (synthwave, line art, Swiss grid, risograph, VHS, pixel art, newsreel, whiteboard, blueprint, woodcut, neon sign, rhythm game show, chalkboard, ink wash, stained glass, rubber-hose cartoon, CRT terminal, transit map, radar, thermal camera, X-ray, sketchnote, ukiyo-e, silent film, exploded view…) with what makes each recognisable
+  named motion-design styles (synthwave, line art, Swiss grid, risograph, VHS, pixel art, newsreel, whiteboard, blueprint, woodcut, neon sign, rhythm game show, chalkboard, ink wash, stained glass, rubber-hose cartoon, CRT terminal, transit map, radar, thermal camera, X-ray, sketchnote, ukiyo-e, silent film, exploded view, ink silhouette, 90s low poly…) with what makes each recognisable
   and how to build it.
 - [Sounds](reference/sounds.md): the built-in sound effects.
 

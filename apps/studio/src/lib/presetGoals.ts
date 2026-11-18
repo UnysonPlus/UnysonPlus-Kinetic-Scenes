@@ -22,7 +22,7 @@ const GOALS: PresetGoal[] = [
   { id: 'product', label: 'Show a product or app', hint: 'Walk through an interface: a cursor that clicks, a zoom into the detail, a page that scrolls.',
     presets: ['cursor-move', 'cursor-click', 'digital-zoom', 'scroll', 'select-box', 'glass', 'copies'] },
   { id: 'texture', label: 'Give it a look', hint: 'A style for the whole piece: film, print, tape, hand-drawn, or a colour grade.',
-    presets: ['grade', 'film', 'scanlines', 'halftone', 'boil', 'text-outline', 'text-gradient', 'text-skew', 'recolor'] },
+    presets: ['grade', 'film', 'scanlines', 'halftone', 'silhouette', 'pixel-art', 'line-drawing', 'low-poly', 'boil', 'text-outline', 'text-gradient', 'text-skew', 'recolor'] },
   { id: 'talkinghead', label: 'Edit a talking head', hint: 'Effects for a person on camera: cut the person out of the footage first (Footage tools), then restyle, clone, blow away or ring them.',
     presets: ['manga', 'ascii', 'engrave', 'blow-away', 'clone-row', 'ring-text', 'rack-focus', 'explode-3d', 'snap-zoom', 'digital-zoom'] },
   { id: 'code', label: 'Explain code', hint: 'Type it, change it, run it, and point at the line that matters.',
