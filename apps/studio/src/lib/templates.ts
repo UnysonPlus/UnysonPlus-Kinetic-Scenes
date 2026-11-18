@@ -1,4 +1,5 @@
 import type { Clip, Layer, Scene } from '@unysonplus/scene-player/types';
+import { pipFile } from './mascotSample';
 import { BUILT_IN_STYLES, type SceneStyle, type StyleMove } from './styles';
 
 /**
@@ -20,6 +21,7 @@ export const TEMPLATES: TemplateInfo[] = [
   { id: 'social', name: 'Social promo', goal: 'A Reel, Short or TikTok', description: 'A vertical promo: a hook in the first second, three quick beats, and a call to action kept clear of the app buttons.', format: '9x16' },
   { id: 'paper', name: 'Paper cut-out explainer', goal: 'Act out an idea in a paper world', description: 'A little world of cut paper with real depth: a slow camera moves through it, a banner states the idea, a caption rides on a torn tag and the scene tears away to the answer.', format: '9x16' },
   { id: 'explainer', name: 'Explainer', goal: 'Explain something in chapters', description: 'For longer pieces: chapter cards, a chapter progress bar, a small heads-up label and subtitles. Replace the script, or ask AI assist to fill it from yours.', format: '16x9' },
+  { id: 'mascot', name: 'Mascot presenter', goal: 'A mascot explains it', description: 'Pip (or your own mascot) presents three points: it waves hello, explains each point as it lands beside it and gives a thumbs up at the end. Add a voice-over and it talks.', format: '16x9' },
   { id: 'code', name: 'Code demo', goal: 'Show how code works', description: 'A code window types a snippet, the key line is highlighted with a note, and it runs.', format: '16x9' },
 ];
 
@@ -174,6 +176,23 @@ export function templateScene(id: string, style: SceneStyle = BUILT_IN_STYLES[0]
       rect('Chapter track', { x: 50, y: 6, w: 90, h: 0.5 }, `${pal.text}22`, [clip({ preset: 'fade', params: { y: 0 } }, 0, 0.4)], { radius: 0.25 });
       rect('Chapter progress', { x: 50, y: 6, w: 90, h: 0.5 }, pal.accent, [clip({ preset: 'wipe', params: { from: 'left' } }, 0, duration, 'none')], { radius: 0.25 });
       text('Heads-up', 'Chapter 1 of 3', { x: 94, y: 11, anchor: 'right' } as Layer['box'], { ...body, fontSize: 2, color: pal.muted, align: 'right' }, [clip({ preset: 'fade', params: { y: 0 } }, 0.2, 0.4), clip({ preset: 'text-swap', params: { to: 'Chapter 2 of 3' } }, len, 0.4), clip({ preset: 'text-swap', params: { to: 'Chapter 3 of 3' } }, 2 * len, 0.4)]);
+      break;
+    }
+    case 'mascot': {
+      // Pip on the left; the points land on the right, each with Pip's explaining pose. A voice-over makes it talk.
+      const pip = pipFile();
+      add({ id: 'pip', name: 'Pip', type: 'mascot', alt: 'Pip, the mascot', poses: pip.poses, mouths: pip.mouths, box: { x: 24, y: 58, w: 26, h: 74 },
+        clips: [clip({ preset: 'pop', params: { from: 0.6 } }, 0.1, 0.5, 'back.out(1.7)'), clip({ preset: 'mascot-pose', params: { pose: 'wave' } }, 0.5, 1.6),
+          clip({ preset: 'mascot-pose', params: { pose: 'explaining' } }, 2.4, 1.4), clip({ preset: 'mascot-pose', params: { pose: 'thinking' } }, 4.6, 1.4),
+          clip({ preset: 'mascot-pose', params: { pose: 'thumbs-up' } }, 7, 2)] } as never);
+      text('Title', 'Three things to know', { x: 66, y: 18, w: 56 }, { ...heading, fontSize: 4.4, align: 'left' }, [head(0.3)], {});
+      const points = ['It takes two minutes to set up', 'It works with what you already use', 'It is free to start'];
+      points.forEach((p, i) => {
+        const y = 38 + i * 17, at = 2.4 + i * 2.2;
+        rect(`Card ${i + 1}`, { x: 66, y, w: 56, h: 12 }, `${pal.accent}1f`, [shape(at)], { radius: 1.2, stroke: `${pal.accent}66`, strokeWidth: 0.12 });
+        text(`Point ${i + 1}`, p, { x: 41, y, w: 50, anchor: 'left' }, { ...body, fontSize: 2.4, color: pal.text, align: 'left' }, [sub(at + 0.15)], {});
+      });
+      duration = 9.5;
       break;
     }
     case 'code': {

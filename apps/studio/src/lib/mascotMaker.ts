@@ -1,4 +1,4 @@
-import type { MascotFaceBox, MascotLayer, MascotPose } from '@unysonplus/scene-player/types';
+import type { MascotFaceBox, MascotLayer, MascotPose, MascotViseme } from '@unysonplus/scene-player/types';
 
 /**
  * The mascot creator's tools, all in the browser: cutting a pose sheet (several poses on one plain background) into
@@ -18,6 +18,32 @@ export const POSE_SHEET_PROMPT = `Draw the character in the attached picture in 
 6. cheering, both arms up
 
 Keep it exactly the same character in every pose: the same face, colours, proportions and outfit, the same size, facing the viewer. Mouth closed and relaxed, eyes open, in every pose. Show the whole character in each pose, with plenty of empty space between the poses so they never touch. Use a plain, flat bright green background (#00FF00) with no shadows, no floor, no text and no frames.`;
+
+/** What to ask an image AI for: the mascot's mouth in nine shapes, one per sound, on one plain green sheet. */
+export const MOUTH_SHEET_PROMPT = `Draw only the mouth of the character in the attached picture, nine times, all on one image, in a grid of 3 columns and 3 rows, each shaped for a different sound, in this order:
+1. closed and relaxed (silent)
+2. wide open, as in "ah"
+3. stretched wide showing the top teeth, as in "ee"
+4. round and open, as in "oh"
+5. small and round, as in "oo"
+6. lips pressed together, as in "m"
+7. top teeth resting on the lower lip, as in "f"
+8. open with the tongue up behind the top teeth, as in "l"
+9. slightly open showing the teeth, as in "s"
+
+The same style, colours and line thickness as the character's own mouth, all the same size, seen from the front. Only the mouth and lips, nothing else of the face. Plenty of empty space between them so they never touch. A plain, flat bright green background (#00FF00), no text, no frames.`;
+
+/** The shape each mouth on the sheet is, in the prompt's order. */
+export const MOUTH_ORDER: MascotViseme[] = ['rest', 'a', 'e', 'o', 'u', 'mbp', 'fv', 'l', 'etc'];
+export const MOUTH_LABEL: Record<MascotViseme, string> = { rest: 'Closed', a: 'Ah', e: 'Ee', o: 'Oh', u: 'Oo', mbp: 'M B P', fv: 'F V', l: 'L', etc: 'S T K' };
+
+/** Cuts a sheet of nine drawn mouths into one picture per shape (in the prompt's order). */
+export async function cutMouths(src: string): Promise<{ mouths: Partial<Record<MascotViseme, string>>; found: number }> {
+  const r = await cutSheet(src, { min: 0.0012 });
+  const mouths: Partial<Record<MascotViseme, string>> = {};
+  r.poses.slice(0, 9).forEach((p, i) => { mouths[MOUTH_ORDER[i]] = p.src; });
+  return { mouths, found: r.poses.length };
+}
 
 export interface CutPose { src: string; ratio: number; width: number; height: number; face: { mouth?: MascotFaceBox; eyes: MascotFaceBox[] } }
 
@@ -69,7 +95,7 @@ function fgOf(d: Uint8ClampedArray, i: number, bg: Bg): number {
 interface Blob { x0: number; y0: number; x1: number; y1: number; n: number }
 
 /** The separate things on a sheet (connected areas of the character), in reading order: top row left to right, then the next. */
-function blobsOf(mask: Uint8Array, w: number, h: number): Blob[] {
+function blobsOf(mask: Uint8Array, w: number, h: number, min = 0.01): Blob[] {
   const seen = new Uint8Array(w * h);
   const blobs: Blob[] = [];
   const stack: number[] = [];
@@ -89,7 +115,7 @@ function blobsOf(mask: Uint8Array, w: number, h: number): Blob[] {
     blobs.push(b);
   }
   const total = w * h;
-  let big = blobs.filter((b) => b.n > total * 0.004);
+  let big = blobs.filter((b) => b.n > total * Math.min(0.004, min * 0.4));
   // Pieces of one pose that came apart (a hand, a tail): joined to the pose whose box they sit in or touch.
   const pad = Math.round(Math.min(w, h) * 0.015);
   big.sort((a, b) => b.n - a.n);
@@ -99,7 +125,7 @@ function blobsOf(mask: Uint8Array, w: number, h: number): Blob[] {
     if (host) { host.x0 = Math.min(host.x0, b.x0); host.y0 = Math.min(host.y0, b.y0); host.x1 = Math.max(host.x1, b.x1); host.y1 = Math.max(host.y1, b.y1); host.n += b.n; }
     else merged.push({ ...b });
   }
-  big = merged.filter((b) => b.n > total * 0.01);
+  big = merged.filter((b) => b.n > total * min);
   // Reading order: rows by where the poses sit vertically.
   big.sort((a, b) => (a.y0 + a.y1) / 2 - (b.y0 + b.y1) / 2);
   const rows: Blob[][] = [];
@@ -254,7 +280,7 @@ export function guessFace(mask: Uint8Array, w: number, h: number, d?: Uint8Clamp
 }
 
 /** Cuts a sheet of poses (or one picture) into separate see-through poses. */
-export async function cutSheet(src: string, opts: { single?: boolean } = {}): Promise<{ poses: CutPose[]; note?: string }> {
+export async function cutSheet(src: string, opts: { single?: boolean; min?: number } = {}): Promise<{ poses: CutPose[]; note?: string }> {
   const im = await loadImage(src);
   const W = im.naturalWidth, H = im.naturalHeight;
   // Look at a smaller copy to find the poses, then cut each one from the full picture.
@@ -274,7 +300,7 @@ export async function cutSheet(src: string, opts: { single?: boolean } = {}): Pr
   }
   const mask = new Uint8Array(w * h);
   for (let i = 0, p = 0; i < d.length; i += 4, p++) mask[p] = fgOf(d, i, bg) > 0.5 ? 1 : 0;
-  let blobs = blobsOf(mask, w, h);
+  let blobs = blobsOf(mask, w, h, opts.min);
   if (opts.single && blobs.length > 1) {
     const all = blobs.reduce((a, b) => ({ x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1), n: a.n + b.n }));
     blobs = [all];

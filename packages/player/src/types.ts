@@ -104,6 +104,12 @@ export interface AudioClip {
   /** The language it is spoken in (a two-letter code), when it is not English: its words are timed in it. */
   lang?: string;
   /**
+   * How loud it is, 50 times a second from the start of the file, one character each (0-9 then a-z: 0 silent, z its
+   * loudest). Measured once from the sound; a talking mascot opens its mouth with it, so it closes in the pauses and
+   * opens more on the stressed syllables. Playback ignores it otherwise.
+   */
+  levels?: string;
+  /**
    * An audio file: a data: URL (uploaded) or an https address (must allow loading from other sites).
    * Or a built-in sound: "sfx:<name>", optionally with a pitch, "sfx:pop@1.2".
    */
@@ -767,6 +773,14 @@ export interface CursorLayer extends LayerBase {
   label?: string;
 }
 
+/**
+ * The mouth shapes a mascot can have drawn (one picture each): rest (closed), a ("ah", wide open), e ("ee", wide with
+ * teeth), o ("oh", round), u ("oo", small and round), mbp (lips pressed), fv (top teeth on the lower lip), l (tongue up),
+ * etc (slightly open, teeth showing: s, t, k and the rest).
+ */
+export type MascotViseme = 'rest' | 'a' | 'e' | 'o' | 'u' | 'mbp' | 'fv' | 'l' | 'etc';
+export const MASCOT_VISEMES: MascotViseme[] = ['rest', 'a', 'e', 'o', 'u', 'mbp', 'fv', 'l', 'etc'];
+
 /** A part of a mascot's face, in fractions of its pose picture (0-1): left, top, width, height. */
 export interface MascotFaceBox { x: number; y: number; w: number; h: number }
 
@@ -807,6 +821,11 @@ export interface MascotLayer extends LayerBase {
   breathe?: boolean;
   /** Describes the mascot for screen readers. */
   alt?: string;
+  /**
+   * Drawn mouths, one picture per shape (see MascotViseme): when set, the pose's own mouth is covered and the drawn
+   * mouth for each sound is shown in its place, sized to the pose's mouth box.
+   */
+  mouths?: Partial<Record<MascotViseme, string>>;
 }
 
 export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer | LottieLayer | MascotLayer;

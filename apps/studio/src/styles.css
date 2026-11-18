@@ -1351,3 +1351,22 @@ dialog.mascot-dialog { width: min(960px, calc(100vw - 32px)); max-height: calc(1
 .mascot-note { color: var(--accent, #2ad38b); }
 .mascot-foot { display: flex; gap: 8px; align-items: center; }
 .mascot-spacer { flex: 1; }
+.mascot-mouths { order: 1; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.mascot-mouths[open] { gap: 10px; }
+.mascot-mouths summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+.mascot-mouths textarea { width: 100%; font: 12.5px/1.5 ui-monospace, monospace; background: var(--surface-2, #1b222a); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 10px; resize: vertical; }
+.mascot-mouth-grid { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 720px) { .mascot-mouth-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.mascot-mouth-grid figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; background: repeating-conic-gradient(#20262d 0 25%, #191e24 0 50%) 0 0 / 12px 12px; }
+.mascot-mouth-grid img { width: 100%; height: 44px; object-fit: contain; }
+.mascot-mouth-grid span { font-size: 11px; color: #f87171; height: 44px; display: grid; place-items: center; }
+.mascot-mouth-grid figcaption { font-size: 11px; color: var(--ink-dim, #9aa3ad); }
+.mascot-dialog .mascot-note, .mascot-dialog [role="alert"] { order: 2; }
+.mascot-dialog .mascot-foot { order: 3; }
+.mascot-saved { display: flex; flex-direction: column; gap: 8px; }
+.mascot-saved-list { display: flex; gap: 10px; flex-wrap: wrap; }
+.mascot-saved-item { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; }
+.mascot-saved-item > button:first-child { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 120px; padding: 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2, #1b222a); color: var(--ink); cursor: pointer; font: inherit; font-size: 12px; }
+.mascot-saved-item > button:first-child:hover { border-color: var(--accent, #2ad38b); }
+.mascot-saved-item img { width: 100%; height: 80px; object-fit: contain; }
+.mascot-import-plus { display: grid; place-items: center; height: 80px; font-size: 32px; color: var(--accent, #2ad38b); }

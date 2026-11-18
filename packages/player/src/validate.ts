@@ -166,6 +166,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (a.script !== undefined && (typeof a.script !== 'string' || a.script.length > 50000)) { warnings.push(`${ap}.script: must be text (at most 50,000 characters), so it was left out.`); delete a.script; }
         if (a.voiceId !== undefined && (typeof a.voiceId !== 'string' || a.voiceId.length > 200)) { warnings.push(`${ap}.voiceId: must be a voice id, so it was left out.`); delete a.voiceId; }
         if (a.lang !== undefined && (typeof a.lang !== 'string' || !/^[a-z]{2}$/.test(a.lang))) { warnings.push(`${ap}.lang: must be a two-letter language code, so it was left out.`); delete a.lang; }
+        if (a.levels !== undefined && (typeof a.levels !== 'string' || a.levels.length > 50 * 7200 || !/^[0-9a-z]*$/.test(a.levels))) { warnings.push(`${ap}.levels: must be loudness, 50 a second, one character each (0-9, a-z), so it was left out.`); delete a.levels; }
         if (a.words !== undefined) {
           if (!Array.isArray(a.words) || a.words.length > 20000) fail(`${ap}.words`, 'must be a list of at most 20,000 words');
           else {
@@ -386,6 +387,10 @@ export function validateScene(input: unknown): ValidationResult {
           for (const c of layer.clips) if (c.preset === 'mascot-pose' && c.params?.pose && !ids.has(String(c.params.pose))) fail(`${lp}.clips[${c.id}].params.pose`, 'must be one of its poses (an id)');
         }
         if (layer.talk !== undefined && (!isNum(layer.talk) || layer.talk < 0 || layer.talk > 1.5)) fail(`${lp}.talk`, 'must be 0 to 1.5');
+        if (layer.mouths !== undefined) {
+          const shapes = ['rest', 'a', 'e', 'o', 'u', 'mbp', 'fv', 'l', 'etc'];
+          if (!isObj(layer.mouths) || Object.entries(layer.mouths).some(([k, v]) => !shapes.includes(k) || typeof v !== 'string' || !v)) fail(`${lp}.mouths`, `must be { shape: picture } with shapes ${shapes.join(', ')}`);
+        }
         if (!(scene.audio ?? []).some((au) => Array.isArray(au?.words) && au.words.length)) warnings.push(`${lp}: the mascot talks on a voice-over with its words; there is none yet, so it stays quiet.`);
       } else {
         fail(`${lp}.type`, 'must be text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor, lottie or mascot');

@@ -1,4 +1,5 @@
-import type { AudioClip, Clip, MascotFaceBox, MascotLayer, MascotPose } from './types';
+import type { AudioClip, Clip, MascotFaceBox, MascotLayer, MascotPose, MascotViseme } from './types';
+import { MASCOT_VISEMES } from './types';
 
 /**
  * Mascot layers: a character that talks on the voice-over.
@@ -25,7 +26,14 @@ const OPEN: Record<string, number> = {
   s: 0.25, z: 0.25, c: 0.3, j: 0.3, x: 0.3,
 };
 
-interface SaidLetter { at: number; end: number; open: number }
+/** The drawn mouth shape for each letter. */
+const SHAPE: Record<string, MascotViseme> = {
+  a: 'a', e: 'e', i: 'e', y: 'e', o: 'o', u: 'u', w: 'u', q: 'u',
+  m: 'mbp', b: 'mbp', p: 'mbp', f: 'fv', v: 'fv',
+  l: 'l', n: 'l', t: 'l', d: 'l',
+};
+
+interface SaidLetter { at: number; end: number; open: number; shape: MascotViseme }
 const cache = new WeakMap<MascotLayer, { key: string; letters: SaidLetter[] }>();
 
 /** The voice-over a mascot talks on: the one it names, else the first voice with words (and its other parts). */
@@ -36,7 +44,7 @@ function voiceClips(layer: MascotLayer, audio: AudioClip[] | undefined): AudioCl
   return src.group ? list.filter((a) => a.group === src.group).sort((x, y) => x.start - y.start) : [src];
 }
 
-/** Every letter spoken, with when it is said and how open the mouth is on it. */
+/** Every letter spoken, with when it is said, how open the mouth is on it and its drawn shape. */
 function lettersOf(layer: MascotLayer, clips: AudioClip[]): SaidLetter[] {
   const key = clips.map((c) => `${c.id}:${c.start}:${c.offset ?? 0}:${c.duration ?? ''}:${c.words?.length ?? 0}`).join('|');
   const hit = cache.get(layer);
@@ -50,14 +58,14 @@ function lettersOf(layer: MascotLayer, clips: AudioClip[]): SaidLetter[] {
       const at = clip.start + (w.t - off), d = Math.max(0.06, w.d);
       if (!chars.length) continue;
       // Double letters and silent endings make no extra shape: "ll" is one L, a final "e" after a consonant is quiet.
-      const sounds: number[] = [];
+      const sounds: Array<{ open: number; shape: MascotViseme }> = [];
       for (let i = 0; i < chars.length; i++) {
         if (i > 0 && chars[i] === chars[i - 1]) continue;
         if (i === chars.length - 1 && chars[i] === 'e' && i > 1 && !'aeiouy'.includes(chars[i - 1])) continue;
-        sounds.push(OPEN[chars[i]] ?? 0.3);
+        sounds.push({ open: OPEN[chars[i]] ?? 0.3, shape: SHAPE[chars[i]] ?? 'etc' });
       }
       const step = d / sounds.length;
-      sounds.forEach((open, i) => letters.push({ at: at + i * step, end: at + (i + 1) * step, open }));
+      sounds.forEach((s, i) => letters.push({ at: at + i * step, end: at + (i + 1) * step, open: s.open, shape: s.shape }));
     }
   }
   letters.sort((x, y) => x.at - y.at);
@@ -65,30 +73,59 @@ function lettersOf(layer: MascotLayer, clips: AudioClip[]): SaidLetter[] {
   return letters;
 }
 
-/** How open the mouth is at a moment (0-1): eased between the shapes of the letters, shut between words. */
-export function mouthOpen(layer: MascotLayer, audio: AudioClip[] | undefined, time: number): number {
-  const letters = lettersOf(layer, voiceClips(layer, audio));
-  if (!letters.length) return 0;
+/**
+ * How loud the voice is at a moment (0-1), from its measured levels; null when it has none. Read from the clip playing
+ * then, at 50 per second from the start of its file.
+ */
+function loudness(clips: AudioClip[], time: number): number | null {
+  const clip = clips.find((c) => c.levels && time >= c.start && time < c.start + (c.duration ?? Infinity));
+  if (!clip?.levels) return clips.some((c) => c.levels) ? 0 : null;
+  const i = Math.floor((time - clip.start + (clip.offset ?? 0)) * 50);
+  if (i < 0 || i >= clip.levels.length) return 0;
+  // A short look around the moment, so the mouth does not flicker from one fiftieth to the next.
+  let sum = 0, n = 0;
+  for (let k = i - 1; k <= i + 1; k++) { const ch = clip.levels[k]; if (ch) { sum += parseInt(ch, 36) / 35; n++; } }
+  return n ? sum / n : 0;
+}
+
+/** The mouth at a moment: how open it is (0-1, eased between letters, shut between words) and the shape of the sound. */
+export function mouthShape(layer: MascotLayer, audio: AudioClip[] | undefined, time: number): { open: number; shape: MascotViseme } {
+  const clips = voiceClips(layer, audio);
+  const letters = lettersOf(layer, clips);
+  if (!letters.length) return { open: 0, shape: 'rest' };
   // The letter being said (binary search), and its neighbour, for a smooth move from one shape to the next.
   let lo = 0, hi = letters.length - 1;
   while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (letters[mid].at <= time) lo = mid; else hi = mid - 1; }
-  const cur = letters[lo];
-  if (time < cur.at - 0.06) return 0;
+  const cur = letters[lo], next = letters[lo + 1];
+  let open: number, shape: MascotViseme = cur.shape;
+  if (time < cur.at - 0.06) return { open: 0, shape: 'rest' };
   // Before the first letter of a word / after the last: open from and close to shut over a few frames.
-  if (time < cur.at) return cur.open * (1 - (cur.at - time) / 0.06);
-  if (time >= cur.end) {
-    const next = letters[lo + 1];
+  if (time < cur.at) open = cur.open * (1 - (cur.at - time) / 0.06);
+  else if (time >= cur.end) {
     const gap = next ? next.at - cur.end : Infinity;
-    if (gap < 0.08) return cur.open + (next!.open - cur.open) * ((time - cur.end) / Math.max(0.001, gap));
-    return Math.max(0, cur.open * (1 - (time - cur.end) / 0.07));
+    if (gap < 0.08) open = cur.open + (next!.open - cur.open) * ((time - cur.end) / Math.max(0.001, gap));
+    else { open = Math.max(0, cur.open * (1 - (time - cur.end) / 0.07)); if (time - cur.end > 0.07) shape = 'rest'; }
+  } else {
+    // Inside the letter: ease from its shape toward the next letter's in its last third.
+    const u = (time - cur.at) / Math.max(0.001, cur.end - cur.at);
+    if (u < 0.66 || !next || next.at - cur.end > 0.02) open = cur.open;
+    else { const k = (u - 0.66) / 0.34; open = cur.open + (next.open - cur.open) * k * k * (3 - 2 * k); }
   }
-  // Inside the letter: ease from its shape toward the next letter's in its last third.
-  const u = (time - cur.at) / Math.max(0.001, cur.end - cur.at);
-  const next = letters[lo + 1];
-  if (u < 0.66 || !next || next.at - cur.end > 0.02) return cur.open;
-  const k = (u - 0.66) / 0.34;
-  return cur.open + (next.open - cur.open) * k * k * (3 - 2 * k);
+  // With the voice's measured loudness: shut in its pauses, wider on the loud, stressed syllables.
+  const level = loudness(clips, time);
+  if (level !== null) {
+    const gate = Math.max(0, Math.min(1.25, (level - 0.03) / 0.42));
+    open *= gate;
+    if (gate < 0.08) shape = 'rest';
+  }
+  return { open, shape: open < 0.05 && shape !== 'mbp' && shape !== 'fv' ? 'rest' : shape };
 }
+
+/** How open the mouth is at a moment (0-1). */
+export function mouthOpen(layer: MascotLayer, audio: AudioClip[] | undefined, time: number): number {
+  return mouthShape(layer, audio, time).open;
+}
+
 
 /** A repeatable random number from a text and an index. */
 function rand(seed: string, i: number) {
@@ -158,7 +195,30 @@ export function buildMascot(doc: Document, inner: HTMLElement, layer: MascotLaye
     Object.assign(img.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', display: 'block', pointerEvents: 'none', userSelect: 'none' });
     fig.appendChild(img);
     const m = pose.mouth;
-    if (m) {
+    const drawn = m && layer.mouths && Object.values(layer.mouths).some(Boolean);
+    if (m && drawn) {
+      // Drawn mouths: the pose's own mouth is covered with the skin just below it (or above, at the bottom edge), then
+      // one picture per shape sits in its place; drawMascot shows the one for the sound being said.
+      const pad = 0.15;
+      const cover = { x: Math.max(0, m.x - m.w * pad), y: Math.max(0, m.y - m.h * pad), w: Math.min(1, m.w * (1 + 2 * pad)), h: Math.min(1, m.h * (1 + 2 * pad)) };
+      const from = cover.y + cover.h * 2 <= 1 ? { ...cover, y: cover.y + cover.h } : { ...cover, y: Math.max(0, cover.y - cover.h) };
+      const skin = crop(doc, pose.src, cover, from);
+      skin.className = 'upw-mascot-cover';
+      skin.style.borderRadius = '40%';
+      fig.appendChild(skin);
+      for (const shape of MASCOT_VISEMES) {
+        const src = layer.mouths![shape];
+        if (!src) continue;
+        const mi = doc.createElement('img');
+        mi.className = 'upw-mascot-mouth';
+        mi.dataset.shape = shape;
+        mi.src = src;
+        mi.alt = '';
+        mi.draggable = false;
+        Object.assign(mi.style, { position: 'absolute', left: pct(m.x + m.w / 2 - (m.w * 1.4) / 2), top: pct(m.y - m.h * 0.2), width: pct(m.w * 1.4), height: 'auto', display: 'none', pointerEvents: 'none', transformOrigin: '50% 30%' });
+        fig.appendChild(mi);
+      }
+    } else if (m) {
       // The opening (behind), then the lower lip, which moves down over the chin.
       const hole = doc.createElement('div');
       hole.className = 'upw-mascot-hole';
@@ -204,7 +264,8 @@ export function drawMascot(inner: HTMLElement, layer: MascotLayer, audio: AudioC
     const w = W / H > r ? H * r : W, h = w / r;
     fig.style.width = `${w}px`;
     fig.style.height = `${h}px`;
-    const open = Math.max(0, Math.min(1.5, mouthOpen(layer, audio, time) * (layer.talk ?? 1)));
+    const said = mouthShape(layer, audio, time);
+    const open = Math.max(0, Math.min(1.5, said.open * (layer.talk ?? 1)));
     // Breathing, a touch of movement while talking, and a small settle as a new pose arrives.
     const breathe = layer.breathe === false ? 0 : Math.sin(time * 2 * Math.PI / 3.6);
     const settle = time - since < 0.22 ? 1 - (time - since) / 0.22 : 0;
@@ -212,7 +273,17 @@ export function drawMascot(inner: HTMLElement, layer: MascotLayer, audio: AudioC
     const sx = 1 - 0.004 * breathe + 0.03 * settle * settle;
     fig.style.transform = `translate(-50%, -50%) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
     const m = pose.mouth;
-    if (m) {
+    const mouths = fig.querySelectorAll<HTMLElement>('.upw-mascot-mouth');
+    if (m && mouths.length) {
+      // The drawn mouth for this sound (or the nearest drawn one), a touch bigger the wider it opens.
+      const have = new Set(Array.from(mouths, (el) => el.dataset.shape));
+      const want = [said.shape, said.open > 0.45 ? 'a' : 'etc', 'etc', 'a', 'rest'].find((s) => have.has(s));
+      mouths.forEach((el) => {
+        const on = el.dataset.shape === want;
+        el.style.display = on ? 'block' : 'none';
+        if (on) el.style.transform = `scale(${(1 + 0.08 * Math.min(1, open)).toFixed(3)})`;
+      });
+    } else if (m) {
       const hole = fig.querySelector<HTMLElement>('.upw-mascot-hole');
       const jaw = fig.querySelector<HTMLElement>('.upw-mascot-jaw');
       const drop = open * 0.55; // in mouth heights

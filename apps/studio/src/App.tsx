@@ -49,6 +49,9 @@ import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
 import { WelcomeDialog, welcomeSeen } from './components/WelcomeDialog';
 import { MascotDialog } from './components/MascotDialog';
 import { draftsOf, mascotLayer, type DraftPose } from './lib/mascotMaker';
+import { measureVoiceLevels, withLevels } from './lib/levels';
+import { layerFromFile } from './lib/mascotStore';
+import type { MascotLayer, MascotViseme } from '@unysonplus/scene-player/types';
 import { CONTACT_URL, StartDialog } from './components/StartDialog';
 import { PhysicsDialog } from './components/PhysicsDialog';
 import { SwarmDialog } from './components/SwarmDialog';
@@ -526,6 +529,21 @@ export function App() {
     commit(r.scene);
     setSelection({ layerId: r.id, clipId: null });
   }, [commit]);
+
+  /** Measures the loudness of the voice a mascot talks on, then puts it on the scene as it is by then (nothing else is undone). */
+  const timeVoice = () => {
+    measureVoiceLevels(latest.current.scene).then((lv) => { if (lv.size) commit(withLevels(latest.current.scene, lv)); }).catch(() => { /* the words alone still move the mouth */ });
+  };
+
+  /** Adds a mascot (a saved or imported one, or Pip), sized to the stage, and times its mouth to the voice's loudness. */
+  const addMascotFields = (fields: Partial<MascotLayer>) => {
+    const cur = latest.current.scene;
+    const bp = cur.stage.breakpoints.find((b) => b.id === primaryBreakpoint(cur)) ?? cur.stage.breakpoints[0];
+    const aspect = bp ? bp.aspect[0] / bp.aspect[1] : 16 / 9;
+    const ratio = fields.poses?.[0]?.ratio ?? 0.8;
+    addLayerOfType('mascot', { ...fields, box: { x: 50, y: 58, w: +Math.min(90, (70 * ratio) / aspect).toFixed(2), h: 70 } } as Partial<Layer>);
+    timeVoice();
+  };
 
   const onAddLayer = (type: LeafType) => {
     if (type === 'image') imageRef.current?.click();
@@ -1514,7 +1532,7 @@ export function App() {
                   openAssist(true);
                 }} />
             ) : tab === 'check' ? null : tab === 'inspect'
-              ? <Inspector onEditMascot={(id) => setMascotAsk({ editId: id })} onPhysics={() => setPhysicsOpen(true)} onPreviewSound={(src, v) => { audioEngine.preview(src, v); }} time={state.time} onSeek={seek} scene={scene} selection={selection} bp={state.breakpoint} onCommit={commit} onSelect={setSelection} alignTo={alignTo} onAlignTo={setAlignTo} onAlign={align} onEnter={enterGroup} onGroup={groupSelection} onUngroup={ungroupSelection} />
+              ? <Inspector onEditMascot={(id) => setMascotAsk({ editId: id })} onAddMascot={addMascotFields} latest={() => latest.current.scene} onPhysics={() => setPhysicsOpen(true)} onPreviewSound={(src, v) => { audioEngine.preview(src, v); }} time={state.time} onSeek={seek} scene={scene} selection={selection} bp={state.breakpoint} onCommit={commit} onSelect={setSelection} alignTo={alignTo} onAlignTo={setAlignTo} onAlign={align} onEnter={enterGroup} onGroup={groupSelection} onUngroup={ungroupSelection} />
               : <ScenePanel scene={scene} onCommit={commit} />}
           </div>
         </aside>
@@ -1566,16 +1584,19 @@ export function App() {
       <WhatsNewDialog open={newsOpen} onClose={() => setNewsOpen(false)} onTry={tryNews} />
       <WelcomeDialog open={welcomeOpen} onClose={() => setWelcomeOpen(false)} />
       <MascotDialog open={!!mascotAsk} hasVoice={(scene.audio ?? []).some((a) => a.words?.length)} onClose={() => setMascotAsk(null)}
-        initial={(() => { const l = mascotAsk?.editId ? findLayer(scene, mascotAsk.editId) : undefined; return l?.type === 'mascot' ? { name: l.name ?? 'Mascot', poses: draftsOf(l) } : undefined; })()}
-        onAdd={(name: string, poses: DraftPose[]) => {
+        initial={(() => { const l = mascotAsk?.editId ? findLayer(scene, mascotAsk.editId) : undefined; return l?.type === 'mascot' ? { name: l.name ?? 'Mascot', poses: draftsOf(l), mouths: l.mouths } : undefined; })()}
+        onUseFile={(f) => { addMascotFields(layerFromFile(f)); setMascotAsk(null); }}
+        onAdd={(name: string, poses: DraftPose[], mouths?: Partial<Record<MascotViseme, string>>) => {
           const cur = latest.current.scene;
           const bp = cur.stage.breakpoints.find((b) => b.id === primaryBreakpoint(cur)) ?? cur.stage.breakpoints[0];
           const aspect = bp ? bp.aspect[0] / bp.aspect[1] : 16 / 9;
           const editId = mascotAsk?.editId;
           const built = mascotLayer(editId ?? 'mascot', name, poses, aspect);
-          if (editId) commit(mapLayer(cur, editId, (l) => (l.type === 'mascot' ? { ...l, name, alt: name, poses: built.poses, pose: built.poses.some((p) => p.id === l.pose) ? l.pose : undefined } : l)));
-          else addLayerOfType('mascot', { name, alt: name, poses: built.poses, box: built.box } as Partial<Layer>);
+          if (editId) commit(mapLayer(cur, editId, (l) => (l.type === 'mascot' ? { ...l, name, alt: name, poses: built.poses, mouths, pose: built.poses.some((p) => p.id === l.pose) ? l.pose : undefined } : l)));
+          else addLayerOfType('mascot', { name, alt: name, poses: built.poses, box: built.box, ...(mouths ? { mouths } : {}) } as Partial<Layer>);
           setMascotAsk(null);
+          // The voice's loudness, measured once, makes the mouth shut in the pauses and open on the stressed syllables.
+          timeVoice();
         }} />
       <ListenDialog open={listenOpen} scene={scene} onClose={() => setListenOpen(false)} onSeek={seek} />
       <PhysicsDialog open={physicsOpen} scene={scene} ids={selectedIds(selection)} at={+state.time.toFixed(2)} onClose={() => setPhysicsOpen(false)}

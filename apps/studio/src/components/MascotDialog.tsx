@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { AudioClip, MascotFaceBox, MascotLayer } from '@unysonplus/scene-player/types';
+import type { AudioClip, MascotFaceBox, MascotLayer, MascotViseme } from '@unysonplus/scene-player/types';
 import { buildMascot, drawMascot } from '@unysonplus/scene-player/mascot';
-import { POSE_NAMES, POSE_SHEET_PROMPT, carryFace, cutSheet, fileToDataUrl, type CutPose, type DraftPose } from '../lib/mascotMaker';
+import { deleteMascot, listMascots, readMascotFile, type MascotFile, type SavedMascot } from '../lib/mascotStore';
+import { pipFile } from '../lib/mascotSample';
+import { MOUTH_LABEL, MOUTH_ORDER, MOUTH_SHEET_PROMPT, POSE_NAMES, POSE_SHEET_PROMPT, carryFace, cutMouths, cutSheet, fileToDataUrl, type CutPose, type DraftPose } from '../lib/mascotMaker';
 
 /**
  * Insert › Mascot…: a step-by-step mascot creator.
@@ -27,15 +29,17 @@ const PREVIEW_WORDS = (() => {
 const PREVIEW_LEN = PREVIEW_WORDS[PREVIEW_WORDS.length - 1].t + PREVIEW_WORDS[PREVIEW_WORDS.length - 1].d + 1.6;
 const PREVIEW_AUDIO: AudioClip[] = [{ id: 'preview', src: '', start: 0, role: 'voice', words: PREVIEW_WORDS } as AudioClip];
 
-function draftLayer(p: DraftPose): MascotLayer {
-  return { id: 'preview', type: 'mascot', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [], talk: 1.1,
+type Mouths = Partial<Record<MascotViseme, string>>;
+
+function draftLayer(p: DraftPose, mouths?: Mouths): MascotLayer {
+  return { id: 'preview', type: 'mascot', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [], talk: 1.1, ...(mouths && Object.keys(mouths).length ? { mouths } : {}),
     poses: [{ id: 'p', name: p.name, src: p.cut.src, ratio: p.cut.ratio, ...(p.mouth ? { mouth: p.mouth } : {}), eyes: p.eyes, ...(p.eyesClosed ? { eyesClosed: true } : {}) }] };
 }
 
 /** The pose talking and blinking, drawn with the player's own mascot code. */
-function LivePreview(props: { pose: DraftPose }) {
+function LivePreview(props: { pose: DraftPose; mouths?: Mouths }) {
   const ref = useRef<HTMLDivElement>(null);
-  const layer = useMemo(() => draftLayer(props.pose), [props.pose]);
+  const layer = useMemo(() => draftLayer(props.pose, props.mouths), [props.pose, props.mouths]);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -92,7 +96,7 @@ function FaceEditor(props: { pose: DraftPose; part: Part; onChange: (p: DraftPos
   );
 }
 
-export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose: () => void; onAdd: (name: string, poses: DraftPose[]) => void; initial?: { name: string; poses: DraftPose[] } }) {
+export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose: () => void; onAdd: (name: string, poses: DraftPose[], mouths?: Mouths) => void; initial?: { name: string; poses: DraftPose[]; mouths?: Mouths }; onUseFile: (f: MascotFile) => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [step, setStep] = useState(1);
   const [source, setSource] = useState<Source | null>(null);
@@ -104,6 +108,13 @@ export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose:
   const [cur, setCur] = useState(0);
   const [part, setPart] = useState<Part>('mouth');
   const [name, setName] = useState('Mascot');
+  /** Drawn mouths (optional), one picture per shape. */
+  const [mouths, setMouths] = useState<Mouths>({});
+  const [mouthCopied, setMouthCopied] = useState(false);
+  const mouthRef = useRef<HTMLInputElement>(null);
+  /** Mascots saved in this browser, and the Import file picker. */
+  const [saved, setSaved] = useState<SavedMascot[]>([]);
+  const importRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -114,8 +125,8 @@ export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose:
     if (props.open) {
       setNote(null); setError(null); setCur(0); setPart('mouth');
       // Editing a mascot: straight to its poses.
-      if (props.initial) { setStep(2); setSource('many'); setPoses(props.initial.poses); setName(props.initial.name); }
-      else { setStep(1); setSource(null); setPoses([]); setName('Mascot'); }
+      if (props.initial) { setStep(2); setSource('many'); setPoses(props.initial.poses); setName(props.initial.name); setMouths(props.initial.mouths ?? {}); }
+      else { setStep(1); setSource(null); setPoses([]); setName('Mascot'); setMouths({}); listMascots().then(setSaved); }
     }
   }, [props.open]);
 
@@ -177,6 +188,22 @@ export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose:
 
         {step === 1 && (
           <div className="mascot-body">
+            <div className="mascot-saved">
+              <span className="field-label">Use a mascot you have</span>
+              <div className="mascot-saved-list">
+                <figure className="mascot-saved-item"><button type="button" onClick={() => props.onUseFile(pipFile())} title="Pip: six poses and drawn mouths, ready to talk"><img src={pipFile().poses[0].src} alt="" /><span>Try it with Pip</span></button></figure>
+                {saved.map((m) => (
+                  <figure key={m.id} className="mascot-saved-item">
+                    <button type="button" onClick={() => props.onUseFile(m.file)}><img src={m.file.poses[0]?.src} alt="" /><span>{m.name}</span></button>
+                    <button type="button" className="link-btn" onClick={() => deleteMascot(m.id).then(() => listMascots().then(setSaved))} aria-label={`Remove ${m.name} from your mascots`}>Remove</button>
+                  </figure>
+                ))}
+                <figure className="mascot-saved-item"><button type="button" onClick={() => importRef.current?.click()}><span className="mascot-import-plus">+</span><span>Import a mascot file…</span></button></figure>
+              </div>
+              <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={async (e) => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; try { props.onUseFile(readMascotFile(await file.text())); } catch (err) { setError((err as Error).message); } }} />
+              <p className="field-hint wide">Save a mascot with Save to my mascots (select it in a scene); Export the mascot there makes a file to import on another computer.</p>
+            </div>
+            <span className="field-label">Or make a new one</span>
             <p className="field-hint wide">Pictures on a plain or see-through background work best: the Studio takes the background off by itself. Nothing is uploaded.</p>
             <div className="mascot-choices">
               <button type="button" className={`mascot-choice${source === 'one' ? ' is-on' : ''}`} onClick={() => pick('one')} disabled={busy}>
@@ -231,6 +258,33 @@ export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose:
         )}
 
         {step === 3 && pose && (
+          <details className="mascot-mouths" open={Object.keys(mouths).length > 0}>
+            <summary>Drawn mouths (optional): {Object.keys(mouths).length ? `${Object.keys(mouths).length} of 9` : 'talking looks drawn, not stretched'}</summary>
+            <p className="field-hint wide">In the same chat with your image AI, send this prompt too and upload what it draws: nine mouths, one per sound. They replace the pose's own mouth, in every pose. Without them the pose's own mouth opens and closes.</p>
+            <textarea readOnly value={MOUTH_SHEET_PROMPT} rows={5} aria-label="The prompt for drawn mouths" />
+            <div className="mascot-row">
+              <button type="button" className="btn small" onClick={() => { navigator.clipboard?.writeText(MOUTH_SHEET_PROMPT).then(() => { setMouthCopied(true); setTimeout(() => setMouthCopied(false), 1600); }); }}>{mouthCopied ? 'Copied' : 'Copy the mouth prompt'}</button>
+              <button type="button" className="btn small primary" disabled={busy} onClick={() => mouthRef.current?.click()}>{busy ? 'Cutting out the mouths…' : 'Upload the mouth sheet'}</button>
+              {Object.keys(mouths).length > 0 && <button type="button" className="btn small ghost" onClick={() => setMouths({})}>Use the pose's own mouth instead</button>}
+            </div>
+            <input ref={mouthRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={async (e) => {
+              const file = e.target.files?.[0]; if (!file) return;
+              setBusy(true); setError(null);
+              try {
+                const r = await cutMouths(await fileToDataUrl(file));
+                setMouths(r.mouths);
+                setNote(r.found === 9 ? 'Got all nine mouths: the preview now talks with them.' : `Found ${r.found} mouths (the prompt asks for 9). Check them below; ask your image AI to try again with more space between them if some are missing.`);
+              } catch (err) { setError((err as Error).message); }
+              finally { setBusy(false); e.target.value = ''; }
+            }} />
+            {Object.keys(mouths).length > 0 && (
+              <div className="mascot-mouth-grid">
+                {MOUTH_ORDER.map((k) => <figure key={k}>{mouths[k] ? <img src={mouths[k]} alt="" /> : <span>missing</span>}<figcaption>{MOUTH_LABEL[k]}</figcaption></figure>)}
+              </div>
+            )}
+          </details>
+        )}
+        {step === 3 && pose && (
           <div className="mascot-body mascot-face-step">
             <div className="mascot-face-col">
               <div className="mascot-row" role="radiogroup" aria-label="Which part to draw">
@@ -242,7 +296,7 @@ export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose:
               <p className="field-hint wide">Pick a part, then drag a box around it on the picture: the mouth (closed lips), then each eye. Drag a box to move it. We guessed where they are; fix what is off.</p>
             </div>
             <div className="mascot-preview-col">
-              <LivePreview pose={pose} />
+              <LivePreview pose={pose} mouths={mouths} />
               <label className="assist-check"><input type="checkbox" checked={pose.eyesClosed} onChange={(e) => setPose({ ...pose, eyesClosed: e.target.checked })} /> The eyes are closed in this pose</label>
               <p className="field-hint wide">The mouth should open and close cleanly, and the eyes blink. Pose {cur + 1} of {poses.length}: <strong>{pose.name}</strong></p>
               <div className="mascot-row">
@@ -272,7 +326,7 @@ export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose:
           <span className="mascot-spacer" />
           {step === 2 && <button type="button" className="btn small primary" disabled={!poses.length} onClick={() => { setCur(0); setNote(null); setStep(3); }}>Next: the face</button>}
           {step === 3 && <button type="button" className="btn small primary" onClick={() => { setNote(null); setStep(4); }}>The face looks right</button>}
-          {step === 4 && <button type="button" className="btn small primary" disabled={!name.trim()} onClick={() => props.onAdd(name.trim(), poses)}>{props.initial ? 'Save the changes' : 'Add it to the scene'}</button>}
+          {step === 4 && <button type="button" className="btn small primary" disabled={!name.trim()} onClick={() => props.onAdd(name.trim(), poses, Object.keys(mouths).length ? mouths : undefined)}>{props.initial ? 'Save the changes' : 'Add it to the scene'}</button>}
         </footer>
       </div>
     </dialog>
