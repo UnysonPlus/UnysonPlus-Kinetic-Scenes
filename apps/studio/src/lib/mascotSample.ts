@@ -1,27 +1,42 @@
 import type { MascotFaceBox, MascotViseme } from '@unysonplus/scene-player/types';
 import { MASCOT_FILE_FORMAT, type MascotFile } from './mascotStore';
+import catalogue from '../../public/mascots/samples.json';
 
 /**
- * Pip, the sample mascot that comes with the Studio (an orange character drawn for Kinetic Scenes, free to use): six
- * poses with their faces set and nine drawn mouths, to try mascots before making your own, and for the Mascot presenter
- * template. Its pictures are served with the Studio, by full address, so a scene with Pip plays anywhere.
+ * The sample mascots that come with the Studio (drawn for Kinetic Scenes, free to use): Pip and nine more, people and
+ * characters, each with six poses (idle, explaining, wave, thinking, thumbs up, cheer), its face set and nine drawn
+ * mouths, to use straight away or to try mascots before making your own. The list is public/mascots/samples.json (the
+ * AI Dev Kit reads the same file from the published Studio); the pictures are served with the Studio, by full address,
+ * so a scene with a sample mascot plays anywhere.
  */
-const at = (path: string) => new URL(`mascots/pip/${path}`, document.baseURI).href;
+export interface SampleMascot {
+  id: string;
+  name: string;
+  group: 'people' | 'characters';
+  blurb: string;
+  alt: string;
+  ratio: number;
+  face: { mouth: MascotFaceBox; eyes: MascotFaceBox[] };
+  poses: Array<{ id: string; name: string; file: string }>;
+  mouths: Partial<Record<MascotViseme, string>>;
+}
 
-const FACE: { mouth: MascotFaceBox; eyes: MascotFaceBox[] } = {
-  mouth: { x: 0.43, y: 0.525, w: 0.14, h: 0.08 },
-  eyes: [{ x: 0.35, y: 0.375, w: 0.12, h: 0.117 }, { x: 0.53, y: 0.375, w: 0.12, h: 0.117 }],
-};
-const POSES: Array<[string, string, string]> = [
-  ['idle', 'Idle', 'idle'], ['explaining', 'Explaining', 'explain'], ['wave', 'Wave', 'wave'],
-  ['thinking', 'Thinking', 'think'], ['thumbs-up', 'Thumbs up', 'thumbs'], ['cheer', 'Cheer', 'cheer'],
-];
-const SHAPES: MascotViseme[] = ['rest', 'a', 'e', 'o', 'u', 'mbp', 'fv', 'l', 'etc'];
+export const SAMPLE_MASCOTS = (catalogue as { samples: SampleMascot[] }).samples;
 
-export function pipFile(): MascotFile {
+const at = (path: string) => new URL(`mascots/${path}`, document.baseURI).href;
+
+/** A sample as a mascot file (the same shape as a saved or imported mascot). */
+export function sampleFile(id: string): MascotFile {
+  const s = SAMPLE_MASCOTS.find((x) => x.id === id) ?? SAMPLE_MASCOTS[0];
   return {
-    format: MASCOT_FILE_FORMAT, version: 1, name: 'Pip',
-    poses: POSES.map(([id, name, file]) => ({ id, name, src: at(`${file}.png`), ratio: 0.8333, ...FACE })),
-    mouths: Object.fromEntries(SHAPES.map((s) => [s, at(`mouth-${s}.png`)])),
+    format: MASCOT_FILE_FORMAT, version: 1, name: s.name, alt: s.alt,
+    poses: s.poses.map((p) => ({ id: p.id, name: p.name, src: at(p.file), ratio: s.ratio, mouth: s.face.mouth, eyes: s.face.eyes })),
+    mouths: Object.fromEntries(Object.entries(s.mouths).map(([k, f]) => [k, at(f as string)])),
   };
 }
+
+/** The picture a gallery tile shows (the idle pose). */
+export const sampleThumb = (s: SampleMascot) => at(s.poses[0].file);
+
+/** Pip, the first sample (the Mascot presenter template uses it). */
+export const pipFile = () => sampleFile('pip');

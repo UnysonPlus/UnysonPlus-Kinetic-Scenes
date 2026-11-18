@@ -1,0 +1,736 @@
+{
+ "format": "unysonplus-mascot-samples",
+ "version": 1,
+ "samples": [
+  {
+   "id": "pip",
+   "name": "Pip",
+   "alt": "Pip, a round orange character",
+   "ratio": 0.8333,
+   "face": {
+    "mouth": {
+     "x": 0.43,
+     "y": 0.525,
+     "w": 0.14,
+     "h": 0.08
+    },
+    "eyes": [
+     {
+      "x": 0.35,
+      "y": 0.375,
+      "w": 0.12,
+      "h": 0.117
+     },
+     {
+      "x": 0.53,
+      "y": 0.375,
+      "w": 0.12,
+      "h": 0.117
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "pip/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "pip/explain.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "pip/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "pip/think.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "pip/thumbs.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "pip/cheer.png"
+    }
+   ],
+   "group": "characters",
+   "blurb": "A round, friendly character",
+   "mouths": {
+    "rest": "pip/mouth-rest.png",
+    "a": "pip/mouth-a.png",
+    "e": "pip/mouth-e.png",
+    "o": "pip/mouth-o.png",
+    "u": "pip/mouth-u.png",
+    "mbp": "pip/mouth-mbp.png",
+    "fv": "pip/mouth-fv.png",
+    "l": "pip/mouth-l.png",
+    "etc": "pip/mouth-etc.png"
+   }
+  },
+  {
+   "id": "daniel",
+   "name": "Daniel",
+   "group": "people",
+   "blurb": "A businessman in a suit",
+   "alt": "Daniel, a businessman in a navy suit",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.44,
+     "y": 0.32666666666666666,
+     "w": 0.12,
+     "h": 0.05333333333333334
+    },
+    "eyes": [
+     {
+      "x": 0.3925,
+      "y": 0.24333333333333335,
+      "w": 0.075,
+      "h": 0.04666666666666667
+     },
+     {
+      "x": 0.5325,
+      "y": 0.24333333333333335,
+      "w": 0.075,
+      "h": 0.04666666666666667
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "daniel/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "daniel/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "daniel/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "daniel/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "daniel/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "daniel/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "daniel/mouth-rest.png",
+    "a": "daniel/mouth-a.png",
+    "e": "daniel/mouth-e.png",
+    "o": "daniel/mouth-o.png",
+    "u": "daniel/mouth-u.png",
+    "mbp": "daniel/mouth-mbp.png",
+    "fv": "daniel/mouth-fv.png",
+    "l": "daniel/mouth-l.png",
+    "etc": "daniel/mouth-etc.png"
+   }
+  },
+  {
+   "id": "grace",
+   "name": "Grace",
+   "group": "people",
+   "blurb": "A businesswoman in a blazer",
+   "alt": "Grace, a businesswoman in a charcoal blazer",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.44,
+     "y": 0.33,
+     "w": 0.12,
+     "h": 0.0533
+    },
+    "eyes": [
+     {
+      "x": 0.3925,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     },
+     {
+      "x": 0.5325,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "grace/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "grace/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "grace/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "grace/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "grace/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "grace/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "grace/mouth-rest.png",
+    "a": "grace/mouth-a.png",
+    "e": "grace/mouth-e.png",
+    "o": "grace/mouth-o.png",
+    "u": "grace/mouth-u.png",
+    "mbp": "grace/mouth-mbp.png",
+    "fv": "grace/mouth-fv.png",
+    "l": "grace/mouth-l.png",
+    "etc": "grace/mouth-etc.png"
+   }
+  },
+  {
+   "id": "leo",
+   "name": "Leo",
+   "group": "people",
+   "blurb": "A man in a casual sweater",
+   "alt": "Leo, a man in a teal sweater",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.44,
+     "y": 0.33,
+     "w": 0.12,
+     "h": 0.0533
+    },
+    "eyes": [
+     {
+      "x": 0.3925,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     },
+     {
+      "x": 0.5325,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "leo/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "leo/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "leo/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "leo/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "leo/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "leo/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "leo/mouth-rest.png",
+    "a": "leo/mouth-a.png",
+    "e": "leo/mouth-e.png",
+    "o": "leo/mouth-o.png",
+    "u": "leo/mouth-u.png",
+    "mbp": "leo/mouth-mbp.png",
+    "fv": "leo/mouth-fv.png",
+    "l": "leo/mouth-l.png",
+    "etc": "leo/mouth-etc.png"
+   }
+  },
+  {
+   "id": "maya",
+   "name": "Maya",
+   "group": "people",
+   "blurb": "A woman in a cardigan",
+   "alt": "Maya, a woman in a mustard cardigan",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.44,
+     "y": 0.33,
+     "w": 0.12,
+     "h": 0.0533
+    },
+    "eyes": [
+     {
+      "x": 0.3925,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     },
+     {
+      "x": 0.5325,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "maya/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "maya/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "maya/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "maya/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "maya/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "maya/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "maya/mouth-rest.png",
+    "a": "maya/mouth-a.png",
+    "e": "maya/mouth-e.png",
+    "o": "maya/mouth-o.png",
+    "u": "maya/mouth-u.png",
+    "mbp": "maya/mouth-mbp.png",
+    "fv": "maya/mouth-fv.png",
+    "l": "maya/mouth-l.png",
+    "etc": "maya/mouth-etc.png"
+   }
+  },
+  {
+   "id": "rosa",
+   "name": "Rosa",
+   "group": "people",
+   "blurb": "A chef",
+   "alt": "Rosa, a chef in whites and a chef hat",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.44,
+     "y": 0.33,
+     "w": 0.12,
+     "h": 0.0533
+    },
+    "eyes": [
+     {
+      "x": 0.3925,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     },
+     {
+      "x": 0.5325,
+      "y": 0.2433,
+      "w": 0.075,
+      "h": 0.0467
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "rosa/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "rosa/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "rosa/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "rosa/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "rosa/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "rosa/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "rosa/mouth-rest.png",
+    "a": "rosa/mouth-a.png",
+    "e": "rosa/mouth-e.png",
+    "o": "rosa/mouth-o.png",
+    "u": "rosa/mouth-u.png",
+    "mbp": "rosa/mouth-mbp.png",
+    "fv": "rosa/mouth-fv.png",
+    "l": "rosa/mouth-l.png",
+    "etc": "rosa/mouth-etc.png"
+   }
+  },
+  {
+   "id": "bolt",
+   "name": "Bolt",
+   "group": "characters",
+   "blurb": "A robot",
+   "alt": "Bolt, a friendly green and white robot",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.4375,
+     "y": 0.3058,
+     "w": 0.125,
+     "h": 0.0617
+    },
+    "eyes": [
+     {
+      "x": 0.39,
+      "y": 0.2,
+      "w": 0.08,
+      "h": 0.0667
+     },
+     {
+      "x": 0.53,
+      "y": 0.2,
+      "w": 0.08,
+      "h": 0.0667
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "bolt/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "bolt/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "bolt/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "bolt/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "bolt/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "bolt/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "bolt/mouth-rest.png",
+    "a": "bolt/mouth-a.png",
+    "e": "bolt/mouth-e.png",
+    "o": "bolt/mouth-o.png",
+    "u": "bolt/mouth-u.png",
+    "mbp": "bolt/mouth-mbp.png",
+    "fv": "bolt/mouth-fv.png",
+    "l": "bolt/mouth-l.png",
+    "etc": "bolt/mouth-etc.png"
+   }
+  },
+  {
+   "id": "miso",
+   "name": "Miso",
+   "group": "characters",
+   "blurb": "A cat",
+   "alt": "Miso, a purple cat",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.445,
+     "y": 0.3467,
+     "w": 0.11,
+     "h": 0.0533
+    },
+    "eyes": [
+     {
+      "x": 0.365,
+      "y": 0.25,
+      "w": 0.1,
+      "h": 0.0733
+     },
+     {
+      "x": 0.535,
+      "y": 0.25,
+      "w": 0.1,
+      "h": 0.0733
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "miso/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "miso/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "miso/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "miso/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "miso/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "miso/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "miso/mouth-rest.png",
+    "a": "miso/mouth-a.png",
+    "e": "miso/mouth-e.png",
+    "o": "miso/mouth-o.png",
+    "u": "miso/mouth-u.png",
+    "mbp": "miso/mouth-mbp.png",
+    "fv": "miso/mouth-fv.png",
+    "l": "miso/mouth-l.png",
+    "etc": "miso/mouth-etc.png"
+   }
+  },
+  {
+   "id": "drip",
+   "name": "Drip",
+   "group": "characters",
+   "blurb": "A water drop",
+   "alt": "Drip, a blue water drop",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.445,
+     "y": 0.51,
+     "w": 0.11,
+     "h": 0.0533
+    },
+    "eyes": [
+     {
+      "x": 0.385,
+      "y": 0.4017,
+      "w": 0.09,
+      "h": 0.07
+     },
+     {
+      "x": 0.525,
+      "y": 0.4017,
+      "w": 0.09,
+      "h": 0.07
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "drip/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "drip/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "drip/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "drip/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "drip/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "drip/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "drip/mouth-rest.png",
+    "a": "drip/mouth-a.png",
+    "e": "drip/mouth-e.png",
+    "o": "drip/mouth-o.png",
+    "u": "drip/mouth-u.png",
+    "mbp": "drip/mouth-mbp.png",
+    "fv": "drip/mouth-fv.png",
+    "l": "drip/mouth-l.png",
+    "etc": "drip/mouth-etc.png"
+   }
+  },
+  {
+   "id": "hoot",
+   "name": "Hoot",
+   "group": "characters",
+   "blurb": "An owl in a graduation cap",
+   "alt": "Hoot, an owl in a graduation cap",
+   "ratio": 0.6667,
+   "face": {
+    "mouth": {
+     "x": 0.45,
+     "y": 0.3858,
+     "w": 0.1,
+     "h": 0.0483
+    },
+    "eyes": [
+     {
+      "x": 0.35,
+      "y": 0.31,
+      "w": 0.12,
+      "h": 0.08
+     },
+     {
+      "x": 0.53,
+      "y": 0.31,
+      "w": 0.12,
+      "h": 0.08
+     }
+    ]
+   },
+   "poses": [
+    {
+     "id": "idle",
+     "name": "Idle",
+     "file": "hoot/idle.png"
+    },
+    {
+     "id": "explaining",
+     "name": "Explaining",
+     "file": "hoot/explaining.png"
+    },
+    {
+     "id": "wave",
+     "name": "Wave",
+     "file": "hoot/wave.png"
+    },
+    {
+     "id": "thinking",
+     "name": "Thinking",
+     "file": "hoot/thinking.png"
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "file": "hoot/thumbs-up.png"
+    },
+    {
+     "id": "cheer",
+     "name": "Cheer",
+     "file": "hoot/cheer.png"
+    }
+   ],
+   "mouths": {
+    "rest": "hoot/mouth-rest.png",
+    "a": "hoot/mouth-a.png",
+    "e": "hoot/mouth-e.png",
+    "o": "hoot/mouth-o.png",
+    "u": "hoot/mouth-u.png",
+    "mbp": "hoot/mouth-mbp.png",
+    "fv": "hoot/mouth-fv.png",
+    "l": "hoot/mouth-l.png",
+    "etc": "hoot/mouth-etc.png"
+   }
+  }
+ ]
+}

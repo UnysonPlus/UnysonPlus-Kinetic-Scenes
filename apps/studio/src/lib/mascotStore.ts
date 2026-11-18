@@ -11,6 +11,8 @@ export interface MascotFile {
   format: typeof MASCOT_FILE_FORMAT;
   version: 1;
   name: string;
+  /** The description for screen readers (default: the name). */
+  alt?: string;
   poses: MascotPose[];
   pose?: string;
   mouths?: Partial<Record<MascotViseme, string>>;
@@ -64,7 +66,7 @@ export async function mascotFile(layer: MascotLayer): Promise<MascotFile> {
     for (const [k, v] of Object.entries(layer.mouths)) if (v) mouths[k as MascotViseme] = await inline(v);
   }
   return {
-    format: MASCOT_FILE_FORMAT, version: 1, name: layer.name ?? 'Mascot', poses,
+    format: MASCOT_FILE_FORMAT, version: 1, name: layer.name ?? 'Mascot', ...(layer.alt && layer.alt !== layer.name ? { alt: layer.alt } : {}), poses,
     ...(layer.pose ? { pose: layer.pose } : {}), ...(mouths ? { mouths } : {}),
     ...(layer.talk !== undefined ? { talk: layer.talk } : {}), ...(layer.blink === false ? { blink: false } : {}), ...(layer.breathe === false ? { breathe: false } : {}),
   };
@@ -83,7 +85,7 @@ export function readMascotFile(text: string): MascotFile {
 /** The fields a Mascot layer takes from a mascot file. */
 export function layerFromFile(f: MascotFile): Partial<MascotLayer> {
   return {
-    name: f.name, alt: f.name, poses: f.poses, ...(f.pose ? { pose: f.pose } : {}), ...(f.mouths ? { mouths: f.mouths } : {}),
+    name: f.name, alt: f.alt || f.name, poses: f.poses, ...(f.pose ? { pose: f.pose } : {}), ...(f.mouths ? { mouths: f.mouths } : {}),
     ...(f.talk !== undefined ? { talk: f.talk } : {}), ...(f.blink === false ? { blink: false } : {}), ...(f.breathe === false ? { breathe: false } : {}),
   };
 }

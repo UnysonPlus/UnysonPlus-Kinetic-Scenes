@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AudioClip, MascotFaceBox, MascotLayer, MascotViseme } from '@unysonplus/scene-player/types';
 import { buildMascot, drawMascot } from '@unysonplus/scene-player/mascot';
 import { deleteMascot, listMascots, readMascotFile, type MascotFile, type SavedMascot } from '../lib/mascotStore';
-import { pipFile } from '../lib/mascotSample';
+import { SAMPLE_MASCOTS, sampleFile, sampleThumb } from '../lib/mascotSample';
 import { MOUTH_LABEL, MOUTH_ORDER, MOUTH_SHEET_PROMPT, POSE_NAMES, POSE_SHEET_PROMPT, carryFace, cutMouths, cutSheet, fileToDataUrl, type CutPose, type DraftPose } from '../lib/mascotMaker';
 
 /**
@@ -188,10 +188,25 @@ export function MascotDialog(props: { open: boolean; hasVoice: boolean; onClose:
 
         {step === 1 && (
           <div className="mascot-body">
+            <div className="mascot-samples">
+              <span className="field-label">Start from a sample</span>
+              <p className="field-hint wide">Ready to talk: six poses, the face set and drawn mouths. Free to use in your videos.</p>
+              {(['people', 'characters'] as const).map((g) => (
+                <div key={g} className="mascot-sample-group">
+                  <span className="mascot-sample-group-name">{g === 'people' ? 'People' : 'Characters'}</span>
+                  <div className="mascot-sample-list">
+                    {SAMPLE_MASCOTS.filter((m) => m.group === g).map((m) => (
+                      <button key={m.id} type="button" className="mascot-sample" onClick={() => props.onUseFile(sampleFile(m.id))} title={`${m.name}: ${m.blurb.toLowerCase()}. Six poses and drawn mouths, ready to talk.`}>
+                        <img src={sampleThumb(m)} alt="" loading="lazy" /><span>{m.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
             <div className="mascot-saved">
               <span className="field-label">Use a mascot you have</span>
               <div className="mascot-saved-list">
-                <figure className="mascot-saved-item"><button type="button" onClick={() => props.onUseFile(pipFile())} title="Pip: six poses and drawn mouths, ready to talk"><img src={pipFile().poses[0].src} alt="" /><span>Try it with Pip</span></button></figure>
                 {saved.map((m) => (
                   <figure key={m.id} className="mascot-saved-item">
                     <button type="button" onClick={() => props.onUseFile(m.file)}><img src={m.file.poses[0]?.src} alt="" /><span>{m.name}</span></button>
