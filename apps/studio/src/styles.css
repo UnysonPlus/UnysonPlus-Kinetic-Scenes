@@ -1314,3 +1314,40 @@ dialog.welcome-dialog { width: min(1280px, calc(100vw - 32px), calc((100dvh - 21
 .welcome-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .welcome-actions { display: flex; gap: 8px; margin-left: auto; }
 .start-intro-btn { background: none; border: 0; padding: 0; color: var(--accent, #2AD38B); font: inherit; cursor: pointer; text-decoration: underline; }
+
+/* The mascot creator (MascotDialog). */
+dialog.mascot-dialog { width: min(960px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; }
+.mascot-steps { display: flex; gap: 6px; margin: -4px 0 0; padding: 0; list-style: none; flex-wrap: wrap; }
+.mascot-steps li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-dim, #9aa3ad); padding: 4px 10px 4px 4px; border-radius: 999px; border: 1px solid var(--border); }
+.mascot-steps li i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-style: normal; font-weight: 700; background: var(--surface-2, #1b222a); }
+.mascot-steps li.is-on { color: var(--ink); border-color: var(--accent, #2ad38b); }
+.mascot-steps li.is-on i, .mascot-steps li.is-done i { background: var(--accent, #2ad38b); color: #04211b; }
+.mascot-body { display: flex; flex-direction: column; gap: 12px; }
+.mascot-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 720px) { .mascot-choices { grid-template-columns: 1fr; } }
+.mascot-choice { text-align: left; display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2, #1b222a); color: var(--ink); cursor: pointer; font: inherit; }
+.mascot-choice strong { font-size: 14px; }
+.mascot-choice span { font-size: 12.5px; color: var(--ink-dim, #9aa3ad); line-height: 1.45; }
+.mascot-choice:hover, .mascot-choice.is-on { border-color: var(--accent, #2ad38b); }
+.mascot-prompt { display: flex; flex-direction: column; gap: 10px; }
+.mascot-prompt textarea { width: 100%; font: 12.5px/1.5 ui-monospace, monospace; background: var(--surface-2, #1b222a); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 10px; resize: vertical; }
+.mascot-howto { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; }
+.mascot-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mascot-poses { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.mascot-pose { margin: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 10px; background: repeating-conic-gradient(#20262d 0 25%, #191e24 0 50%) 0 0 / 16px 16px; }
+.mascot-pose img { width: 100%; height: 140px; object-fit: contain; }
+.mascot-pose input { width: 100%; font: inherit; font-size: 13px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
+.mascot-pose-tools { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; }
+.mascot-face-step { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 720px) { .mascot-face-step { grid-template-columns: 1fr; } }
+.mascot-face-col, .mascot-preview-col { display: flex; flex-direction: column; gap: 10px; }
+.mascot-face { position: relative; margin: 0 auto; touch-action: none; cursor: crosshair; background: repeating-conic-gradient(#20262d 0 25%, #191e24 0 50%) 0 0 / 16px 16px; border-radius: 8px; user-select: none; }
+.mascot-face img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mascot-box { position: absolute; border: 2px solid; border-radius: 4px; cursor: move; box-sizing: border-box; }
+.mascot-box.is-mouth { border-color: #2ad38b; background: rgba(42, 211, 139, .14); }
+.mascot-box.is-eye { border-color: #4da3ff; background: rgba(77, 163, 255, .14); }
+.mascot-box.is-on { box-shadow: 0 0 0 2px rgba(255, 255, 255, .6); }
+.mascot-live { position: relative; width: 100%; aspect-ratio: 1; border-radius: 10px; background: radial-gradient(circle at 50% 40%, #1d4d42, #0d2a24); overflow: hidden; }
+.mascot-note { color: var(--accent, #2ad38b); }
+.mascot-foot { display: flex; gap: 8px; align-items: center; }
+.mascot-spacer { flex: 1; }

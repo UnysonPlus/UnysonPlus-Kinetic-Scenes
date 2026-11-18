@@ -21,6 +21,7 @@ import { ModelSection } from './ModelSection';
 import { CameraPath } from './CameraPath';
 import { LottieSection } from './LottieSection';
 import { CutObjectSection } from './CutObjectSection';
+import { MascotSection } from './MascotSection';
 import { CaptionsSection, CodeSection, CursorSection, CutOutSection, LiveShotSection, DiagramSection, FlowSection, HoverSection, PathSection, RepeatSection, ScriptVoiceSection, SplitImageSection, StepsSection } from './VectorSections';
 import { focusCamera } from '../lib/tour';
 import { suggestPoster } from '../lib/poster';
@@ -78,6 +79,8 @@ interface Props {
   onPreviewSound?: (src: string, volume?: number) => void;
   /** Opens Drop with physics for the selected layers. */
   onPhysics?: () => void;
+  /** Opens the mascot creator on a Mascot layer, to change its poses or face. */
+  onEditMascot?: (layerId: string) => void;
 }
 
 const EASES = [
@@ -568,7 +571,7 @@ function MultiInspector(props: Props & { ids: string[] }) {
 
 /* ------------------------------------------------------------------ layer */
 
-function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlignTo, onAlign, time }: Props & { layer: Layer }) {
+function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlignTo, onAlign, time, onEditMascot }: Props & { layer: Layer }) {
   const override = editsOverride(scene, layer, bp);
   const hasOverride = !!(bp && layer.overrides?.[bp]);
   const o = (bp && layer.overrides?.[bp]) || {};
@@ -664,6 +667,8 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
       )}
       {layer.type === 'flow' && <FlowSection scene={scene} layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'cursor' && <CursorSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'mascot' && <MascotSection scene={scene} layer={layer} time={time} set={(p) => props(p as Record<string, unknown>)} onCommit={onCommit}
+        onEdit={() => onEditMascot?.(layer.id)} onSelectClip={(clipId) => onSelect({ layerId: layer.id, clipId })} />}
       {layer.type === 'repeat' && <RepeatSection layer={layer} set={(p) => props(p as Record<string, unknown>)} onUnpack={() => onCommit(repeatToGroup(scene, layer.id))} />}
       {layer.type === 'text' && <BehindSection scene={scene} layer={layer} onCommit={onCommit} />}
       <StacksSection scene={scene} layer={layer} time={time} onCommit={onCommit} />
@@ -844,7 +849,8 @@ function ClipInspector({ scene, layer, clipId, onCommit, onSelect, selection, ti
 
       {meta && meta.fields.length > 0 && (
         <Section title="Settings">
-          {meta.fields.map((f) => <ParamField key={f.key} field={f} value={params[f.key]} onChange={(v) => setParam(f.key, v)} layers={f.type === 'layer' ? layerChoices(scene, layer.id) : undefined} />)}
+          {meta.fields.map((f) => <ParamField key={f.key} field={f} value={params[f.key]} onChange={(v) => setParam(f.key, v)} layers={f.type === 'layer' ? layerChoices(scene, layer.id) : undefined}
+            poses={f.type === 'pose' && layer.type === 'mascot' ? layer.poses.map((p) => ({ value: p.id, label: p.name })) : undefined} />)}
         </Section>
       )}
       {clip.preset === 'keyframes' && (
@@ -938,8 +944,10 @@ function playheadOf(scene: Scene): number {
   return typeof t === 'number' ? Math.min(scene.duration, Math.max(0, t)) : 0;
 }
 
-function ParamField({ field, value, onChange, layers }: { field: PresetField; value: unknown; onChange: (v: unknown) => void; layers?: Array<{ value: string; label: string }> }) {
+function ParamField({ field, value, onChange, layers, poses }: { field: PresetField; value: unknown; onChange: (v: unknown) => void; layers?: Array<{ value: string; label: string }>; poses?: Array<{ value: string; label: string }> }) {
   switch (field.type) {
+    case 'pose':
+      return <SelectField label={field.label} value={typeof value === 'string' && value ? value : (poses?.[0]?.value ?? '')} options={poses?.length ? poses : [{ value: '', label: 'No poses' }]} onChange={onChange} />;
     case 'longtext':
       return <TextField label={field.label} value={typeof value === 'string' ? value : ''} wide mono multiline onCommit={onChange} />;
     case 'layer':

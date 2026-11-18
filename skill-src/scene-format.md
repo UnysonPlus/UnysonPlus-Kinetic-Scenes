@@ -69,6 +69,7 @@ optionally `start` / `end` (seconds it is there), `opacity`, `overrides`, `link`
 | `repeat` | a list | `item` (one layer, usually a group, with `{{field}}` placeholders), `items` [{ … }], `step` { `x`, `y` }, `columns`, `rowStep`, `stagger` |
 | `captions` | the words of a voice-over | `style`, `audio` (clip id), `maxWords`, `mode` (word, karaoke, none), `motion` (pop, slam, drop), `highlight`, `background`, `effect` (none, outline, shadow, glow, chrome: the look on the letters), `effectColor` (the outline or glow colour) |
 | `cursor` | a pointer for tours | `shape` (auto, arrow, hand), `theme`, `ringColor`; its box x / y is where the TIP starts |
+| `mascot` | a character that talks on the voice-over | `poses` [{ `id`, `name`, `src` (a see-through PNG of the pose), `ratio` (its width / height), `mouth` { `x`, `y`, `w`, `h` } and `eyes` [{ … }] (in fractions 0-1 of the pose picture: the closed lips and each eye), `eyesClosed` }], `pose` (the main pose's id), `audio` (the voice clip it talks on; default the first with words), `talk` (0-1.5, how wide the mouth opens), `blink`, `breathe`, `alt`. The mouth moves on the voice-over's word timings by itself; a `mascot-pose` clip { `pose`: id } holds another pose for its length: pin it to a word (`at`) so the pose arrives as the word is said. Made in the Studio with Insert › Mascot… (from one picture, a picture per pose, or a six-pose sheet from an image AI) |
 
 Other layer fields:
 

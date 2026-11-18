@@ -253,6 +253,9 @@ export function addLayer(scene: Scene, type: Exclude<Layer['type'], 'group'>, ex
     // Joins the two layers on top, if there are two to join.
     const others = layersIn(scene, scope).filter((l) => l.type !== 'flow').slice(-2);
     layer = { id, type: 'flow', name: 'Flow lines', from: others[0]?.id ?? '', to: others[1]?.id ?? others[0]?.id ?? '', count: 7, pulses: 1, clips: [] };
+  } else if (type === 'mascot') {
+    // Made in the mascot creator, which passes its poses in extra.
+    layer = { id, type: 'mascot', name: 'Mascot', poses: [], alt: '', box: { x: 50, y: 58, w: 30, h: 70 }, clips: [] };
   } else if (type === 'video') {
     // Footage fills the frame by default.
     layer = { id, type: 'video', name: 'Footage', src: '', fit: 'cover', box: { x: 50, y: 50, w: 100, h: 100 }, clips: [] };

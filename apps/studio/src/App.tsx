@@ -47,6 +47,8 @@ import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { TemplatesDialog } from './components/TemplatesDialog';
 import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
 import { WelcomeDialog, welcomeSeen } from './components/WelcomeDialog';
+import { MascotDialog } from './components/MascotDialog';
+import { draftsOf, mascotLayer, type DraftPose } from './lib/mascotMaker';
 import { CONTACT_URL, StartDialog } from './components/StartDialog';
 import { PhysicsDialog } from './components/PhysicsDialog';
 import { SwarmDialog } from './components/SwarmDialog';
@@ -62,7 +64,7 @@ import type { Sheet } from './lib/batch';
 import { stockInStudio } from './lib/stock';
 import type { StockResult } from './lib/stock';
 import {
-  addClip, addLayer, blankScene, boxAt, containerOf, duplicateLayer, findClip, findLayer, groupLayers, layersIn, moveBy, removeClip,
+  addClip, addLayer, blankScene, mapLayer, primaryBreakpoint, boxAt, containerOf, duplicateLayer, findClip, findLayer, groupLayers, layersIn, moveBy, removeClip,
   removeLayer, roundTime, setClip, ungroupLayer, writeLayout,
 } from './lib/sceneOps';
 import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/groups';
@@ -325,6 +327,8 @@ export function App() {
   const [startOpen, setStartOpen] = useState(() => shouldShowStart(location.search));
   /** The welcome video: once, in front of the start box, for a first visit that did not come through a link. */
   const [welcomeOpen, setWelcomeOpen] = useState(() => shouldShowStart(location.search) && !welcomeSeen());
+  /** The mascot creator: open, and the Mascot layer it is changing (null: a new mascot). */
+  const [mascotAsk, setMascotAsk] = useState<{ editId: string | null } | null>(null);
   const [physicsOpen, setPhysicsOpen] = useState(false);
   const [swarmOpen, setSwarmOpen] = useState(false);
   const [listenOpen, setListenOpen] = useState(false);
@@ -342,6 +346,7 @@ export function App() {
     else if (a === 'export') setExporting(true);
     else if (a === 'translate') setTranslateOpen(true);
     else if (a === 'intro') setWelcomeOpen(true);
+    else if (a === 'mascot') setMascotAsk({ editId: null });
     else setStartOpen(true);
   };
   const newTag = newsUnread ? 'New' : undefined;
@@ -1089,6 +1094,7 @@ export function App() {
       { label: 'Cursor', onSelect: () => onAddLayer('cursor') },
       { label: 'List', onSelect: () => onAddLayer('repeat') },
       { label: 'Captions', onSelect: () => onAddLayer('captions'), disabled: !!scope },
+      { label: 'Mascot…', onSelect: () => setMascotAsk({ editId: null }), hint: 'A character that talks on the voice-over: from one picture, your own pose pictures, or six poses drawn by your image AI' },
       { label: 'Flow', onSelect: () => onAddLayer('flow') },
       'sep',
       { label: 'Audio…', onSelect: () => audioRef.current?.click() },
@@ -1508,7 +1514,7 @@ export function App() {
                   openAssist(true);
                 }} />
             ) : tab === 'check' ? null : tab === 'inspect'
-              ? <Inspector onPhysics={() => setPhysicsOpen(true)} onPreviewSound={(src, v) => { audioEngine.preview(src, v); }} time={state.time} onSeek={seek} scene={scene} selection={selection} bp={state.breakpoint} onCommit={commit} onSelect={setSelection} alignTo={alignTo} onAlignTo={setAlignTo} onAlign={align} onEnter={enterGroup} onGroup={groupSelection} onUngroup={ungroupSelection} />
+              ? <Inspector onEditMascot={(id) => setMascotAsk({ editId: id })} onPhysics={() => setPhysicsOpen(true)} onPreviewSound={(src, v) => { audioEngine.preview(src, v); }} time={state.time} onSeek={seek} scene={scene} selection={selection} bp={state.breakpoint} onCommit={commit} onSelect={setSelection} alignTo={alignTo} onAlignTo={setAlignTo} onAlign={align} onEnter={enterGroup} onGroup={groupSelection} onUngroup={ungroupSelection} />
               : <ScenePanel scene={scene} onCommit={commit} />}
           </div>
         </aside>
@@ -1559,6 +1565,18 @@ export function App() {
         onUseForAi={useStyleForAi} onDelete={deleteStyle} onUpsert={upsertStyle} />
       <WhatsNewDialog open={newsOpen} onClose={() => setNewsOpen(false)} onTry={tryNews} />
       <WelcomeDialog open={welcomeOpen} onClose={() => setWelcomeOpen(false)} />
+      <MascotDialog open={!!mascotAsk} hasVoice={(scene.audio ?? []).some((a) => a.words?.length)} onClose={() => setMascotAsk(null)}
+        initial={(() => { const l = mascotAsk?.editId ? findLayer(scene, mascotAsk.editId) : undefined; return l?.type === 'mascot' ? { name: l.name ?? 'Mascot', poses: draftsOf(l) } : undefined; })()}
+        onAdd={(name: string, poses: DraftPose[]) => {
+          const cur = latest.current.scene;
+          const bp = cur.stage.breakpoints.find((b) => b.id === primaryBreakpoint(cur)) ?? cur.stage.breakpoints[0];
+          const aspect = bp ? bp.aspect[0] / bp.aspect[1] : 16 / 9;
+          const editId = mascotAsk?.editId;
+          const built = mascotLayer(editId ?? 'mascot', name, poses, aspect);
+          if (editId) commit(mapLayer(cur, editId, (l) => (l.type === 'mascot' ? { ...l, name, alt: name, poses: built.poses, pose: built.poses.some((p) => p.id === l.pose) ? l.pose : undefined } : l)));
+          else addLayerOfType('mascot', { name, alt: name, poses: built.poses, box: built.box } as Partial<Layer>);
+          setMascotAsk(null);
+        }} />
       <ListenDialog open={listenOpen} scene={scene} onClose={() => setListenOpen(false)} onSeek={seek} />
       <PhysicsDialog open={physicsOpen} scene={scene} ids={selectedIds(selection)} at={+state.time.toFixed(2)} onClose={() => setPhysicsOpen(false)}
         onScene={(s, note) => { commit(s); setPhysicsOpen(false); setNotice(note); post({ type: 'seek', time: state.time }); }} />

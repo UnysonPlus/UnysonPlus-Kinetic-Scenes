@@ -767,7 +767,49 @@ export interface CursorLayer extends LayerBase {
   label?: string;
 }
 
-export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer | LottieLayer;
+/** A part of a mascot's face, in fractions of its pose picture (0-1): left, top, width, height. */
+export interface MascotFaceBox { x: number; y: number; w: number; h: number }
+
+/** One pose of a mascot: a picture of it (see-through around it) and where its mouth and eyes are on it. */
+export interface MascotPose {
+  id: string;
+  /** What the pose is (idle, explaining, wave, thinking, thumbs up, cheer, or your own). */
+  name: string;
+  src: string;
+  /** The picture's width / height, so the face can be placed before the picture loads. */
+  ratio: number;
+  /** The mouth: it opens and closes on the voice-over. Without one the pose does not talk. */
+  mouth?: MascotFaceBox;
+  /** The eyes: they blink now and then. */
+  eyes?: MascotFaceBox[];
+  /** The eyes are already shut in this pose (a happy squint): no blinking. */
+  eyesClosed?: boolean;
+}
+
+/**
+ * A mascot: a character that talks on the voice-over. It shows one pose at a time (the first, or the one a "Pose"
+ * clip picks), its mouth opens and closes on the words of the voice-over it follows (the shape of each sound, timed
+ * from the words), its eyes blink now and then, and it breathes a little. Everything is drawn from the scene's time,
+ * so preview and export match.
+ */
+export interface MascotLayer extends LayerBase {
+  type: 'mascot';
+  poses: MascotPose[];
+  /** The pose shown when no Pose clip is playing (its id). Defaults to the first. */
+  pose?: string;
+  /** The voice-over it talks on (an audio clip's id). Defaults to the first voice-over with its words. */
+  audio?: string;
+  /** How wide the mouth opens, 0-1.5. Defaults to 1. */
+  talk?: number;
+  /** Blinks now and then. Defaults to true. */
+  blink?: boolean;
+  /** Breathes a little (a slow, small rise and fall), and moves a touch as it talks. Defaults to true. */
+  breathe?: boolean;
+  /** Describes the mascot for screen readers. */
+  alt?: string;
+}
+
+export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | ModelLayer | GroupLayer | PathLayer | FlowLayer | DiagramLayer | CodeLayer | RepeatLayer | CaptionsLayer | CursorLayer | LottieLayer | MascotLayer;
 
 export interface Clip {
   id: string;

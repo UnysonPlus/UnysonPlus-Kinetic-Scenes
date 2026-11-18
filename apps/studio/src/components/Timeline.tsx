@@ -85,7 +85,7 @@ function tickStep(pps: number) {
   return 120;
 }
 
-const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', video: '▶', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚', lottie: '✦' };
+const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', image: '▣', video: '▶', model: '◆', group: '❏', path: '〜', flow: '≋', diagram: '⌘', code: '{}', repeat: '☰', captions: 'CC', cursor: '➚', lottie: '✦', mascot: '☺' };
 
 /** The time readout at the top-left of the ruler. */
 function Readout(props: { clock: LiveValue<number>; offset: number; scope: string | null | undefined }) {

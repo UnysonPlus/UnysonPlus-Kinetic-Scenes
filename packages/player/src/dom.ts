@@ -5,6 +5,7 @@ import { buildDiagram, buildFlow, buildPath } from './vector';
 import { buildCode } from './code';
 import { buildCaptions } from './captions';
 import { buildCursor } from './cursor';
+import { buildMascot } from './mascot';
 
 /** The elements created for one layer. */
 export interface LayerRefs {
@@ -190,6 +191,8 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
   } else if (layer.type === 'cursor') {
     inner.setAttribute('aria-hidden', 'true');
     buildCursor(doc, inner, layer);
+  } else if (layer.type === 'mascot') {
+    buildMascot(doc, inner, layer);
   } else if (layer.type === 'captions') {
     // The spoken words are in the transcript.
     inner.setAttribute('aria-hidden', 'true');

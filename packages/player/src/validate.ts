@@ -366,8 +366,29 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.frame !== undefined && !['window', 'terminal', 'plain'].includes(layer.frame)) fail(`${lp}.frame`, 'must be window, terminal or plain');
         if (layer.theme !== undefined && !['dark', 'light'].includes(layer.theme)) fail(`${lp}.theme`, 'must be dark or light');
         if (layer.fontSize !== undefined && (!isNum(layer.fontSize) || layer.fontSize <= 0 || layer.fontSize > 20)) fail(`${lp}.fontSize`, 'must be more than 0 and at most 20 stage units');
+      } else if (layer.type === 'mascot') {
+        const box = (b: unknown) => isObj(b) && [b.x, b.y, b.w, b.h].every((v) => isNum(v) && v >= -0.01 && v <= 1.01) && (b.w as number) > 0 && (b.h as number) > 0;
+        if (!Array.isArray(layer.poses) || !layer.poses.length || layer.poses.length > 24) fail(`${lp}.poses`, 'must be a list of 1 to 24 poses');
+        else {
+          const ids = new Set<string>();
+          layer.poses.forEach((p, k) => {
+            const pp = `${lp}.poses[${k}]`;
+            if (!isObj(p)) return fail(pp, 'must be a pose { id, name, src, ratio, mouth, eyes }');
+            if (typeof p.id !== 'string' || !p.id) fail(`${pp}.id`, 'is required');
+            else if (ids.has(p.id)) fail(`${pp}.id`, 'is used twice'); else ids.add(p.id);
+            if (typeof p.src !== 'string' || !p.src) fail(`${pp}.src`, 'is required (the pose picture)');
+            if (!isNum(p.ratio) || p.ratio <= 0) fail(`${pp}.ratio`, 'must be the width / height of its picture');
+            if (p.mouth !== undefined && !box(p.mouth)) fail(`${pp}.mouth`, 'must be { x, y, w, h } in fractions of the picture (0-1)');
+            if (p.eyes !== undefined && (!Array.isArray(p.eyes) || p.eyes.length > 4 || !p.eyes.every(box))) fail(`${pp}.eyes`, 'must be up to 4 boxes { x, y, w, h } in fractions of the picture');
+            if (p.mouth === undefined) warnings.push(`${pp}: no mouth box, so this pose does not talk.`);
+          });
+          if (layer.pose !== undefined && !ids.has(layer.pose)) fail(`${lp}.pose`, 'must be one of its poses (an id)');
+          for (const c of layer.clips) if (c.preset === 'mascot-pose' && c.params?.pose && !ids.has(String(c.params.pose))) fail(`${lp}.clips[${c.id}].params.pose`, 'must be one of its poses (an id)');
+        }
+        if (layer.talk !== undefined && (!isNum(layer.talk) || layer.talk < 0 || layer.talk > 1.5)) fail(`${lp}.talk`, 'must be 0 to 1.5');
+        if (!(scene.audio ?? []).some((au) => Array.isArray(au?.words) && au.words.length)) warnings.push(`${lp}: the mascot talks on a voice-over with its words; there is none yet, so it stays quiet.`);
       } else {
-        fail(`${lp}.type`, 'must be text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor or lottie');
+        fail(`${lp}.type`, 'must be text, shape, image, video, model, group, path, flow, diagram, code, captions, repeat, cursor, lottie or mascot');
       }
 
       if (layer.type !== 'group' && layer.type !== 'flow' && layer.type !== 'repeat') {

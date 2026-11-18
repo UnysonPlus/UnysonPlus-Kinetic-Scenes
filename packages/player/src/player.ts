@@ -20,6 +20,7 @@ import { drawDiagram, drawFlow, drawPath } from './vector';
 import { drawCode } from './code';
 import { drawCaptions } from './captions';
 import { drawCursor } from './cursor';
+import { drawMascot } from './mascot';
 import { expandRepeats } from './repeat';
 import { applyWordPins } from './words';
 import { presetMeta } from './presets/catalog';
@@ -659,6 +660,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       }
       // Captions follow the voice-over, which runs on the scene's own clock.
       else if (layer.type === 'captions') lateDraw.push(() => drawCaptions(inner, layer, scene.audio, tl ? tl.time() : 0));
+      // A mascot talks on the voice-over and picks its pose from its Pose clips: drawn from the scene's own clock.
+      else if (layer.type === 'mascot') lateDraw.push(() => drawMascot(inner, layer, scene.audio, tl ? tl.time() : 0));
 
       if (layer.type === 'group' && refs.children) {
         const dur = groupDuration(layer);

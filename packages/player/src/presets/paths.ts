@@ -28,6 +28,8 @@ export const PATH_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   'code-note': codeClip,
   // The Cursor layer draws itself from these (cursor.ts).
   'cursor-move': codeClip,
+  // The Mascot layer draws its pose from these (mascot.ts).
+  'mascot-pose': codeClip,
   'cursor-click': codeClip,
   'cursor-drag': codeClip,
   'cursor-type': codeClip,

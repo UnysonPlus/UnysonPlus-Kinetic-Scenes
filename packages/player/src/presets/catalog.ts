@@ -7,7 +7,7 @@ import { EXIT_EASE } from '../eases';
  * loading GSAP. presets/index.ts supplies the build function for every id listed here.
  */
 
-export type PresetCategory = 'text' | 'reveal' | 'motion' | 'emphasis' | 'ambient' | '3d' | 'transition' | 'code' | 'tour';
+export type PresetCategory = 'text' | 'reveal' | 'motion' | 'emphasis' | 'ambient' | '3d' | 'transition' | 'code' | 'tour' | 'mascot';
 
 export const CATEGORY_LABELS: Record<PresetCategory, string> = {
   text: 'Text',
@@ -19,6 +19,7 @@ export const CATEGORY_LABELS: Record<PresetCategory, string> = {
   transition: 'Scene transitions',
   code: 'Code',
   tour: 'Cursor and tours',
+  mascot: 'Mascot',
 };
 
 export type PresetField =
@@ -31,7 +32,9 @@ export type PresetField =
   /** Several lines of plain text (not code to run). */
   | { key: string; label: string; type: 'longtext' }
   /** Another layer of the scene, by id. */
-  | { key: string; label: string; type: 'layer' };
+  | { key: string; label: string; type: 'layer' }
+  /** One of the mascot's poses (its id). */
+  | { key: string; label: string; type: 'pose' };
 
 export interface PresetMeta {
   id: string;
@@ -74,7 +77,7 @@ const SIDE: PresetField = {
   ],
 };
 // Presets that animate the layer as a whole also work on a group (its frame).
-const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'video', 'model', 'group', 'path', 'flow', 'diagram', 'code', 'captions', 'repeat', 'cursor'];
+const ALL: PresetMeta['appliesTo'] = ['text', 'shape', 'image', 'video', 'model', 'group', 'path', 'flow', 'diagram', 'code', 'captions', 'repeat', 'cursor', 'mascot'];
 
 export const PRESET_CATALOG: PresetMeta[] = [
   // ---- Text ----
@@ -406,6 +409,14 @@ export const PRESET_CATALOG: PresetMeta[] = [
     defaultEase: 'none', defaultDuration: 1,
     defaults: {},
     fields: [],
+  },
+  // ---- Mascot (for Mascot layers: the mascot draws its pose from these clips) ----
+  {
+    id: 'mascot-pose', label: 'Pose', category: 'mascot', appliesTo: ['mascot'],
+    description: 'The mascot holds a pose (waving, thinking, thumbs up…) for the length of the clip, then goes back to its default pose. It keeps talking and blinking in every pose. Pin the clip to a word of the voice-over so the pose arrives as the word is said.',
+    defaultEase: 'none', defaultDuration: 1.6,
+    defaults: { pose: '' },
+    fields: [{ key: 'pose', label: 'Pose', type: 'pose' }],
   },
   {
     id: 'build-draw', label: 'Build: draw', category: 'tour', appliesTo: ['text', 'shape', 'image', 'video', 'model', 'group', 'path', 'diagram', 'code', 'repeat', 'lottie'],
