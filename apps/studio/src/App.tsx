@@ -34,6 +34,8 @@ import { BUILT_IN_STYLES, applyStyle, loadCustomStyles, saveCustomStyles, starte
 import { sfxMeta, sfxSrc, soundTrack } from '@unysonplus/scene-player/sfx';
 import { AudioInspector } from './components/AudioInspector';
 import { useEditorConnection } from './lib/connection';
+import { usePageConnection } from './lib/pageConnection';
+import { PagePanel } from './components/PagePanel';
 import { formatScene } from './lib/format';
 import { useHistory } from './lib/history';
 import { createProject, readProject, saveProject as saveToFolder, watchProject, workspaceAvailable, type OpenProject } from './lib/workspace';
@@ -219,6 +221,7 @@ export function App() {
   /** The group being edited (double-click to enter, Escape to leave); null = the whole scene. */
   const [scope, setScope] = useState<string | null>(null);
   // Opened from a Unyson+ page editor ("Open in Kinetic Scenes"): load its scene, offer "Save to page".
+  const page = usePageConnection();
   const conn = useEditorConnection((incoming) => {
     commit(incoming);
     setSelection({ layerId: null, clipId: null });
@@ -1302,8 +1305,18 @@ export function App() {
           )}
         </div>
       )}
+      {page.state.status !== 'none' && (
+        <div className={`connect-bar is-${page.state.status}`} role="status">
+          {page.state.status === 'waiting' && <span>Connecting to your Unyson+ page…</span>}
+          {page.state.status === 'connected' && (
+            <span>Page mode (beta): connected to <strong>{page.state.title || page.state.site}</strong> on <strong>{page.state.site}</strong>. The Page panel lists its elements and their motion.</span>
+          )}
+          {page.state.status === 'closed' && <span>The Live Editor on <strong>{page.state.site}</strong> was closed.</span>}
+        </div>
+      )}
       </div>
 
+      {page.state.status !== 'none' && <PagePanel state={page.state} onSelect={page.select} />}
       <main className="workspace">
         <Library layerType={selectedLayer?.type ?? null} count={selectedIds(selection).length} onApply={applyPreset} show={libraryAsk}
           pieces={<PiecesLibrary onInsert={(piece) => {

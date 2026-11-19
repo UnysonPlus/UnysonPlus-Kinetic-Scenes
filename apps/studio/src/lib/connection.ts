@@ -22,7 +22,8 @@ export type ConnectionState =
 
 export function useEditorConnection(onScene: (scene: Scene) => void) {
   // Decided once at start: once the editor closes, window.opener goes null, and we still need to notice.
-  const [wanted] = useState(() => typeof window !== 'undefined' && new URLSearchParams(location.search).get('connect') === 'unysonplus' && !!window.opener);
+  // Page mode ("Animate" in the Live Editor) has its own link: lib/pageConnection.ts.
+  const [wanted] = useState(() => typeof window !== 'undefined' && new URLSearchParams(location.search).get('connect') === 'unysonplus' && new URLSearchParams(location.search).get('mode') !== 'page' && !!window.opener);
   const [state, setState] = useState<ConnectionState>(wanted ? { status: 'waiting' } : { status: 'none' });
   const partner = useRef<string | null>(null);
   const onSceneRef = useRef(onScene);
