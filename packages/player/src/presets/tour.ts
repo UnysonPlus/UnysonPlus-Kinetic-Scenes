@@ -1,5 +1,6 @@
 import type { PresetContext } from './index';
 import { clamp01, drive, isOut, num, pick } from './more';
+import { filterPart } from './looks';
 
 /**
  * Tour presets that point at a layer: Spotlight (everything else dims), Callout (a labelled pill beside
@@ -187,13 +188,17 @@ export const TOUR_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     const shadow = p.shadow !== false;
     const ring = color(p, 'ring', '');
     const el = ctx.el;
+    // A picture, a mascot, a 3D object, a line or words can be see-through: their shadow follows what is drawn (a
+    // cut-out photo casts the shadow of its subject, not of its frame). Solid layers keep the box shadow.
+    const shaped = ['image', 'mascot', 'model', 'lottie', 'path', 'text'].includes(ctx.layer.type);
     drive(ctx, (e) => {
       const v = clamp01(out ? 1 - e : e);
-      if (v <= 0.001) { el.style.scale = ''; el.style.boxShadow = ''; el.style.outline = ''; el.style.zIndex = ''; return; }
+      if (v <= 0.001) { el.style.scale = ''; el.style.boxShadow = ''; el.style.outline = ''; el.style.zIndex = ''; if (shaped) filterPart(el, ctx.clip.id, null); return; }
       el.style.scale = (1 + (k - 1) * v).toFixed(4);
       el.style.zIndex = '7000';
       const parts: string[] = [];
-      if (shadow) parts.push(`0 ${(1.2 * v).toFixed(2)}cqw ${(3.2 * v).toFixed(2)}cqw rgba(0,0,0,${(0.45 * v).toFixed(3)})`);
+      if (shadow && shaped) filterPart(el, ctx.clip.id, `drop-shadow(0 ${(1.2 * v).toFixed(2)}cqw ${(1.6 * v).toFixed(2)}cqw rgba(0,0,0,${(0.45 * v).toFixed(3)}))`);
+      else if (shadow) parts.push(`0 ${(1.2 * v).toFixed(2)}cqw ${(3.2 * v).toFixed(2)}cqw rgba(0,0,0,${(0.45 * v).toFixed(3)})`);
       if (ring) parts.push(`0 0 0 ${(0.3 * v).toFixed(3)}cqw ${ring}`);
       el.style.boxShadow = parts.join(', ');
     }, { always: !out });
