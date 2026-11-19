@@ -3,7 +3,7 @@ import type { Scene } from '@unysonplus/scene-player/types';
 import type { LiveValue } from './liveValue';
 import type { PageState } from './pageConnection';
 import {
-  addTrack, forPage, layerIdFor, newTimeline, sceneFromTimeline, targetOf, timelineFromScene,
+  addTrack, forPage, layerIdFor, newTimeline, newTimelineId, retarget as retargetTl, sceneFromTimeline, signature, targetOf, timelineFromScene,
   type PageTimeline, type PageTrigger,
 } from './pageTimeline';
 import { isKeyframes } from './keyframes';
@@ -32,6 +32,11 @@ export function usePageTimelines(o: Opts) {
   const [activeId, setActiveId] = useState('');
   const started = useRef(false);
   const [previewing, setPreviewing] = useState(false);
+  /** What is saved on the page (its signature), to show unsaved changes; '' until the first list is in. */
+  const [savedSig, setSavedSig] = useState('');
+  const baseline = useRef(false);
+  const pendingSig = useRef('');
+  const [saving, setSaving] = useState(false);
 
   // First connection: the page's own timelines, or a new one.
   useEffect(() => {
@@ -40,6 +45,7 @@ export function usePageTimelines(o: Opts) {
     const first = state.timelines.length ? state.timelines : [newTimeline()];
     setList(first);
     setActiveId(first[0].id);
+    baseline.current = !!state.timelines.length;
     o.reset(sceneFromTimeline(first[0], state.elements));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
@@ -47,6 +53,22 @@ export function usePageTimelines(o: Opts) {
   const meta = list.find((t) => t.id === activeId);
   const active = useMemo(() => (meta ? timelineFromScene(scene, meta) : null), [scene, meta]);
   const all = useMemo(() => list.map((t) => (active && t.id === active.id ? active : t)), [list, active]);
+  const sig = useMemo(() => signature(all.filter((t) => t.tracks.length)), [all]);
+
+  // The page's own timelines are the saved state (once they have been through the editor's scene).
+  useEffect(() => {
+    if (baseline.current && active) { baseline.current = false; setSavedSig(sig); }
+  }, [sig, active]);
+  const dirty = sig !== (savedSig || signature([]));
+
+  // The result of Save to page.
+  const savedN = state.status === 'connected' ? state.saved?.n ?? 0 : 0;
+  useEffect(() => {
+    if (!savedN || state.status !== 'connected' || !state.saved) return;
+    setSaving(false);
+    if (state.saved.ok) setSavedSig(pendingSig.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedN]);
 
   // Every change goes to the page (shown at the playhead).
   useEffect(() => {
@@ -132,7 +154,7 @@ export function usePageTimelines(o: Opts) {
   }, [all, activeId, elements]);
 
   /** Name, trigger, repeat and yoyo: the timeline's own settings (not part of the scene). */
-  const update = useCallback((patch: Partial<Pick<PageTimeline, 'name' | 'repeat' | 'yoyo'>> & { trigger?: Partial<PageTrigger> }) => {
+  const update = useCallback((patch: Partial<Pick<PageTimeline, 'name' | 'repeat' | 'yoyo' | 'runsOn'>> & { trigger?: Partial<PageTrigger> }) => {
     setList((l) => l.map((t) => (t.id !== activeId ? t : {
       ...t, ...patch, trigger: patch.trigger ? { ...t.trigger, ...patch.trigger } : t.trigger,
     })));
@@ -161,7 +183,54 @@ export function usePageTimelines(o: Opts) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, send]);
 
-  return { list: all, active, activeId, addElement, switchTo, create, remove, update, setDuration, preview, stopPreview, previewing };
+  // Closing Kinetic Scenes with unsaved timelines asks first.
+  useEffect(() => {
+    if (!dirty || !connected) return;
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [dirty, connected]);
+
+  /** Save to page: every timeline that has a track (empty ones are left out). */
+  const save = useCallback(() => {
+    if (!connected || saving) return;
+    pendingSig.current = sig;
+    setSaving(true);
+    send({ type: 'upw-studio:page-save', timelines: all.filter((t) => t.tracks.length).map(forPage) });
+  }, [connected, saving, sig, all, send]);
+
+  /** Adds timelines from a file (ids made unique); the first one opens. Returns how many tracks point at elements not on this page. */
+  const importList = useCallback((incoming: PageTimeline[]) => {
+    const taken = new Set(all.map((t) => t.id));
+    const fresh = incoming.map((t) => (taken.has(t.id) ? { ...t, id: newTimelineId() } : t));
+    // A new, still empty timeline is replaced rather than kept.
+    const keep = all.filter((t) => t.tracks.length || t.id !== activeId);
+    const next = [...keep, ...fresh];
+    setList(next);
+    setActiveId(fresh[0].id);
+    o.reset(sceneFromTimeline(fresh[0], elements));
+    o.setSelection({ layerId: null, clipId: null });
+    const here = new Set(elements.map((e) => e.id));
+    return fresh.reduce((n, t) => n + t.tracks.filter((tr) => !here.has(tr.target)).length, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all, activeId, elements]);
+
+  /** A track whose element is not on this page (from another page or site) moves to an element that is. */
+  const retarget = useCallback((from: string, to: string) => {
+    if (!active) return;
+    const next = retargetTl(active, from, to);
+    if (next === active) return;
+    setList((l) => l.map((t) => (t.id === active.id ? next : t)));
+    o.commit(sceneFromTimeline(next, elements));
+    const lid = layerIdFor(to);
+    o.setSelection({ layerId: lid, clipId: `${lid}-kf` });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, elements]);
+
+  return {
+    list: all, active, activeId, addElement, switchTo, create, remove, update, setDuration, preview, stopPreview, previewing,
+    save, saving, dirty, importList, retarget,
+  };
 }
 
 export type PageTimelines = ReturnType<typeof usePageTimelines>;

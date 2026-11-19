@@ -1416,3 +1416,17 @@ dialog.mascot-dialog { width: min(960px, calc(100vw - 32px)); max-height: calc(1
 .page-tl__field input, .page-tl__field select { width: 100%; color: var(--ink); }
 .page-tl__checks { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); }
 .page-tl__checks label { display: flex; align-items: center; gap: 4px; }
+
+/* Page timelines 5e: Runs on, Save to page, tracks not on this page, Import / Export. */
+.page-tl__devices { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 6px 8px; border: 1px solid var(--border, #2a2f36); border-radius: 6px; font-size: 12px; }
+.page-tl__devices legend { padding: 0 4px; font-size: 11px; opacity: 0.75; }
+.page-tl__devices label { display: inline-flex; align-items: center; gap: 4px; }
+.page-tl__save { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.page-tl__state { font-size: 12px; opacity: 0.7; }
+.page-tl__state.is-dirty { opacity: 1; color: #ffb547; }
+.page-panel__note.is-warn { color: #ffb547; }
+.page-tl__missing { display: grid; gap: 6px; padding: 8px; border: 1px dashed #ffb547; border-radius: 6px; font-size: 12px; }
+.page-tl__missing-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.page-tl__io { font-size: 12px; }
+.page-tl__io summary { cursor: pointer; padding: 4px 0; font-weight: 600; }
+.page-tl__io-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }

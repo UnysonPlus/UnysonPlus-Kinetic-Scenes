@@ -14,6 +14,12 @@ import { clipEase, framesOf, isKeyframes, PROPS, type Keyframe } from './keyfram
  */
 
 export type TriggerType = 'load' | 'in-view' | 'hover' | 'click';
+export type Device = 'desktop' | 'tablet' | 'phone';
+export const DEVICES: Array<{ value: Device; label: string; hint: string }> = [
+  { value: 'desktop', label: 'Desktop', hint: '992 px and wider' },
+  { value: 'tablet', label: 'Tablet', hint: '768 to 991 px' },
+  { value: 'phone', label: 'Phone', hint: 'Narrower than 768 px' },
+];
 
 export interface PageTrigger {
   type: TriggerType;
@@ -55,6 +61,8 @@ export interface PageTimeline {
   repeat?: number;
   /** Repeats go back and forth. */
   yoyo?: boolean;
+  /** The devices it plays on (unset = all three). */
+  runsOn?: Device[];
   tracks: PageTrack[];
 }
 
@@ -199,7 +207,33 @@ export function forPage(tl: PageTimeline): PageTimeline {
   return {
     id: tl.id, name: tl.name, duration: tl.duration, trigger: tl.trigger,
     ...(tl.repeat ? { repeat: tl.repeat } : {}), ...(tl.yoyo ? { yoyo: true } : {}),
-    tracks: tl.tracks.map((t) => ({ target: t.target, ...(t.label ? { label: t.label } : {}), ...(t.ease ? { ease: t.ease } : {}), frames: t.frames })),
+    ...(tl.runsOn && tl.runsOn.length < 3 ? { runsOn: tl.runsOn } : {}),
+    tracks: tl.tracks.map((t) => {
+      // Every keyframe carries its curve as CSS (a timeline that was not opened this time has none yet).
+      const fe = clipEase({ id: '', preset: 'keyframes', start: 0, duration: tl.duration, ...(t.ease ? { ease: t.ease } : {}), params: { frames: t.frames } } as Clip);
+      return {
+        target: t.target, ...(t.label ? { label: t.label } : {}), ...(t.ease ? { ease: t.ease } : {}),
+        frames: t.frames.map((f) => ({ ...f, e: f.e ?? easeToCss(f.ease ?? fe) })),
+      };
+    }),
+  };
+}
+
+/** A timeline's content without the baked curves, to tell whether it changed since it was saved. */
+export function signature(list: PageTimeline[]): string {
+  return JSON.stringify(list.map((tl) => {
+    const p = forPage(tl);
+    return { ...p, trigger: Object.fromEntries(Object.entries(p.trigger).sort()), tracks: p.tracks.map((t) => ({ ...t, label: undefined, frames: t.frames.map(({ e: _e, ...f }) => f) })) };
+  }));
+}
+
+/** Points a track at another element (one that is on this page), keeping its moves. */
+export function retarget(tl: PageTimeline, from: string, to: string): PageTimeline {
+  if (tl.tracks.some((t) => t.target === to)) return tl;
+  return {
+    ...tl,
+    trigger: tl.trigger.target === from ? { ...tl.trigger, target: to } : tl.trigger,
+    tracks: tl.tracks.map((t) => (t.target === from ? { ...t, target: to, label: undefined } : t)),
   };
 }
 
@@ -240,6 +274,7 @@ export function cleanTimeline(raw: unknown): PageTimeline | null {
     },
     ...(Number(r.repeat) ? { repeat: Math.max(-1, Math.min(100, Math.round(Number(r.repeat)))) } : {}),
     ...(r.yoyo ? { yoyo: true } : {}),
+    ...(Array.isArray(r.runsOn) ? { runsOn: DEVICES.map((d) => d.value).filter((d) => (r.runsOn as unknown[]).includes(d)) } : {}),
     tracks,
   };
 }

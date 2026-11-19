@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PageState } from '../lib/pageConnection';
 import type { PageTimelines } from '../lib/usePageTimelines';
-import { TRIGGERS, type TriggerType } from '../lib/pageTimeline';
+import { DEVICES, TRIGGERS, type Device, type TriggerType } from '../lib/pageTimeline';
+import { downloadText, parseTimelinesFile, timelinesToCsv, timelinesToJson } from '../lib/pageTimelineFiles';
 
 /**
  * Page mode (Animation Creator, beta): the elements of the Unyson+ page that opened the Studio, with the motion they
@@ -14,6 +15,8 @@ export function PagePanel({ state, onSelect, timelines: tl }: {
   const [query, setQuery] = useState('');
   const [onlyMoving, setOnlyMoving] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [ioNote, setIoNote] = useState('');
   const elements = state.status === 'connected' || state.status === 'closed' ? state.elements : [];
   const selected = state.status === 'connected' ? state.selected : '';
   const active = tl.active;
@@ -39,6 +42,29 @@ export function PagePanel({ state, onSelect, timelines: tl }: {
 
   const trig = active?.trigger;
   const connected = state.status === 'connected';
+  const canSave = state.status === 'connected' && state.canSave;
+  const saveError = state.status === 'connected' && state.saved && !state.saved.ok ? state.saved.message : '';
+  const here = useMemo(() => new Set(elements.map((e) => e.id)), [elements]);
+  const missing = active ? active.tracks.filter((t) => !here.has(t.target)) : [];
+  const runsOn: Device[] = active?.runsOn ?? DEVICES.map((d) => d.value);
+  const slugOf = (name: string, fallback: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || fallback;
+  const pageSlug = slugOf(state.status === 'connected' ? state.title || state.site : '', 'page');
+  const pageUrl = state.status === 'connected' ? state.url : '';
+  const withTracks = tl.list.filter((t) => t.tracks.length);
+
+  const onImport = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const got = parseTimelinesFile(file.name, await file.text());
+      const away = tl.importList(got);
+      setIoNote(`Imported ${got.length} timeline${got.length === 1 ? '' : 's'}.`
+        + (away ? ` ${away} track${away === 1 ? '' : 's'} point at elements not on this page: pick an element and use it for each.` : '')
+        + ' Save to page to keep them.');
+    } catch (err) {
+      setIoNote(err instanceof Error ? err.message : 'That file could not be read.');
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  };
 
   return (
     <aside className="page-panel" aria-label="Page elements and timelines">
@@ -99,6 +125,32 @@ export function PagePanel({ state, onSelect, timelines: tl }: {
               <label><input type="checkbox" checked={!!active.yoyo} onChange={(e) => tl.update({ yoyo: e.target.checked })} /> Back and forth</label>
             )}
           </div>
+          <fieldset className="page-tl__devices">
+            <legend>Runs on</legend>
+            {DEVICES.map((d) => (
+              <label key={d.value} title={d.hint}>
+                <input type="checkbox" checked={runsOn.includes(d.value)}
+                  onChange={(e) => {
+                    const next = DEVICES.map((x) => x.value).filter((v) => (v === d.value ? e.target.checked : runsOn.includes(v)));
+                    tl.update({ runsOn: next.length === 3 ? undefined : next });
+                  }} /> {d.label}
+              </label>
+            ))}
+          </fieldset>
+          {!runsOn.length && <p className="page-panel__note is-warn">It runs on no device: tick at least one.</p>}
+          {missing.length > 0 && (
+            <div className="page-tl__missing">
+              <strong>Not on this page</strong>
+              {missing.map((m) => (
+                <div key={m.target} className="page-tl__missing-row">
+                  <span>{m.label || 'Element'} <small>({m.target.slice(0, 8)})</small></span>
+                  {pick && !tracked.has(pick.id)
+                    ? <button type="button" className="btn small" onClick={() => tl.retarget(m.target, pick.id)} title="Its moves go to the picked element">Use {pick.label}</button>
+                    : <small>Pick an element to use instead</small>}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="page-tl__row">
             {tl.previewing
               ? <button type="button" className="btn small" onClick={tl.stopPreview}>Stop the preview</button>
@@ -112,8 +164,32 @@ export function PagePanel({ state, onSelect, timelines: tl }: {
             {active.tracks.length
               ? 'Each track is an element: select its Keyframes clip to change its moves and curves. Play or scrub the timeline and the page follows.'
               : 'Pick an element (here or on the page), then Add it to the timeline: it gets a first move (rise and fade in) to change.'}
-            {' '}Saving to the page comes next; for now a timeline lasts while both windows are open.
           </p>
+          <div className="page-tl__save">
+            <button type="button" className="btn small primary" onClick={tl.save} disabled={!canSave || tl.saving || !tl.dirty}
+              title={canSave ? 'Stores every timeline on the page, for visitors' : 'Activate the Animation Engine on the site to save page timelines'}>
+              {tl.saving ? 'Saving…' : 'Save to page'}
+            </button>
+            <span className={`page-tl__state${tl.dirty ? ' is-dirty' : ''}`}>{!canSave ? 'Saving needs the Animation Engine' : tl.dirty ? 'Unsaved changes' : 'Saved on the page'}</span>
+          </div>
+          {saveError && <p className="page-panel__note is-warn" role="alert">{saveError}</p>}
+          <details className="page-tl__io">
+            <summary>Import / Export</summary>
+            <div className="page-tl__io-row">
+              <button type="button" className="btn small" disabled={!active.tracks.length}
+                onClick={() => downloadText(`${slugOf(active.name, 'timeline')}.timeline.json`, timelinesToJson([active], pageUrl), 'application/json')}>This timeline (JSON)</button>
+              <button type="button" className="btn small" disabled={!withTracks.length}
+                onClick={() => downloadText(`${pageSlug}-timelines.json`, timelinesToJson(withTracks, pageUrl), 'application/json')}>All (JSON)</button>
+              <button type="button" className="btn small" disabled={!withTracks.length} title="A spreadsheet: one row per keyframe"
+                onClick={() => downloadText(`${pageSlug}-timelines.csv`, timelinesToCsv(withTracks), 'text/csv')}>All (CSV)</button>
+            </div>
+            <div className="page-tl__io-row">
+              <button type="button" className="btn small" onClick={() => fileRef.current?.click()}>Import a file…</button>
+              <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" hidden onChange={(e) => onImport(e.target.files?.[0])} />
+            </div>
+            <p className="page-panel__note">JSON keeps every setting, to move timelines to another page or site. CSV is a spreadsheet (one row per keyframe) that imports back the same.</p>
+            {ioNote && <p className="page-panel__note" role="status">{ioNote}</p>}
+          </details>
         </section>
       )}
 

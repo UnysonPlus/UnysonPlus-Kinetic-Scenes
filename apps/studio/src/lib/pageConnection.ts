@@ -12,6 +12,8 @@ import { cleanTimeline, type PageTimeline } from './pageTimeline';
  *   Studio → editor  { type: 'upw-studio:page-timeline', timelines, active, t }   the page timelines, after every edit
  *   Studio → editor  { type: 'upw-studio:page-seek', id, t }      show a timeline at t on the page
  *   Studio → editor  { type: 'upw-studio:page-play' | 'upw-studio:page-arm' | 'upw-studio:page-stop', id }
+ *   Studio → editor  { type: 'upw-studio:page-save', timelines }  Save to page
+ *   editor → Studio  { type: 'upw-studio:page-saved', ok, timelines | message }   its result
  *
  * As in the scene connection, only messages from the window that opened us are accepted, and replies go only to the
  * address that window first answered from.
@@ -36,7 +38,11 @@ export type PageState =
   | { status: 'waiting' }
   | { status: 'connected'; site: string; title: string; url: string; elements: PageElement[]; selected: string;
       /** The timelines the page already had when it connected (the first message only). */
-      timelines: PageTimeline[] }
+      timelines: PageTimeline[];
+      /** The page can store timelines (the Animation Engine is active). */
+      canSave: boolean;
+      /** The last Save to page: its result, numbered so each one is noticed. */
+      saved: { n: number; ok: boolean; message: string } | null }
   | { status: 'closed'; site: string; title: string; elements: PageElement[] };
 
 export const isPageMode = () =>
@@ -81,7 +87,12 @@ export function usePageConnection() {
           status: 'connected', site, title: str(e.data.title, 120), url: str(e.data.url, 500), elements,
           selected: s.status === 'connected' ? s.selected : '',
           timelines: s.status === 'connected' ? s.timelines : timelines,
+          canSave: e.data.canSave !== false,
+          saved: s.status === 'connected' ? s.saved : null,
         }));
+      } else if (e.data.type === 'upw-studio:page-saved') {
+        const ok = e.data.ok === true;
+        setState((s) => (s.status === 'connected' ? { ...s, saved: { n: (s.saved?.n ?? 0) + 1, ok, message: ok ? '' : str(e.data.message, 300) || 'Save failed' } } : s));
       } else if (e.data.type === 'upw-studio:page-select') {
         const id = str(e.data.id, 80);
         setState((s) => (s.status === 'connected' ? { ...s, selected: id } : s));
