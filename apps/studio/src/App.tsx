@@ -34,10 +34,6 @@ import { BUILT_IN_STYLES, applyStyle, loadCustomStyles, saveCustomStyles, starte
 import { sfxMeta, sfxSrc, soundTrack } from '@unysonplus/scene-player/sfx';
 import { AudioInspector } from './components/AudioInspector';
 import { useEditorConnection } from './lib/connection';
-import { isPageMode, usePageConnection } from './lib/pageConnection';
-import { usePageTimelines } from './lib/usePageTimelines';
-import { newTimeline, sceneFromTimeline } from './lib/pageTimeline';
-import { PagePanel } from './components/PagePanel';
 import { formatScene } from './lib/format';
 import { useHistory } from './lib/history';
 import { createProject, readProject, saveProject as saveToFolder, watchProject, workspaceAvailable, type OpenProject } from './lib/workspace';
@@ -172,8 +168,7 @@ interface KeyInfo {
 const settlePins = (s: Scene): Scene => { try { return applyWordPins(s).scene; } catch { return s; } };
 
 export function App() {
-  // Page mode edits the page's timelines, never the scene kept in this browser (see usePageTimelines).
-  const history = useHistory<Scene>(() => (isPageMode() ? sceneFromTimeline(newTimeline(), []) : loadInitial()), settlePins);
+  const history = useHistory<Scene>(() => loadInitial(), settlePins);
   const scene = history.present;
   const [selection, setSelection] = useState<Selection>({ layerId: null, clipId: null });
   // A phone starts on the Mobile layout: a 1920 px desktop window scaled to a phone's width is too small to work on.
@@ -224,11 +219,6 @@ export function App() {
   /** The group being edited (double-click to enter, Escape to leave); null = the whole scene. */
   const [scope, setScope] = useState<string | null>(null);
   // Opened from a Unyson+ page editor ("Open in Kinetic Scenes"): load its scene, offer "Save to page".
-  const page = usePageConnection();
-  const pageTl = usePageTimelines({
-    state: page.state, select: page.select, send: page.send, scene, commit: history.commit, reset: history.reset, clock,
-    selectedLayer: selection.layerId, setSelection,
-  });
   const conn = useEditorConnection((incoming) => {
     commit(incoming);
     setSelection({ layerId: null, clipId: null });
@@ -322,7 +312,6 @@ export function App() {
 
   // Autosave the working scene in this browser.
   useEffect(() => {
-    if (isPageMode()) return;
     const t = setTimeout(() => saveDraft(scene), 400);
     return () => clearTimeout(t);
   }, [scene]);
@@ -418,7 +407,6 @@ export function App() {
       setNotice('That scene link is not from a Unyson+ site, so it was not opened.');
       return;
     }
-    if (isPageMode()) return;
     let id: string | null = new URLSearchParams(location.search).get('project');
     if (!id) try { id = localStorage.getItem(PROJECT_KEY); } catch { /* private window */ }
     if (!id) return;
@@ -1314,19 +1302,10 @@ export function App() {
           )}
         </div>
       )}
-      {page.state.status !== 'none' && (
-        <div className={`connect-bar is-${page.state.status}`} role="status">
-          {page.state.status === 'waiting' && <span>Connecting to your Unyson+ page…</span>}
-          {page.state.status === 'connected' && (
-            <span>Page mode (beta): connected to <strong>{page.state.title || page.state.site}</strong> on <strong>{page.state.site}</strong>. Pick an element in the Page panel or on the page, add it to a timeline, and keyframe it here: the page plays along.</span>
-          )}
-          {page.state.status === 'closed' && <span>The Live Editor on <strong>{page.state.site}</strong> was closed.</span>}
-        </div>
-      )}
       </div>
 
-      <main className={`workspace${page.state.status !== 'none' ? ' is-page' : ''}`}>
-        {page.state.status !== 'none' ? <PagePanel state={page.state} onSelect={page.select} timelines={pageTl} /> : (
+      <main className="workspace">
+        {(
         <Library layerType={selectedLayer?.type ?? null} count={selectedIds(selection).length} onApply={applyPreset} show={libraryAsk}
           pieces={<PiecesLibrary onInsert={(piece) => {
             const r = insertPiece(latest.current.scene, piece, Math.round(latest.current.state.time * 100) / 100, latest.current.scope);
