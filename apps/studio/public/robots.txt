@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kinetic-scenes.unysonplus.com/sitemap.xml
