@@ -150,8 +150,10 @@ ${transcriptHtml(scene)}
 }
 
 /**
- * The preview page: the top of a website with the scene as its hero and page content below. The
- * editor script mounts the scene, draws selection handles and talks to the Studio (see editor.ts).
+ * The preview page: the top of a website with the scene as its hero. Below a web scene a faded,
+ * labelled placeholder stands for the rest of the page (it is never exported); a video scene has no
+ * page, so `data-made="video"` hides it, kept current from the Studio's scene messages. The editor
+ * script mounts the scene, draws selection handles and talks to the Studio (see editor.ts).
  */
 export function previewHtml(scene: Scene, opts: { safeArea: boolean }): string {
   return `<!doctype html>
@@ -161,18 +163,20 @@ export function previewHtml(scene: Scene, opts: { safeArea: boolean }): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 html,body{margin:0;background:#0a0d11;color:#c9d1da;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.page{padding:6vh 6vw 10vh;display:grid;gap:18px;max-width:1100px;margin:0 auto}
-.page i{display:block;height:14px;border-radius:7px;background:#1b222b}
-.page i:nth-child(1){width:38%;height:22px;background:#232b35}
+.page{padding:28px 6vw 10vh;display:grid;gap:18px;max-width:1100px;margin:0 auto;border-top:1px dashed #2c3540;opacity:.75}
+.page i{display:block;height:14px;border-radius:7px;background:#161c23}
+.page i:nth-child(2){width:38%;height:22px;background:#1b222b}
 .page i:nth-child(3){width:86%}
 .page i:nth-child(4){width:72%}
-.page p{margin:0;font-size:13px;color:#7d8794}
+.page p{margin:0;font-size:12px;letter-spacing:.02em;color:#7d8794}
+body[data-made="video"] .page{display:none}
 .err{margin:24px;padding:16px;border:1px solid #6b2a2a;border-radius:8px;background:#1c1214;color:#f2b8b5;font:13px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap}
 </style>
 </head>
-<body data-safe="${opts.safeArea ? 'true' : 'false'}">
+<body data-safe="${opts.safeArea ? 'true' : 'false'}" data-made="${scene.mode === 'video' ? 'video' : 'web'}">
 <div id="scene"></div>
-<div class="page" aria-hidden="true"><i></i><p>The rest of the page continues below the scene.</p><i></i><i></i><i></i></div>
+<div class="page" aria-hidden="true"><p>Your web page continues here. Only a preview: it is not part of the scene and is not exported.</p><i></i><i></i><i></i></div>
+<script>addEventListener('message',function(e){var d=e.data;if(e.source===parent&&d&&d.type==='scene'&&d.scene)document.body.dataset.made=d.scene.mode==='video'?'video':'web';});</script>
 <script type="application/json" id="scene-json">${safeJson(scene)}</script>
 ${assetBaseScript()}
 ${inlinePlayer(false)}
