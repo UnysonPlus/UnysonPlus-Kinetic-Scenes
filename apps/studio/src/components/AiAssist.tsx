@@ -469,7 +469,8 @@ export function AiAssist(props: {
       if (!st.transcription) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
       // The voice shown in the Voice menu (shared with Voice-over from a script).
       if (voices.isVoicebox && !st.voicebox?.connected) throw new Error(`${voices.label} needs Voicebox open. Open it, or pick another voice.`);
-      if (!voices.isVoicebox && (!st.program || !st.voices[voices.voice]?.installed)) await installVoice(voices.voice, (step) => setPhase(`Installing the voice: ${step}`));
+      if (voices.isVoiceStudio && !st.voicestudio?.connected) throw new Error(`${voices.label} needs VoiceStudio open. Open it, or pick another voice.`);
+      if (!voices.isOwn && (!st.program || !st.voices[voices.voice]?.installed)) await installVoice(voices.voice, (step) => setPhase(`Installing the voice: ${step}`));
       setPhase(`Speaking in ${voices.label}`);
       const v = await speak(lines, { voice: voices.voice, signal: ctl.signal, onStep: (step) => setPhase(step) });
       const added = withVoice({ ...scene, layers: [] }, v, 'Voice-over', voices.label);

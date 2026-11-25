@@ -119,6 +119,9 @@ export function AddonsDialog(props: { open: boolean; onClose: () => void }) {
               {a.id === 'voicebox' && a.state === 'connected' && a.profiles && a.profiles.length > 0 && (
                 <p className="addon-detail">Voices: {a.profiles.map((p) => p.name).join(', ')}. Pick one under Voice-over from a script, or in AI assist.</p>
               )}
+              {a.id === 'voicestudio' && a.state === 'connected' && (
+                <p className="addon-detail">Pick a voice as "VoiceStudio: name" under Voice-over from a script, or in AI assist. Only use a voice you have the right to use.</p>
+              )}
               {a.id === 'voicebox' && (
                 <p className="addon-detail">Only use a voice you have the right to use: your own, or someone's with their permission.</p>
               )}

@@ -363,7 +363,7 @@ export function StepsSection(props: { scene: Scene; onCommit: (scene: Scene) => 
 export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scene) => void }) {
   const [script, setScript] = useState('');
   // The voice (built-in, or one of the person's Voicebox voices while Voicebox is open), shared with AI assist.
-  const { voice, setVoice, options, label, isVoicebox: isOwn } = useVoices();
+  const { voice, setVoice, options, label, isOwn, isVoiceStudio } = useVoices();
   const [pace, setPace] = useState(1.12);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -375,7 +375,8 @@ export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scen
       const st = await voiceStatus();
       if (!st) throw new Error('Start the AI Dev Kit on this computer (an up-to-date one) first.');
       if (!st.transcription) throw new Error('Install speech recognition in the AI Dev Kit first (select an audio clip, Words): it times every word.');
-      if (isOwn && !st.voicebox?.connected) throw new Error('Open Voicebox first (see Add-ons in the top bar).');
+      if (isVoiceStudio && !st.voicestudio?.connected) throw new Error('Open VoiceStudio first: the kit uses it while it runs.');
+      if (isOwn && !isVoiceStudio && !st.voicebox?.connected) throw new Error('Open Voicebox first (see Add-ons in the top bar).');
       if (!isOwn && (!st.program || !st.voices[voice]?.installed)) await installVoice(voice, (s) => setNote(`Installing the voice: ${s}`));
       const v = await speak(lines, { voice, pace, onStep: (s) => setNote(s) });
       props.onCommit(withVoice(props.scene, v, 'Voice-over', label).scene);
@@ -393,8 +394,10 @@ export function ScriptVoiceSection(props: { scene: Scene; onCommit: (scene: Scen
       {!isOwn && <NumberField label="Pace (higher is slower)" value={pace} step={0.02} min={0.7} max={1.6} onCommit={(v) => v && setPace(v)} />}
       <div className="insp-start"><button type="button" className="btn small" disabled={busy || !script.trim()} onClick={make}>{busy ? 'Speaking…' : 'Make the voice-over'}</button></div>
       <p className="field-hint wide">{isOwn
-        ? 'Speaks each line in your Voicebox voice (Voicebox must be open; the first line can take a few minutes while it loads), then times every word. Only use a voice you have the right to use.'
-        : 'No microphone needed: a free voice runs on your computer through the AI Dev Kit (downloaded once, about 60 MB), and every word is timed, so scenes and captions follow it exactly. Changing one line remakes only that line. Your own voice: connect Voicebox under Add-ons.'}</p>
+        ? isVoiceStudio
+          ? 'Speaks each line in your VoiceStudio voice (VoiceStudio must be open; about a minute a line on a mid-range graphics card), then times every word. Only use a voice you have the right to use.'
+          : 'Speaks each line in your Voicebox voice (Voicebox must be open; the first line can take a few minutes while it loads), then times every word. Only use a voice you have the right to use.'
+        : 'No microphone needed: a free voice runs on your computer through the AI Dev Kit (downloaded once, about 60 MB), and every word is timed, so scenes and captions follow it exactly. Changing one line remakes only that line. Your own voice: open VoiceStudio, or connect Voicebox under Add-ons, and pick it here.'}</p>
       {note && <p className="field-hint wide" role="status">{kitify(note)}</p>}
     </Section>
   );
