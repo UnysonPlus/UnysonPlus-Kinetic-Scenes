@@ -610,6 +610,213 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     }, { ease: false, always: true });
   },
 
+  'freeze-frame'(ctx) {
+    // The footage stops on a frame (the player holds the video while this clip runs and plays on from the same frame
+    // after it: see syncFootage), a quick flash marks the freeze, and a hand-drawn arrow with a short note draws
+    // itself on to point at something. Near the end the drawing fades and the video plays on.
+    const p = ctx.params;
+    const ink = color(p, 'color', '#ffffff');
+    const tx = num(p, 'x', 50), ty = num(p, 'y', 45);
+    const side = pick(p, 'side', ['left', 'right'] as const, 'left');
+    const note = typeof p.text === 'string' ? p.text.trim().slice(0, 40) : 'Look here';
+    const host = owned(ctx, 'upw-freeze');
+    Object.assign(host.style, { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '4' });
+    if (!host.firstElementChild) {
+      host.innerHTML = '<svg style="position:absolute;inset:0;width:100%;height:100%;overflow:visible" aria-hidden="true"><path class="a" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1"/><path class="h" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1"/></svg><span></span>';
+    }
+    const svg = host.querySelector('svg')!;
+    const shaft = host.querySelector<SVGPathElement>('path.a')!, head = host.querySelector<SVGPathElement>('path.h')!;
+    const label = host.querySelector<HTMLElement>(':scope > span')!;
+    label.textContent = note;
+    Object.assign(label.style, {
+      position: 'absolute', color: ink, font: '700 3.6cqw/1.1 "Marker Felt", "Permanent Marker", "Comic Sans MS", "Segoe Print", cursive',
+      whiteSpace: 'nowrap', textShadow: '0 .2cqw .6cqw rgba(0,0,0,.45)', transform: `rotate(${side === 'left' ? -4 : 4}deg)`,
+    });
+    const media = ctx.el.querySelector<HTMLElement>(':scope > video, :scope > img');
+    let k = 0;
+    const draw = () => {
+      const W = host.offsetWidth || 1, H = host.offsetHeight || 1;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      // From beside the note to the point, bowed like a quick pen stroke.
+      const px = (tx / 100) * W, py = (ty / 100) * H;
+      const dir = side === 'left' ? -1 : 1;
+      const sx = px + dir * W * 0.28, sy = py - H * 0.16;
+      const cx = (sx + px) / 2 + dir * W * 0.02, cy = Math.min(sy, py) - H * 0.08;
+      const ex = px + dir * W * 0.035, ey = py - H * 0.012;
+      shaft.setAttribute('d', `M ${sx.toFixed(1)} ${sy.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+      // The head: two short strokes back from the tip, along the curve's last direction.
+      const ang = Math.atan2(ey - cy, ex - cx), L = W * 0.045;
+      const h1x = ex - L * Math.cos(ang - 0.5), h1y = ey - L * Math.sin(ang - 0.5);
+      const h2x = ex - L * Math.cos(ang + 0.5), h2y = ey - L * Math.sin(ang + 0.5);
+      head.setAttribute('d', `M ${h1x.toFixed(1)} ${h1y.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)} L ${h2x.toFixed(1)} ${h2y.toFixed(1)}`);
+      const sw = (W * 0.009).toFixed(2);
+      for (const pth of [shaft, head]) { pth.setAttribute('stroke', ink); pth.setAttribute('stroke-width', sw); pth.style.filter = 'drop-shadow(0 1px 3px rgba(0,0,0,.45))'; }
+      Object.assign(label.style, { left: `${(sx / W) * 100 + (side === 'left' ? -2 : 2)}%`, top: `${(sy / H) * 100 - 5}%`, translate: side === 'left' ? '-60% 0' : '-40% 0' });
+      const t = k * ctx.duration;
+      const fade = clamp01((ctx.duration - t) / 0.3);
+      const a = clamp01((t - 0.25) / 0.45), b = clamp01((t - 0.7) / 0.15), n = clamp01((t - 0.55) / 0.3);
+      shaft.style.strokeDashoffset = String(1 - a);
+      head.style.strokeDashoffset = String(1 - b);
+      label.style.opacity = (n * fade).toFixed(3);
+      label.style.clipPath = `inset(0 ${((1 - n) * 100).toFixed(1)}% 0 0)`;
+      svg.style.opacity = (k > 0 && k < 1 ? fade : 0).toFixed(3);
+      if (media) media.style.filter = k > 0 && k < 1 ? `brightness(${(1 + 0.7 * clamp01(1 - t / 0.18)).toFixed(3)}) saturate(${(1 - 0.25 * fade).toFixed(3)})` : '';
+    };
+    ctx.late(draw);
+    drive(ctx, (raw) => { k = raw; draw(); }, { ease: false, always: true });
+  },
+
+  'dot-reveal'(ctx) {
+    // The picture builds itself out of glowing dots (a grid of points that light up and swell until they touch),
+    // then snaps into focus. Out runs it backwards. A CSS mask of round dots does the build, so it works on any layer.
+    const p = ctx.params;
+    const out = isOut(p);
+    const cell = num(p, 'dots', 1.4);
+    const glowC = color(p, 'color', '#7fe7ff');
+    const set = (v: string) => { ctx.el.style.maskImage = v; ctx.el.style.setProperty('-webkit-mask-image', v); };
+    chain(ctx, (raw) => {
+      const e = out ? 1 - raw : raw;
+      if (e <= 0) { set(''); ctx.el.style.opacity = '0'; ctx.el.style.filter = ''; return; }
+      ctx.el.style.opacity = '';
+      if (e >= 0.72) {
+        // Snap into focus: the dots are gone, a little blur and glow settle away.
+        const f = clamp01((e - 0.72) / 0.28);
+        set('');
+        ctx.el.style.filter = f < 1 ? `blur(${((1 - f) * 0.5).toFixed(3)}cqw) brightness(${(1 + 0.35 * (1 - f)).toFixed(3)})` : '';
+        return;
+      }
+      // Dots: tiny and bright first, then swelling until they cover the picture (radius past half the diagonal).
+      const g = e / 0.72;
+      const r = cell * (0.08 + 0.66 * g * g);
+      set(`radial-gradient(circle, #000 ${r.toFixed(3)}cqw, transparent ${(r + 0.06).toFixed(3)}cqw)`);
+      ctx.el.style.setProperty('mask-size', `${cell}cqw ${cell}cqw`);
+      ctx.el.style.setProperty('-webkit-mask-size', `${cell}cqw ${cell}cqw`);
+      ctx.el.style.filter = `brightness(${(1.9 - 0.7 * g).toFixed(3)}) drop-shadow(0 0 ${(0.35 * (1 - g) + 0.1).toFixed(3)}cqw ${glowC})`;
+    }, { ease: false });
+  },
+
+  'led-sign'(ctx) {
+    // A dot-matrix LED sign types its line out letter by letter, each lit dot glowing, while the room dims around it
+    // (everything under this layer darkens; a cut-out person above it stays lit, so the sign glows behind them).
+    const p = ctx.params;
+    const out = isOut(p);
+    const ink = color(p, 'color', '#ff5a36');
+    const cell = num(p, 'dots', 0.6);
+    const dim = clamp01(num(p, 'dim', 60) / 100);
+    const words = ctx.el.querySelector<HTMLElement>('.upw-txt') ?? ctx.el;
+    const outer = ctx.el.closest<HTMLElement>('.upw-layer');
+    const dots = `radial-gradient(circle, #000 ${(cell * 0.36).toFixed(3)}cqw, transparent ${(cell * 0.42).toFixed(3)}cqw)`;
+    Object.assign(words.style, { color: ink });
+    words.style.maskImage = dots; words.style.setProperty('-webkit-mask-image', dots);
+    words.style.setProperty('mask-size', `${cell}cqw ${cell}cqw`); words.style.setProperty('-webkit-mask-size', `${cell}cqw ${cell}cqw`);
+    // The unlit dots of the board behind the letters.
+    ctx.el.style.backgroundImage = `radial-gradient(circle, rgba(255,255,255,.07) ${(cell * 0.3).toFixed(3)}cqw, transparent ${(cell * 0.36).toFixed(3)}cqw)`;
+    ctx.el.style.backgroundSize = `${cell}cqw ${cell}cqw`;
+    const chars = ctx.chars.length ? ctx.chars : [];
+    chain(ctx, (raw) => {
+      const e = out ? 1 - raw : raw;
+      const lit = clamp01(e / 0.85);
+      const n = Math.round(lit * chars.length);
+      chars.forEach((c, i) => { c.style.opacity = i < n ? '1' : '0'; });
+      const room = clamp01(e / 0.25) * dim;
+      if (outer) outer.style.boxShadow = room > 0 ? `0 0 0 200vmax rgba(0,0,0,${room.toFixed(3)})` : '';
+      ctx.el.style.filter = e > 0 ? `drop-shadow(0 0 .25cqw ${ink}) drop-shadow(0 0 1.1cqw ${ink})` : '';
+      ctx.el.style.opacity = e > 0 ? '' : '0';
+    }, { ease: false });
+  },
+
+  'cut-through'(ctx) {
+    // Shows the layers inside this group one at a time, a hard cut every few beats: pages, pictures or headlines
+    // cutting in on each spoken word (a match cut, with one word locked on top in its own layer).
+    const p = ctx.params;
+    const every = Math.max(0.05, num(p, 'every', 0.4));
+    const loop = p.loop === true;
+    const outer = ctx.el.closest<HTMLElement>('.upw-layer');
+    if (!outer) return;
+    const kids = () => Array.from(outer.querySelectorAll<HTMLElement>('.upw-layer')).filter((k) => k.parentElement?.closest('.upw-layer') === outer);
+    drive(ctx, (raw) => {
+      const list = kids();
+      if (!list.length) return;
+      const step = Math.floor((raw * ctx.duration) / every + 1e-6);
+      const i = loop ? step % list.length : Math.min(list.length - 1, step);
+      // Hidden by a clip, not visibility: the player sets visibility for each layer's own start and end.
+      list.forEach((k, j) => { k.style.clipPath = j === i ? '' : 'inset(50%)'; });
+    }, { ease: false, always: true });
+  },
+
+  'shrink-into'(ctx) {
+    // Shrinks the speaker's picture into a tile (the centre of a profile grid) or a corner (a paper page), with
+    // rounded corners and a soft shadow; the out clip grows it back. The speaker is the footage layer picked in
+    // "Shrinks", else a cut-out person, else the biggest footage. Like Split push it moves the picture inside the
+    // layer, so the speaker's own clips and the camera are left alone.
+    const p = ctx.params;
+    const out = isOut(p);
+    const want = typeof p.push === 'string' ? p.push.trim() : '';
+    const size = clamp01(num(p, 'size', 32) / 100);
+    const at = pick(p, 'at', ['center', 'bottom-right', 'bottom-left', 'top-right', 'top-left'] as const, 'center');
+    const radius = num(p, 'radius', 2);
+    let media: HTMLElement | null = null;
+    const find = () => {
+      if (media?.isConnected) return media;
+      const stage = ctx.el.closest('.upw-stage') ?? ctx.el.ownerDocument;
+      const own = ctx.el.closest<HTMLElement>('.upw-layer');
+      let el: HTMLElement | null = want ? stage.querySelector<HTMLElement>(`.upw-layer[data-layer="${CSS.escape(want)}"]`) : null;
+      if (!el) el = Array.from(stage.querySelectorAll<HTMLElement>('.upw-layer.upw-video')).find((l) => /-person(-\d+)?$/.test(l.dataset.layer ?? '')) ?? null;
+      if (!el) {
+        let best = 0;
+        stage.querySelectorAll<HTMLElement>('.upw-layer.upw-video').forEach((l) => {
+          if (l === own || own?.contains(l)) return;
+          const r = l.getBoundingClientRect(), a = r.width * r.height;
+          if (a > best) { best = a; el = l; }
+        });
+      }
+      media = el ? (el as HTMLElement).querySelector<HTMLElement>('.upw-li > video, .upw-li > img') : null;
+      return media;
+    };
+    chain(ctx, (raw) => {
+      const k = out ? 1 - raw : raw;
+      const m = find();
+      if (!m) return;
+      if (k <= 0) { m.style.scale = ''; m.style.translate = ''; m.style.clipPath = ''; m.style.filter = ''; return; }
+      const s = lerp(1, size, k);
+      const margin = 0.05;
+      const cx = at.includes('right') ? 1 - margin - size / 2 : at.includes('left') ? margin + size / 2 : 0.5;
+      const cy = at.startsWith('bottom') ? 1 - margin - size / 2 : at.startsWith('top') ? margin + size / 2 : 0.5;
+      m.style.scale = s.toFixed(4);
+      m.style.translate = `${((cx - 0.5) * 100 * k).toFixed(3)}% ${((cy - 0.5) * 100 * k).toFixed(3)}%`;
+      m.style.clipPath = `inset(0 round ${(radius / s).toFixed(3)}cqw)`;
+      m.style.filter = `drop-shadow(0 ${(0.6 / s).toFixed(3)}cqw ${(1.4 / s).toFixed(3)}cqw rgba(0,0,0,${(0.35 * k).toFixed(3)}))`;
+    });
+  },
+
+  carousel(ctx) {
+    // The layers inside this group ride a tilted ring round its centre, nearer ones bigger and brighter, turning over
+    // the clip. "Half" shows only the far side (put that copy under the cut-out person) or only the near side (a copy
+    // over them), so the cards pass behind the person: the Card carousel piece adds both.
+    const p = ctx.params;
+    const R = num(p, 'radius', 30);
+    const tilt = num(p, 'tilt', 0.28);
+    const turns = num(p, 'turns', 1);
+    const start = (num(p, 'start', 0) / 360) * Math.PI * 2;
+    const half = pick(p, 'half', ['all', 'far', 'near'] as const, 'all');
+    const outer = ctx.el.closest<HTMLElement>('.upw-layer');
+    if (!outer) return;
+    const kids = () => Array.from(outer.querySelectorAll<HTMLElement>('.upw-layer')).filter((k) => k.parentElement?.closest('.upw-layer') === outer);
+    drive(ctx, (e) => {
+      const list = kids();
+      list.forEach((k, i) => {
+        const a = start + (i / list.length) * Math.PI * 2 + e * turns * Math.PI * 2;
+        const depth = Math.sin(a);
+        const near = depth >= 0;
+        const show = half === 'all' || (half === 'near') === near;
+        k.style.transform = `translate(${(Math.cos(a) * R).toFixed(3)}cqw, ${(depth * R * tilt).toFixed(3)}cqw) scale(${(0.66 + 0.34 * (depth + 1) / 2).toFixed(4)})`;
+        k.style.filter = `brightness(${(0.62 + 0.38 * (depth + 1) / 2).toFixed(3)})`;
+        k.style.zIndex = String(Math.round(100 + depth * 50));
+        k.style.clipPath = show ? '' : 'inset(50%)'; // not visibility: the player uses it for start and end
+      });
+    }, { always: true });
+  },
+
   jiggle(ctx) {
     // The phone home-screen wobble: a quick, slight back-and-forth tilt (before a delete, or "edit me").
     const amp = num(ctx.params, 'angle', 2.5);

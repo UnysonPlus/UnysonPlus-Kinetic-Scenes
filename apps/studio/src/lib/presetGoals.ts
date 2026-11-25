@@ -8,11 +8,11 @@ export interface PresetGoal { id: string; label: string; hint: string; presets: 
 
 const GOALS: PresetGoal[] = [
   { id: 'headline', label: 'Make a headline land', hint: 'Big words arriving with weight: pick one per scene, the strongest for the most important line.',
-    presets: ['text-rise', 'text-slam', 'text-stretch', 'text-blur', 'text-flip', 'text-tracking', 'text-wave', 'text-3d', 'pop'] },
+    presets: ['text-rise', 'text-slam', 'text-stretch', 'text-blur', 'text-flip', 'text-tracking', 'text-wave', 'text-3d', 'led-sign', 'pop'] },
   { id: 'reveal', label: 'Reveal a picture', hint: 'Bring in a photo, screenshot or footage: wipes and masks feel deliberate, fades feel soft.',
-    presets: ['wipe', 'soft-wipe', 'iris', 'blinds', 'slide', 'zoom', 'strip-in', 'brush', 'pixelate', 'image-swap'] },
+    presets: ['wipe', 'soft-wipe', 'iris', 'blinds', 'slide', 'zoom', 'strip-in', 'brush', 'pixelate', 'dot-reveal', 'image-swap'] },
   { id: 'attention', label: 'Draw attention', hint: 'Point at one thing that matters, once. Too many of these and nothing stands out.',
-    presets: ['spotlight', 'callout', 'lift', 'glow', 'pulse', 'sheen', 'select-box', 'strike', 'stamp', 'jiggle', 'shake'] },
+    presets: ['spotlight', 'callout', 'lift', 'glow', 'pulse', 'sheen', 'select-box', 'strike', 'stamp', 'tape-label', 'jiggle', 'shake'] },
   { id: 'change', label: 'Change scenes', hint: 'Move from one part to the next: put it on a beat or at the end of a sentence.',
     presets: ['tr-slash', 'tr-whip', 'tr-zoom', 'tr-streak', 'tr-dip', 'tr-flash', 'tr-glitch', 'tr-tear', 'tr-page', 'tr-tape', 'morph', 'portal'] },
   { id: 'numbers', label: 'Show numbers and data', hint: 'Counts, progress and charts: a number counting up is more convincing than one appearing.',
@@ -24,7 +24,7 @@ const GOALS: PresetGoal[] = [
   { id: 'texture', label: 'Give it a look', hint: 'A style for the whole piece: film, print, tape, hand-drawn, or a colour grade.',
     presets: ['grade', 'film', 'scanlines', 'halftone', 'silhouette', 'pixel-art', 'line-drawing', 'low-poly', 'boil', 'text-outline', 'text-gradient', 'text-skew', 'recolor'] },
   { id: 'talkinghead', label: 'Edit a talking head', hint: 'Effects for a person on camera: cut the person out of the footage first (Footage tools), then restyle, clone, blow away or ring them.',
-    presets: ['manga', 'ascii', 'engrave', 'blow-away', 'clone-row', 'ring-text', 'rack-focus', 'explode-3d', 'snap-zoom', 'digital-zoom'] },
+    presets: ['manga', 'ascii', 'engrave', 'blow-away', 'clone-row', 'ring-text', 'rack-focus', 'explode-3d', 'snap-zoom', 'digital-zoom', 'lock-on', 'freeze-frame', 'split-push', 'shrink-into', 'carousel', 'cut-through'] },
   { id: 'code', label: 'Explain code', hint: 'Type it, change it, run it, and point at the line that matters.',
     presets: ['code-type', 'code-edit', 'code-highlight', 'code-note', 'code-run'] },
 ];

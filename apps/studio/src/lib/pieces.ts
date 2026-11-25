@@ -8,7 +8,11 @@ import { findLayer, layersIn } from './sceneOps';
  * Laid out for a vertical video; they work on any stage.
  */
 
-export interface Piece { id: string; name: string; description: string; build: () => Layer }
+export interface Piece {
+  id: string; name: string; description: string; build: () => Layer;
+  /** A second layer that goes ABOVE a cut-out person (the first goes under them): the near half of a ring that passes behind the person. */
+  front?: () => Layer;
+}
 
 let n = 0;
 const C = (preset: string, start: number, duration: number, params?: Record<string, unknown>, ease?: string): Clip => ({ id: `${preset}-${n++}`, preset, start, duration, ...(params ? { params } : {}), ...(ease ? { ease } : {}) });
@@ -422,10 +426,81 @@ export const PIECES: Piece[] = [
       ]);
     },
   },
+  {
+    id: 'match-cut', name: 'Match cut', description: 'Five front pages cut in one after another on each spoken word while one big word stays locked in the same place on top. Change the headlines, the word and how fast it cuts (Cut through on the Pages group).',
+    build: () => {
+      const pages: Array<[string, string, string]> = [['#f4efe4', '#1c1e22', 'Everyone is talking about it'], ['#1c1e22', '#ffffff', 'The week it changed'], ['#e8f0ff', '#13306b', 'Is it worth the hype?'], ['#fff3d6', '#5a3b00', 'What nobody tells you'], ['#ffe3e3', '#7a0e1c', 'The real story']];
+      return group('match-cut', 'Match cut', [
+        group('pages', 'Pages', pages.map(([bg, ink, head], i) => group(`page${i}`, `Page ${i + 1}`, [
+          rect(`paper${i}`, 50, 50, 100, 178, { fill: bg }),
+          text(`mast${i}`, 'THE DAILY', 50, 12, 6.5, { style: { fontFamily: SERIF, fontSize: 6.5, fontWeight: 900, color: ink, letterSpacing: 0.1 } }),
+          rect(`rule${i}`, 50, 16, 86, 0.4, { fill: ink }),
+          text(`head${i}`, head, 50, 24, 5, { box: { w: 86 }, style: { fontFamily: SERIF, fontSize: 5, fontWeight: 800, color: ink, align: 'center' } }),
+          rect(`col${i}a`, 28, 74, 40, 30, { fill: 'rgba(0,0,0,0.08)' }),
+          rect(`col${i}b`, 72, 74, 40, 30, { fill: 'rgba(0,0,0,0.08)' }),
+        ])), [C('cut-through', 0, 2, { every: 0.4 })]),
+        text('locked', 'AI', 50, 50, 22, { style: { fontSize: 22, fontWeight: 900, color: '#ff3b47' }, clips: [C('pop', 0, 0.25)] }),
+      ]);
+    },
+  },
+  {
+    id: 'profile-grid', name: 'Profile grid', description: 'The speaker shrinks into the centre tile of a 3 by 3 grid of reel covers while the other eight pop in one by one, each with its view count. Change the covers (any picture or colour) and the counts.',
+    build: () => {
+      const counts = ['1.2M', '84K', '310K', '2.4M', '56K', '730K', '98K', '1.9M'];
+      const fills = ['linear-gradient(160deg,#ff7a59,#a14dff)', 'linear-gradient(160deg,#2ad38b,#0b6e7a)', 'linear-gradient(160deg,#5580ff,#1c1e22)', 'linear-gradient(160deg,#ffb020,#ff3b47)', 'linear-gradient(160deg,#13b1cd,#5580ff)', 'linear-gradient(160deg,#1c1e22,#5f6266)', 'linear-gradient(160deg,#ff3b5c,#ffb020)', 'linear-gradient(160deg,#00b295,#2ad38b)'];
+      const spots: Array<[number, number]> = [[17.5, 18.5], [50, 18.5], [82.5, 18.5], [17.5, 50], [82.5, 50], [17.5, 81.5], [50, 81.5], [82.5, 81.5]];
+      return group('profile-grid', 'Profile grid', spots.flatMap(([x, y], i) => [
+        { id: `tile${i}`, type: 'shape', shape: 'rect', fill: fills[i], radius: 1.6, box: { x, y, w: 31, ratio: 9 / 16 }, clips: [withSound(C('pop', 0.5 + i * 0.12, 0.35), 'soft-pop')] } as Layer,
+        text(`views${i}`, `▶ ${counts[i]}`, x - 13, y + 12.5, 2.6, { box: { anchor: 'left' }, style: { fontSize: 2.6, fontWeight: 800, color: '#ffffff' }, clips: [C('fade', 0.6 + i * 0.12, 0.25)] }),
+      ]), [C('shrink-into', 0, 0.7, { size: 31, at: 'center', radius: 1.6 })]);
+    },
+  },
+  {
+    id: 'card-carousel', name: 'Card carousel', description: 'Six reel covers spin round the speaker on a tilted 3D ring and pass behind a cut-out person on the far side: two copies of the ring, the far half under the person and the near half over them. Change the covers (any picture or colour) and the speed (Carousel, on both groups).',
+    build: () => carouselHalf('far'),
+    front: () => carouselHalf('near'),
+  },
+  {
+    id: 'halftone-page', name: 'Halftone paper page', description: 'A cream paper page fills the frame, the speaker shrinks into the bottom-right corner, and their words build up at the top in serif type with the keywords in red (wrap a keyword in *asterisks*). Put Risograph on the cut-out person for the halftone dots.',
+    build: () => group('halftone-page', 'Halftone paper page', [
+      rect('paper', 50, 50, 100, 178, { fill: 'radial-gradient(120% 90% at 30% 20%, #faf5e8 0%, #efe6d0 70%, #e6dbc0 100%)' }),
+      text('words', 'The *one* habit that made my videos *ten times* better', 8, 20, 6.4, {
+        box: { anchor: 'left', w: 84 },
+        style: { fontFamily: SERIF, fontSize: 6.4, fontWeight: 700, color: '#1c1e22', align: 'left', lineHeight: 1.08, accent: '#d7263d' },
+        clips: [C('text-rise', 0.4, 2.2, { by: 'words', stagger: 0.18 })],
+      }),
+      rect('rule', 50, 36, 84, 0.3, { fill: '#1c1e22', clips: [C('wipe', 2.6, 0.5, { from: 'left' })] }),
+    ], [C('shrink-into', 0, 0.8, { size: 50, at: 'bottom-right', radius: 0 })]),
+  },
+  {
+    id: 'key-rain', name: 'Keyboard rain', description: 'Keyboard keys rain down one after another, bounce and pile up at the bottom of the frame, behind a cut-out speaker. Change the keys (each is a text layer) and their times.',
+    build: () => {
+      const keys = ['Ctrl', 'C', 'V', 'Z', 'Esc', 'Tab', 'Shift', 'S', 'A', 'Enter', 'Alt', 'X', 'F', 'Space'];
+      return group('key-rain', 'Keyboard rain', keys.map((k, i) => {
+        const x = 8 + ((i * 37) % 86);
+        const y = 92 - (i % 3) * 4.2 - Math.floor(i / 7) * 3;
+        const r0 = ((i * 53) % 50) - 25, r1 = ((i * 29) % 30) - 15;
+        return text(`key${i}`, k, x, y, 3.2, {
+          box: { rotate: 0 },
+          style: { fontSize: 3.2, fontWeight: 700, color: '#1c1e22' },
+          pill: { fill: '#f4f5f7', stroke: '#c9ccd2', strokeWidth: 0.15, radius: 1.1, padX: 1.3, padY: 0.7 },
+          clips: [C('keyframes', 0.15 + i * 0.16, 1.1, { frames: [{ t: 0, y: -2600, rotate: r0 }, { t: 1.1, y: 0, rotate: r1, ease: 'bounce.out' }] }, 'power2.in')],
+        });
+      }));
+    },
+  },
 ];
 
 /** A clip with a built-in sound that plays as it starts. */
 function withSound(c: Clip, name: string): Clip { return { ...c, sound: { name } }; }
+
+/** One half of the Card carousel: six reel covers on the Carousel ring, showing only its far or its near side. */
+function carouselHalf(half: 'far' | 'near'): Layer {
+  const fills = ['linear-gradient(160deg,#ff7a59,#a14dff)', 'linear-gradient(160deg,#2ad38b,#0b6e7a)', 'linear-gradient(160deg,#5580ff,#1c1e22)', 'linear-gradient(160deg,#ffb020,#ff3b47)', 'linear-gradient(160deg,#13b1cd,#5580ff)', 'linear-gradient(160deg,#ff3b5c,#ffb020)'];
+  return group(`carousel-${half}`, half === 'far' ? 'Card carousel (behind)' : 'Card carousel (in front)',
+    fills.map((f, i) => ({ id: `cover-${half}${i}`, type: 'shape', shape: 'rect', fill: f, radius: 1.2, stroke: 'rgba(255,255,255,0.6)', strokeWidth: 0.2, box: { x: 50, y: 42, w: 15, ratio: 9 / 16 }, clips: [] } as Layer)),
+    [C('fade', 0, 0.4), C('carousel', 0, 8, { radius: 32, tilt: 0.25, turns: 1, half }, 'none')]);
+}
 
 /** Inserts a piece at the playhead (in the group being edited), with ids made unique; returns its id. */
 export function insertPiece(scene: Scene, piece: Piece, at: number, scope: string | null): { scene: Scene; id: string } {
@@ -439,12 +514,15 @@ export function insertPiece(scene: Scene, piece: Piece, at: number, scope: strin
     return out;
   };
   const layer = renew(piece.build());
+  const front = piece.front ? renew(piece.front()) : null;
   // A group starts at the playhead; a lone layer (captions) follows the voice and starts at 0.
-  if (layer.type === 'group' && at > 0) (layer as Layer & { start?: number }).start = Math.round(at * 100) / 100;
+  for (const l of [layer, front]) if (l && l.type === 'group' && at > 0) (l as Layer & { start?: number }).start = Math.round(at * 100) / 100;
   // With the person cut out of the footage, a piece goes just under them (graphics behind the person); else on top.
   const add = (ls: Layer[]): Layer[] => {
     const k = ls.findIndex((l) => l.type === 'video' && /-person(-\d+)?$/.test(l.id));
-    return k >= 0 ? [...ls.slice(0, k), layer, ...ls.slice(k)] : [...ls, layer];
+    const placed = k >= 0 ? [...ls.slice(0, k), layer, ...ls.slice(k)] : [...ls, layer];
+    // The near half goes on top, over the person.
+    return front ? [...placed, front] : placed;
   };
   const list = layersIn(scene, scope);
   const next = scope && findLayer(scene, scope)

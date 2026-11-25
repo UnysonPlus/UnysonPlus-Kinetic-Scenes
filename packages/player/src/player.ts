@@ -158,9 +158,17 @@ function pickBreakpoint(bps: Breakpoint[], width: number, ratio = 0): Breakpoint
  * the layer started, times its speed. Playing, the video plays along (corrected when it drifts); paused or
  * scrubbing, it is set to the exact frame.
  */
-function syncFootage(v: HTMLVideoElement, layer: { start?: number; offset?: number; rate?: number }, localTime: number, playing: boolean) {
+function syncFootage(v: HTMLVideoElement, layer: { start?: number; offset?: number; rate?: number; clips?: Array<{ preset: string; start: number; duration: number }> }, localTime: number, playing: boolean) {
   const rate = layer.rate ?? 1;
-  const want = (layer.offset ?? 0) + Math.max(0, localTime - (layer.start ?? 0)) * rate;
+  // Freeze frame clips hold the picture while they run; the file then plays on from the frame it stopped on.
+  let frozen = 0, holding = false;
+  for (const c of layer.clips ?? []) {
+    if (c.preset !== 'freeze-frame' || localTime <= c.start) continue;
+    frozen += Math.min(localTime - c.start, c.duration);
+    if (localTime < c.start + c.duration) holding = true;
+  }
+  const want = (layer.offset ?? 0) + Math.max(0, localTime - (layer.start ?? 0) - frozen) * rate;
+  playing = playing && !holding;
   const len = Number.isFinite(v.duration) ? v.duration : Infinity;
   const inRange = localTime >= (layer.start ?? 0) && want < len;
   if (playing && inRange) {
