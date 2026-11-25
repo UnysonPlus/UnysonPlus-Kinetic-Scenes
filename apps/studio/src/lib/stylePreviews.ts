@@ -15,10 +15,10 @@ export const POSTER_TIME = 3.1;
 
 /** The start screen's filters, in the order they are shown. Explainers come first: most people start there. */
 export const STYLE_GROUPS: Array<{ id: string; label: string; styles: string[] }> = [
-  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint', 'crt-terminal', 'radar', 'transit-map', 'thermal', 'xray', 'exploded'] },
+  { id: 'tech', label: 'Tech and product', styles: ['living-ui', 'data-story', 'keynote', 'night', 'hud', 'neon', 'aurora-glass', 'isometric', 'blueprint', 'crt-terminal', 'radar', 'transit-map', 'thermal', 'xray', 'exploded', 'map-route'] },
   { id: 'clean', label: 'Clean and bold', styles: ['clean', 'swiss', 'editorial', 'bauhaus', 'kinetic', 'social-captions', 'luxe'] },
-  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut', 'chalkboard', 'ink-wash', 'stained-glass', 'sketchnote', 'ukiyo-e', 'silhouette'] },
-  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show', 'rubber-hose', 'silent-film', 'low-poly'] },
+  { id: 'drawn', label: 'Drawn and crafted', styles: ['sketchbook', 'line-art', 'flat-vector', 'cel', 'paper', 'collage', 'watercolour', 'whiteboard', 'woodcut', 'chalkboard', 'ink-wash', 'stained-glass', 'sketchnote', 'ukiyo-e', 'silhouette', 'stick-figure'] },
+  { id: 'fun', label: 'Retro and playful', styles: ['synthwave', 'vhs', 'pixel', 'risograph', 'toy-3d', 'playful', 'pastel', 'liquid', 'newsreel', 'neon-sign', 'game-show', 'rubber-hose', 'silent-film', 'low-poly', 'voxel', 'what-if'] },
 ];
 
 const svgUrl = (body: string, w: number, h: number) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`)}`;
@@ -499,6 +499,76 @@ export function stylePreview(style: SceneStyle): Scene | null {
       dot('a', 28, 40, 44, `${P.accent}55`, [c('fade', 0, 0.9, { direction: 'in' }), c('float', 0.9, 3.3, { height: 6, cycles: 1 })]),
       dot('b', 72, 62, 50, `${P.accent2}55`, [c('fade', 0.2, 0.9, { direction: 'in' }), c('float', 1.1, 3.1, { height: 6, cycles: 1 })]),
       head(50, 50, 9, { t: 'Breathe in.', at: 0.7 }),
+    ],
+    'stick-figure': () => {
+      // A stick person: a big white head with a face, one thick black line for the body (one arm raised to wave).
+      const fig = (wave: boolean, mouth: string) => `<g fill="none" stroke="#17181c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">`
+        + `<path d="M30 40 L30 72"/><path d="M30 72 L20 96 M30 72 L40 96"/>`
+        + (wave ? '<path d="M30 48 L16 62 M30 48 L44 36 L50 22"/>' : '<path d="M30 48 L17 66 M30 48 L43 66"/>')
+        + `</g><circle cx="30" cy="22" r="17" fill="#ffffff" stroke="#17181c" stroke-width="3.2"/>`
+        + `<circle cx="24" cy="20" r="2.2" fill="#17181c"/><circle cx="36" cy="20" r="2.2" fill="#17181c"/>`
+        + `<path d="${mouth}" fill="none" stroke="#17181c" stroke-width="2.6" stroke-linecap="round"/>`;
+      const box = `<rect x="3" y="3" width="44" height="34" rx="3" fill="${P.accent}" stroke="#17181c" stroke-width="3"/><path d="M3 14 H47" stroke="#17181c" stroke-width="3"/>`;
+      return [
+        rect('floor', 50, 83, 100, 0.5, '#17181c', [c('wipe', 0, 0.5, { direction: 'in', from: 'left' })]),
+        art('a', fig(false, 'M23 29 Q30 33 37 29'), 60, 100, 30, 58, 13, [{ ...c('slide', 0.1, 0.9, { direction: 'in', from: 'left', distance: 60 }), ease: 'power2.out' }]),
+        art('b', fig(true, 'M24 28 Q30 34 36 28'), 60, 100, 68, 58, 13, [c('pop', 0.7, 0.45, { direction: 'in', from: 0.3 }), c('jiggle', 1.3, 1, { angle: 3, speed: 4 })]),
+        art('prop', box, 50, 40, 49, 75, 9, [{ ...c('slide', 1.1, 0.5, { direction: 'in', from: 'top', distance: 60 }), ease: 'bounce.out' }]),
+        text('cap', 'a box!?', 50, 93, 4.4, P.text, [c('pop', 1.4, 0.35, { direction: 'in', from: 0.6 })]),
+        head(50, 14, 6.4, { t: 'what if?', at: 0.3 }),
+      ];
+    },
+    voxel: () => {
+      // A little house of cubes on the isometric grid: walls of planks, a stepped roof, a chimney landing last.
+      const cube = (top: string, left: string, right: string) => `<path d="M20 0 L40 11.5 L20 23 L0 11.5Z" fill="${top}"/><path d="M0 11.5 L20 23 L20 46 L0 34.5Z" fill="${left}"/><path d="M40 11.5 L20 23 L20 46 L40 34.5Z" fill="${right}"/>`;
+      const plank = cube('#d8a866', '#b98a55', '#8f6a3f'), roof = cube('#b0603e', '#8e4a2f', '#6d3823'), glow = cube('#ffe08a', '#ffcf4d', '#e0a92a'), stone = cube('#c9ccd2', '#a3a8b0', '#7e848e');
+      const grass = `<path d="M80 0 L160 46 L80 92 L0 46Z" fill="${P.accent2}"/><path d="M0 46 L80 92 L80 100 L0 54Z" fill="#3a8f3a"/><path d="M160 46 L80 92 L80 100 L160 54Z" fill="#2f7a30"/>`;
+      const W = 6, dx = W / 2, dy = (11.5 / 40) * W * (16 / 9), dz = (23 / 40) * W * (16 / 9);
+      const blocks: Array<[number, number, number, string]> = [];
+      for (let k = 0; k < 2; k++) for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) blocks.push([i, j, k, k === 1 && j === 2 && (i === 1 || i === 2) ? glow : plank]);
+      for (let i = 0; i < 4; i++) blocks.push([i, 1, 2, roof]);
+      blocks.sort((a, b) => a[2] - b[2] || (a[0] + a[1]) - (b[0] + b[1]));
+      const layers: Layer[] = [art('grass', grass, 160, 100, 50, 72, 44, [c('pop', 0, 0.45, { direction: 'in', from: 0.6 })])];
+      blocks.forEach(([i, j, k, face], n) => {
+        layers.push(art(`v${n}`, face, 40, 46, 50 + (i - j) * dx, 60 + (i + j) * dy - k * dz, W, [{ ...c('slide', 0.25 + n * 0.055, 0.4, { direction: 'in', from: 'top', distance: 70 }), ease: 'back.out(1.8)' }]));
+      });
+      layers.push(art('chim', stone, 40, 46, 50 + (3 - 1) * dx, 60 + (3 + 0) * dy - 3 * dz, W, [{ ...c('slide', 2.2, 0.35, { direction: 'in', from: 'top', distance: 90 }), ease: 'bounce.out' }, c('burst', 2.5, 0.6, { kind: 'dots', color: '#cfd3d8', count: 10, reach: 6 })]));
+      layers.push(head(22, 30, 7, { t: 'home.', at: 2.4 }));
+      return layers;
+    },
+    'map-route': () => {
+      // A white city in a tilted view; the route is a path in the same view, drawn on, with a pin dropping at the end.
+      const proj = (x: number, y: number): [number, number] => [80 + (x - y) * 1.3, 20 + (x + y) * 0.55];
+      const poly = (pts: Array<[number, number]>) => pts.map(([x, y]) => proj(x, y).map((v) => v.toFixed(1)).join(',')).join(' ');
+      let city = `<polygon points="${poly([[0, 0], [60, 0], [60, 60], [0, 60]])}" fill="#f7f8fa"/>`;
+      city += `<polygon points="${poly([[40, 4], [56, 4], [56, 22], [40, 22]])}" fill="#bfe5c4"/><polygon points="${poly([[2, 36], [18, 36], [18, 56], [2, 56]])}" fill="#bfe5c4"/>`;
+      city += `<polygon points="${poly([[0, 27], [60, 25], [60, 31], [0, 33]])}" fill="#bcd9f5"/>`;
+      for (let bx = 0; bx < 6; bx++) for (let by = 0; by < 6; by++) {
+        if ((bx >= 4 && by <= 1) || (bx <= 1 && by >= 4) || by === 3 || (bx + by) % 4 === 3) continue;
+        const x = bx * 10 + 2, y = by * 10 + 2, h = 2 + ((bx * 7 + by * 3) % 5);
+        const [ax, ay] = proj(x, y), [bx2, by2] = proj(x + 6, y), [cx2, cy2] = proj(x + 6, y + 6), [dx2, dy2] = proj(x, y + 6);
+        city += `<polygon points="${dx2},${dy2} ${cx2},${cy2} ${cx2},${cy2 - h} ${dx2},${dy2 - h}" fill="#d4d9e1"/><polygon points="${bx2},${by2} ${cx2},${cy2} ${cx2},${cy2 - h} ${bx2},${by2 - h}" fill="#c3c9d3"/>`;
+        city += `<polygon points="${ax},${ay - h} ${bx2},${by2 - h} ${cx2},${cy2 - h} ${dx2},${dy2 - h}" fill="#ffffff" stroke="#e1e5eb" stroke-width="0.3"/>`;
+      }
+      const route: Array<[number, number]> = [[9, 59], [9, 39], [29, 39], [29, 19], [49, 19], [49, 9]];
+      const d = route.map(([x, y], i) => { const [X, Y] = proj(x, y); return `${i ? 'L' : 'M'} ${(X / 1.6).toFixed(2)} ${(Y / 0.9).toFixed(2)}`; }).join(' ');
+      const [px, py] = proj(49, 9);
+      const pin = `<path d="M12 0 C5 0 0 5 0 12 C0 21 12 32 12 32 C12 32 24 21 24 12 C24 5 19 0 12 0Z" fill="${P.accent2}"/><circle cx="12" cy="12" r="4.5" fill="#ffffff"/>`;
+      return [
+        art('city', city, 160, 90, 50, 50, 100, [c('fade', 0, 0.4, { direction: 'in' })]),
+        { id: 'route', type: 'path', d, stroke: P.accent, strokeWidth: 0.9, glow: 0.5, box: { x: 50, y: 50, w: 100, h: 56.25 }, clips: [c('draw', 0.4, 1.8)] } as unknown as Layer,
+        art('pin', pin, 24, 32, (px / 160) * 100, (py / 90) * 100 - 4.5, 3.4, [{ ...c('slide', 2.15, 0.45, { direction: 'in', from: 'top', distance: 60 }), ease: 'bounce.out' }]),
+        rect('eta', 14, 16, 20, 12, '#ffffff', [c('slide', 0.2, 0.4, { direction: 'in', from: 'left', distance: 30 })], { radius: 1.4, stroke: '#e1e5eb', strokeWidth: 0.12 }),
+        text('etan', '9 min', 14, 14.5, 4.2, P.text, [c('text-swap', 2.5, 0.35, { to: 'Arrived', style: 'roll' })], { weight: 800 }),
+        text('etas', '2.8 km', 14, 19.5, 2, P.muted, [c('fade', 0.4, 0.3, { direction: 'in' })], { body: true }),
+      ];
+    },
+    'what-if': () => [
+      dot('moon', 70, 46, 26, 'radial-gradient(circle at 34% 30%, #ffffff 0%, #e7e2d6 40%, #b9b2a3 75%, #8d8677 100%)', [c('pop', 0.6, 0.5, { direction: 'in', from: 0.2 }), c('float', 1.1, 1.2, { height: 4, cycles: 1 }), { ...c('pop', 2.4, 0.45, { direction: 'out' }), ease: 'back.in(2)' }]),
+      dot('earth', 28, 62, 22, `radial-gradient(circle at 34% 28%, #ffffff 0%, ${P.accent2} 30%, #1f6fbf 70%, #154d86 100%)`, [c('pop', 0.3, 0.5, { direction: 'in', from: 0.2 }), c('float', 0.8, PREVIEW_SECONDS - 0.8, { height: 3, cycles: 2 })]),
+      text('q', 'What if the Moon vanished?', 50, 16, 5.4, P.text, [move(style.motion.headline, 0.1, 0.5)], { w: 86 }),
+      rect('capbg', 50, 88, 46, 8, 'rgba(42,29,20,0.82)', [c('pop', 2.7, 0.3, { direction: 'in', from: 0.8 })], { radius: 4 }),
+      text('cap', 'the tides go quiet', 50, 88, 3, '#ffffff', [c('fade', 2.8, 0.25, { direction: 'in' })], { body: true }),
     ],
     liquid: () => [
       dot('blob', 50, 50, 54, `linear-gradient(135deg, ${P.accent}, ${P.accent2})`, [c('liquid', 0, PREVIEW_SECONDS, { speed: 0.9 })]),
