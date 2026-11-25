@@ -17,6 +17,7 @@ import { FullscreenPlayer } from './components/FullscreenPlayer';
 import { TranslateDialog } from './components/TranslateDialog';
 import { kitStatus, type KitStatus } from './lib/ai';
 import { lintScene, type LintIssue } from '@unysonplus/scene-player/lint';
+import { sceneWeight } from './lib/sceneWeight';
 import type { LayoutIssue } from '@unysonplus/scene-player/layout';
 import { clipEase, framesOf, isKeyframes, setKey, valueAt, writeFrames } from './lib/keyframes';
 import { addMarker } from './lib/markers';
@@ -885,7 +886,20 @@ export function App() {
   }, [commit, post]);
 
   // ---- Check scene + AI assist ----
-  const issues = useMemo(() => lintScene(scene), [scene]);
+  // The 3D weight (triangles, texture memory, file sizes), read from the models' files whenever they or Made for change.
+  const [weight, setWeight] = useState<{ summary: string | null; issues: LintIssue[] }>({ summary: null, issues: [] });
+  const weightKey = useMemo(() => {
+    const keys: string[] = [];
+    const walk = (list: Layer[]) => list.forEach((l) => { if (l.type === 'model') keys.push(`${l.id}:${l.name ?? ''}:${l.model.kind}:${l.model.src ?? l.model.device ?? ''}`); else if (l.type === 'group') walk(l.layers); });
+    walk(scene.layers);
+    return `${scene.mode ?? 'web'}|${keys.join('|')}`;
+  }, [scene]);
+  useEffect(() => {
+    let live = true;
+    const t = setTimeout(() => { sceneWeight(latest.current.scene).then((w) => { if (live) setWeight(w); }).catch(() => { /* a model that can't be read is left out */ }); }, 400);
+    return () => { live = false; clearTimeout(t); };
+  }, [weightKey]);
+  const issues = useMemo(() => [...lintScene(scene), ...weight.issues], [scene, weight.issues]);
   // Check the layout: measured on the stage at the moments each part has landed, on request (it moves the playhead).
   const [layoutCheck, setLayoutCheck] = useState<{ running: boolean; issues: LayoutIssue[]; done: boolean }>({ running: false, issues: [], done: false });
   useEffect(() => { setLayoutCheck((c) => (c.done || c.issues.length ? { running: false, issues: [], done: false } : c)); }, [scene]);
@@ -1523,7 +1537,7 @@ export function App() {
           </div>
           <div className="panel-body" role="tabpanel">
             {tab === 'check' && (
-              <CheckPanel issues={issues} aiReady={kit.state === 'ready'} onFix={fixIssue} onFixAll={fixAll} onShow={showIssue} onAskAi={askAiToFix}
+              <CheckPanel issues={issues} note={weight.summary} aiReady={kit.state === 'ready'} onFix={fixIssue} onFixAll={fixAll} onShow={showIssue} onAskAi={askAiToFix}
                 layout={layoutCheck} onCheckLayout={checkLayout} onShowLayout={showLayoutIssue} />
             )}
             {tab === 'inspect' && selection.camera && scene.camera?.keys.some((k) => k.id === selection.camera) ? (

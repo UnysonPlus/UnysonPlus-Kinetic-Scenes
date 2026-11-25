@@ -401,6 +401,24 @@ export function lintScene(input: Scene): LintIssue[] {
 
   if (video) issues.push(...videoChecks(scene, all));
 
+  // Thin lines under a moving camera shimmer: a line under about a pixel wide lands on different pixels every frame.
+  // 0.15 stage units is under a pixel on a phone-sized embed (360 px wide) and barely one at 640 px.
+  const keys = input.camera?.keys ?? [];
+  const camMoves = keys.length > 1 && keys.some((k: { x?: number; y?: number; zoom?: number }) => (k.x ?? 0) !== (keys[0].x ?? 0) || (k.y ?? 0) !== (keys[0].y ?? 0) || (k.zoom ?? 1) !== (keys[0].zoom ?? 1));
+  if (camMoves) {
+    const THIN = 0.15;
+    const thin = (l: Layer) => (l.type === 'path' && (l.strokeWidth ?? 0.3) < THIN) || (l.type === 'shape' && !!l.stroke && (l.strokeWidth ?? 0.1) < THIN);
+    const walk = (list: Layer[]) => list.forEach((l) => {
+      if (l.type === 'group') return walk(l.layers);
+      if (!thin(l)) return;
+      issues.push({
+        id: `thin-under-camera:${l.id}`, severity: 'info', layerId: l.id,
+        message: `${nameOf(l)} is a thin line (${(l as { strokeWidth?: number }).strokeWidth ?? (l.type === 'path' ? 0.3 : 0.1)} units) and the camera moves: thinner than a pixel on a phone, it shimmers as it pans or zooms. Make it at least 0.2 units.`,
+        fix: { label: 'Make it 0.2 units', apply: (s) => mapLayer(s, l.id, (x) => ({ ...x, strokeWidth: 0.2 }) as Layer) },
+      });
+    });
+    walk(input.layers);
+  }
   // Issues on a list's copies belong to the list: reported once (for its first copy), on the list itself,
   // with no fix (the copies are generated; the fix goes in the list's item).
   const out: LintIssue[] = [];

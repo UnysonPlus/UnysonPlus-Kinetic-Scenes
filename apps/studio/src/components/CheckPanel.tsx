@@ -8,6 +8,8 @@ import type { LayoutIssue } from '@unysonplus/scene-player/layout';
  */
 export function CheckPanel(props: {
   issues: LintIssue[];
+  /** A line about the scene as a whole (its 3D weight), shown above the list. */
+  note?: string | null;
   aiReady: boolean;
   onFix: (issue: LintIssue) => void;
   onFixAll: () => void;
@@ -29,6 +31,7 @@ export function CheckPanel(props: {
           Timing, readability and layout rules from professional motion design: text stays up long enough to read, is big
           enough on every screen, stays on the stage, and clips don't fight. Checked as you work.
         </p>
+        {props.note && <p className="insp-help check-note">{props.note}</p>}
       </div>
 
       {total > 0 && (

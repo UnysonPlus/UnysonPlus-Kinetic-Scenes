@@ -2,6 +2,7 @@ import { kitBase } from '../lib/ai';
 import { useEffect, useRef, useState } from 'react';
 import { gltfAnimations } from '../lib/gltfInfo';
 import { putFootage } from '../lib/footage';
+import { describeWeight, modelWeight, WEB_BUDGET } from '../lib/sceneWeight';
 import type { ModelLayer } from '@unysonplus/scene-player/types';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 
@@ -65,6 +66,20 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
     let live = true;
     if (m.kind !== 'gltf' || !m.src) { setAnims([]); return; }
     gltfAnimations(m.src).then((a) => { if (live) setAnims(a); }).catch(() => { if (live) setAnims([]); });
+    return () => { live = false; };
+  }, [m.kind, m.src]);
+
+  // The model's own weight, read from its file: shown under it, so a heavy model is seen as soon as it is loaded.
+  const [weight, setWeight] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    setWeight(null);
+    if (m.kind !== 'gltf' || !m.src) return;
+    modelWeight(m.src).then((w) => {
+      if (!live || !w) return;
+      const heavy = w.tris > WEB_BUDGET.modelTris || w.maxTex > WEB_BUDGET.maxTex;
+      setWeight(`This model: ${describeWeight(w)}.${heavy ? ` Heavy for a web page: aim for under ${WEB_BUDGET.modelTris.toLocaleString('en-US')} triangles and textures of ${WEB_BUDGET.maxTex} px at most.` : ''}`);
+    });
     return () => { live = false; };
   }, [m.kind, m.src]);
 
@@ -146,6 +161,7 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
               </div>
             )}
             {note && <p className="field-hint wide">{note}</p>}
+            {weight && <p className="field-hint wide">{weight}</p>}
           </>
         )}
         {(m.kind === 'text' || m.kind === 'svg') && (
