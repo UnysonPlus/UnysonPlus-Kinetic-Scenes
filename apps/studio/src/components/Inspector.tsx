@@ -1,7 +1,7 @@
 import type { Anchor, Breakpoint, Layer, Scene } from '@unysonplus/scene-player/types';
 import { StacksSection } from './StacksSection';
 import { BehindSection } from './BehindSection';
-import { SAFE_HREF } from '@unysonplus/scene-player/types';
+import { MAX_SCENE_SECONDS, SAFE_HREF } from '@unysonplus/scene-player/types';
 import { PRESET_CATALOG, defaultEaseFor, presetMeta, type PresetField } from '@unysonplus/scene-player/catalog';
 import { NAMED_EASES, NAMED_EASE_IDS } from '@unysonplus/scene-player/eases';
 import {
@@ -141,7 +141,7 @@ function SceneInspector({ scene, onCommit, time }: Props) {
 
       <Section title="Scene">
         <TextField label="Title" value={scene.title} onCommit={(v) => set({ title: v || undefined })} wide />
-        <NumberField label="Length" value={scene.duration} unit="s" step={0.1} min={0.5} max={600} onCommit={(v) => v && set({ duration: v })} />
+        <NumberField label="Length" value={scene.duration} unit="s" step={0.1} min={0.5} max={MAX_SCENE_SECONDS} onCommit={(v) => v && set({ duration: v })} />
       </Section>
 
       <Section title={vid ? 'Cover' : 'Playback'}>

@@ -11,6 +11,16 @@
 export const SCENE_FORMAT = 'unysonplus-scene';
 export const SCENE_VERSION = 1;
 
+/**
+ * The longest a single scene may be, in seconds. This is a guard against a typo turning a scene into a
+ * ten-hour timeline, not a limit on what the player can do: the clock, the camera and the audio engine
+ * are all duration-agnostic, and what actually costs a long scene is its layer count, not its length.
+ * It was 600 s while the Studio was for heroes, banners and short reels, which made a long-form
+ * explainer impossible to hold in one scene even though PLATFORM_LIMITS already allows YouTube 12 hours.
+ * Per-platform lengths stay the real advice — see PLATFORM_LIMITS in video.ts.
+ */
+export const MAX_SCENE_SECONDS = 3600;
+
 export interface Scene {
   format: typeof SCENE_FORMAT;
   version: number;

@@ -4,6 +4,7 @@ import { liveValue, useStableCallbacks } from './lib/liveValue';
 import { validateScene } from '@unysonplus/scene-player/validate';
 import { applyWordPins } from '@unysonplus/scene-player/words';
 import { clearSceneLink, readSceneLink, sceneLinkUrl } from './lib/sceneLink';
+import { MAX_SCENE_SECONDS } from '@unysonplus/scene-player/types';
 import type { HeightMode, Layer, Scene } from '@unysonplus/scene-player/types';
 import demo from './scenes/demo.json';
 import { previewHtml } from './lib/documents';
@@ -1297,7 +1298,7 @@ export function App() {
             if (!file) return;
             const [src, meta] = await Promise.all([putFootage(file), probeVideo(file)]);
             // Footage is what the graphics sit on: it starts with the scene and is cut where the file ends. Footage
-            // longer than the scene makes the scene as long as it (as a voice-over does), up to ten minutes.
+            // longer than the scene makes the scene as long as it (as a voice-over does), up to MAX_SCENE_SECONDS.
             const s = latest.current.scene;
             const len = meta.duration ? Math.round(meta.duration * 100) / 100 : 0;
             const r = addLayer(s, 'video', {
@@ -1305,7 +1306,7 @@ export function App() {
               ...(len && len < s.duration ? { end: len } : {}),
             } as Partial<Layer>, latest.current.scope);
             const grow = !latest.current.scope && len > s.duration;
-            commit(grow ? { ...r.scene, duration: Math.min(600, Math.ceil(len * 10) / 10) } : r.scene);
+            commit(grow ? { ...r.scene, duration: Math.min(MAX_SCENE_SECONDS, Math.ceil(len * 10) / 10) } : r.scene);
             setSelection({ layerId: r.id, clipId: null });
             setNotice(`Added ${file.name} (${meta.duration.toFixed(1)} s)${grow ? '; the scene now runs to its end' : ''}. It stays in this browser; exports and videos carry it.`);
           }} />

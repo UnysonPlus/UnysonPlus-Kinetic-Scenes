@@ -1,4 +1,4 @@
-import { SAFE_HREF, SCENE_FORMAT, SCENE_VERSION } from './types';
+import { MAX_SCENE_SECONDS, SAFE_HREF, SCENE_FORMAT, SCENE_VERSION } from './types';
 import type { Anchor, Box, Breakpoint, Clip, HeightMode, Layer, RepeatLayer, Scene } from './types';
 import { expandRepeat } from './repeat';
 import { PRESET_IDS } from './presets/catalog';
@@ -57,8 +57,8 @@ export function validateScene(input: unknown): ValidationResult {
 
   if (scene.format !== SCENE_FORMAT) fail('format', `must be "${SCENE_FORMAT}"`);
   if (scene.version !== SCENE_VERSION) fail('version', `must be ${SCENE_VERSION}`);
-  if (!isNum(scene.duration) || scene.duration <= 0 || scene.duration > 600) {
-    fail('duration', 'must be a number of seconds between 0 and 600');
+  if (!isNum(scene.duration) || scene.duration <= 0 || scene.duration > MAX_SCENE_SECONDS) {
+    fail('duration', `must be a number of seconds between 0 and ${MAX_SCENE_SECONDS}`);
   }
 
   // Stage
