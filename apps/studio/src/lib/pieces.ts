@@ -489,6 +489,58 @@ export const PIECES: Piece[] = [
       }));
     },
   },
+  {
+    id: 'doodles', name: 'Marker doodles', description: 'Yellow marker doodles draw themselves round the speaker one after another: a crown, a star, a sparkle, an arrow and a squiggle under the chin. With the face found (Follow the face), they follow it. Change the colour and the times.',
+    build: () => {
+      const ink = '#ffd23f';
+      const d = (id: string, path: string, x: number, y: number, w: number, extra: Record<string, unknown>, at: number) =>
+        ({ id, type: 'path', d: path, stroke: ink, strokeWidth: 0.6, box: { x, y, w, ...extra }, clips: [C('draw', at, 0.5)] } as Layer);
+      return group('doodles', 'Marker doodles', [
+        d('crown', 'M 0 80 L 10 20 L 30 55 L 50 5 L 70 55 L 90 20 L 100 80 Z', 50, 21, 18, { h: 9 }, 0.1),
+        d('star', 'M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z', 23, 30, 9, { ratio: 1 }, 0.45),
+        d('spark', 'M 50 0 L 50 100 M 0 50 L 100 50 M 18 18 L 82 82 M 82 18 L 18 82', 79, 27, 6, { ratio: 1 }, 0.75),
+        { ...d('arrow', 'M 100 8 Q 45 0 6 82', 80, 44, 16, { h: 10 }, 1.05), arrow: 'end' } as Layer,
+        d('squiggle', 'M 0 50 Q 12 5 25 50 T 50 50 T 75 50 T 100 50', 50, 57, 30, { h: 4 }, 1.4),
+      ], [C('follow', 0, 6, { at: 'face' })]);
+    },
+  },
+  {
+    id: 'logo-link', name: 'Logo link', description: 'Two logos pop in beside the speaker’s face, joined by a dashed line that draws itself across behind the head and then marches. Put your own logo pictures in the two circles (replace the letters) and change the labels.',
+    build: () => group('logo-link', 'Logo link', [
+      { id: 'logoA', type: 'shape', shape: 'ellipse', fill: '#ffffff', box: { x: 22, y: 30, w: 14, ratio: 1 }, clips: [withSound(C('pop', 0, 0.35), 'pop')] } as Layer,
+      text('logoAt', 'A', 22, 30, 6, { style: { fontSize: 6, fontWeight: 900, color: '#1c1e22' }, clips: [C('fade', 0.1, 0.2)] }),
+      { id: 'logoB', type: 'shape', shape: 'ellipse', fill: '#ffffff', box: { x: 78, y: 30, w: 14, ratio: 1 }, clips: [withSound(C('pop', 0.3, 0.35), 'pop')] } as Layer,
+      text('logoBt', 'B', 78, 30, 6, { style: { fontSize: 6, fontWeight: 900, color: '#1c1e22' }, clips: [C('fade', 0.4, 0.2)] }),
+      { id: 'link', type: 'path', d: 'M 0 70 Q 50 0 100 70', stroke: '#ffffff', strokeWidth: 0.45, dash: 1.2, box: { x: 50, y: 26, w: 42, h: 9 }, clips: [C('draw', 0.6, 0.6), C('march', 1.2, 4)] } as Layer,
+      text('labelA', 'Your app', 22, 38.5, 2.6, { style: { fontSize: 2.6, fontWeight: 700, color: '#ffffff' }, clips: [C('fade', 0.3, 0.3)] }),
+      text('labelB', 'Their app', 78, 38.5, 2.6, { style: { fontSize: 2.6, fontWeight: 700, color: '#ffffff' }, clips: [C('fade', 0.6, 0.3)] }),
+    ]),
+  },
+  {
+    id: 'glitch-bar', name: 'Glitchy progress bar', description: 'An "Uninstalling…" panel whose bar crawls, stalls at 38%, jumps to 94%, shakes and then glitches out of the frame: for "delete that app" or "the old way is gone". Change the words, the numbers and the times.',
+    build: () => group('glitch-bar', 'Glitchy progress bar', [
+      rect('panel', 50, 50, 82, 22, { fill: '#111418', radius: 2, stroke: 'rgba(255,255,255,0.12)', strokeWidth: 0.2 }),
+      text('title', 'Uninstalling…', 13, 45, 3.2, { box: { anchor: 'left' }, style: { fontSize: 3.2, fontWeight: 700, color: '#ffffff' } }),
+      text('pct', '0%', 87, 45, 3.2, { box: { anchor: 'right' }, style: { fontSize: 3.2, fontWeight: 700, color: '#ff6b6b' },
+        clips: [C('text-swap', 0.6, 0.2, { to: '12%', style: 'roll' }), C('text-swap', 1.1, 0.2, { to: '37%', style: 'roll' }), C('text-swap', 1.9, 0.2, { to: '38%', style: 'roll' }), C('text-swap', 2.5, 0.2, { to: '94%', style: 'roll' })] }),
+      rect('track', 50, 53, 74, 2.2, { fill: '#2a2f37', radius: 1.1,
+        clips: [C('progress', 0.3, 0.9, { from: 0, to: 37, color: '#ff3b47' }, 'power1.out'), C('progress', 1.2, 1, { from: 37, to: 38, color: '#ff3b47' }, 'none'), C('progress', 2.3, 0.4, { from: 38, to: 94, color: '#ff3b47' }, 'power2.in')] }),
+    ], [C('pop', 0, 0.35), C('shake', 2.75, 0.3), withSound(C('tr-glitch', 3.05, 0.55, { direction: 'out', intensity: 90 }), 'glitch')]),
+  },
+  {
+    id: 'phone-fan', name: 'Phone fan', description: 'Five phones are dealt in one at a time and fan out like a hand of cards behind the speaker, each screen a reel cover. Change the screens (any picture or colour) and the times.',
+    build: () => {
+      const angles = [-28, -14, 0, 14, 28];
+      const fills = ['linear-gradient(160deg,#ff7a59,#a14dff)', 'linear-gradient(160deg,#2ad38b,#0b6e7a)', 'linear-gradient(160deg,#5580ff,#1c1e22)', 'linear-gradient(160deg,#ffb020,#ff3b47)', 'linear-gradient(160deg,#13b1cd,#5580ff)'];
+      return group('phone-fan', 'Phone fan', angles.map((a, i) => {
+        const x = 50 + a * 0.95, y = 46 + Math.abs(a) * 0.13;
+        return group(`phone${i}`, `Phone ${i + 1}`, [
+          { id: `body${i}`, type: 'shape', shape: 'rect', fill: '#0f1115', stroke: '#3a3f47', strokeWidth: 0.2, radius: 2.4, box: { x, y, w: 20, ratio: 0.47, rotate: a }, clips: [] } as Layer,
+          { id: `screen${i}`, type: 'shape', shape: 'rect', fill: fills[i], radius: 1.8, box: { x, y, w: 18.2, ratio: 0.45, rotate: a }, clips: [] } as Layer,
+        ], [withSound(C('slide', 0.15 + i * 0.18, 0.45, { from: 'bottom' }), 'slide')]);
+      }));
+    },
+  },
 ];
 
 /** A clip with a built-in sound that plays as it starts. */

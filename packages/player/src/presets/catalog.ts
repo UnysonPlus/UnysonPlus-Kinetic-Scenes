@@ -638,6 +638,27 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [{ key: 'radius', label: 'Radius', type: 'number', min: 5, max: 60, step: 1, unit: 'su' }, { key: 'tilt', label: 'Tilt', type: 'number', min: 0, max: 1, step: 0.02 }, { key: 'turns', label: 'Turns', type: 'number', min: -5, max: 5, step: 0.25 }, { key: 'start', label: 'Start angle', type: 'number', min: 0, max: 360, step: 5, unit: '°' }, { key: 'half', label: 'Show', type: 'select', options: [{ value: 'all', label: 'The whole ring' }, { value: 'far', label: 'The far side (behind the person)' }, { value: 'near', label: 'The near side (in front)' }] }],
   },
   {
+    id: 'tunnel', label: 'Tunnel', category: 'ambient', appliesTo: ['video', 'image'],
+    description: 'The room tunnels away: the picture drawn inside itself as rings (ovals or frames), each a little darker and turned, rushing away into a dark centre. Put it on the room behind a cut-out person for a "down the rabbit hole" moment.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { speed: 2, twist: 6, dark: 55, shape: 'oval', hold: false },
+    fields: [{ key: 'speed', label: 'Rings per clip', type: 'number', min: 0.25, max: 10, step: 0.25 }, { key: 'twist', label: 'Twist', type: 'number', min: -30, max: 30, step: 1, unit: '°' }, { key: 'dark', label: 'Darker towards the centre', type: 'number', min: 0, max: 100, step: 5, unit: '%' }, { key: 'shape', label: 'Rings', type: 'select', options: [{ value: 'oval', label: 'Ovals' }, { value: 'frame', label: 'Frames' }] }, { key: 'hold', label: 'Stay after the clip', type: 'boolean' }],
+  },
+  {
+    id: 'flip-clock', label: 'Flip clock', category: 'text', appliesTo: ['text'],
+    description: 'A split-flap card counts from one number to another (3, 2, 1), each step flipping down like an airport board, in the layer\u2019s own font and colour on a dark card. Pairs with a tick for each flip.',
+    defaultEase: 'none', defaultDuration: 3,
+    defaults: { from: 3, to: 1, card: '#1c1e22' },
+    fields: [{ key: 'from', label: 'From', type: 'number', min: -999, max: 999, step: 1 }, { key: 'to', label: 'To', type: 'number', min: -999, max: 999, step: 1 }, { key: 'card', label: 'Card', type: 'color' }],
+  },
+  {
+    id: 'crayon', label: 'Crayon', category: 'text', appliesTo: ['text'],
+    description: 'The word is written in crayon, letter after letter as if drawn left to right, in a waxy, grainy line, then an underline is scribbled under it. Takes the layer\u2019s font and colour; a heavy, rounded font looks most like crayon. Behind the speaker\u2019s head, put it under the cut-out person.',
+    defaultEase: 'none', defaultDuration: 1.6,
+    defaults: { direction: 'in', underline: true },
+    fields: [DIRECTION, { key: 'underline', label: 'Then underline it', type: 'boolean' }],
+  },
+  {
     id: 'jiggle', label: 'Jiggle', category: 'emphasis', appliesTo: ALL,
     description: 'The phone home-screen wobble: quick, slight back-and-forth tilting, as before a delete or to say "you can change this".',
     defaultEase: 'none', defaultDuration: 1.2,

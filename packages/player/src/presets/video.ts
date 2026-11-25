@@ -817,6 +817,154 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     }, { always: true });
   },
 
+  tunnel(ctx) {
+    // The room tunnels away: the picture drawn again and again inside itself as oval rings, each a little darker and
+    // turned, rushing away into a dark centre ("down the rabbit hole"). Put it on the room behind a cut-out person.
+    // Drawn from the playing footage every frame, like Copies.
+    const p = ctx.params;
+    const speed = num(p, 'speed', 2);
+    const twist = (num(p, 'twist', 6) / 180) * Math.PI;
+    const dark = clamp01(num(p, 'dark', 55) / 100);
+    const oval = pick(p, 'shape', ['oval', 'frame'] as const, 'oval') === 'oval';
+    const media = mediaOf(ctx.el);
+    if (!media) return;
+    const { holder, fit } = layerCanvas(ctx, 'upw-tunnel');
+    let progress = 0, active = false;
+    const paint = () => {
+      holder.style.opacity = active ? '1' : '0';
+      media.style.visibility = active ? 'hidden' : '';
+      if (!active) return;
+      const { g, w, h } = fit();
+      if (!g) return;
+      g.clearRect(0, 0, w, h);
+      g.fillStyle = '#000';
+      g.fillRect(0, 0, w, h);
+      // Each level is the picture at 72% of the one outside it; one cycle moves every level in by one, so it loops.
+      const k = 0.72;
+      const phase = (progress * speed) % 1;
+      const cx = w / 2, cy = h * 0.46;
+      for (let lvl = 0; lvl < 9; lvl++) {
+        const s = k ** (lvl + phase) / k;
+        const fw = w * s, fh = h * s;
+        if (fw < 3) break;
+        g.save();
+        g.translate(cx, cy);
+        g.rotate((lvl + phase) * twist);
+        g.beginPath();
+        if (oval) g.ellipse(0, 0, fw * 0.62, fh * 0.56, 0, 0, Math.PI * 2);
+        else g.rect(-fw / 2, -fh / 2, fw, fh);
+        g.clip();
+        drawCover(g, media, -fw / 2, -fh / 2, fw, fh);
+        g.fillStyle = `rgba(0,0,0,${Math.min(0.92, dark * (lvl + phase) / 4).toFixed(3)})`;
+        g.fillRect(-fw / 2, -fh / 2, fw, fh);
+        g.restore();
+      }
+    };
+    ctx.late(paint);
+    drive(ctx, (e) => { progress = e; active = e > 0 && e < 1 ? true : e >= 1 && p.hold === true; paint(); }, { ease: false, always: true });
+  },
+
+  'flip-clock'(ctx) {
+    // A split-flap card counts from one number to another (3, 2, 1), each step flipping down like an airport
+    // board: the top half of the old number folds down and the bottom half of the new one lands. It takes the
+    // layer's font, size and colour; the words of the layer are hidden while it runs.
+    const p = ctx.params;
+    const from = Math.round(num(p, 'from', 3)), to = Math.round(num(p, 'to', 1));
+    const card = color(p, 'card', '#1c1e22');
+    const steps = Math.abs(to - from);
+    const dir = to >= from ? 1 : -1;
+    const numberAt = (i: number) => String(from + dir * Math.max(0, Math.min(steps, i)));
+    const digits = Math.max(numberAt(0).length, numberAt(steps).length);
+    const words = ctx.el.querySelector<HTMLElement>('.upw-txt');
+    const box = owned(ctx, 'upw-flip', 'shared');
+    if (!box.firstElementChild) {
+      box.innerHTML = ['ts', 'bs', 'tf', 'bf'].map((c) => `<div data-h="${c}"><span></span></div>`).join('');
+    }
+    Object.assign(box.style, {
+      position: 'absolute', left: '50%', top: '50%', translate: '-50% -50%', width: `${0.62 * digits + 0.5}em`, height: '1.45em',
+      perspective: '5em', lineHeight: '1.45em', textAlign: 'center', fontVariantNumeric: 'tabular-nums', pointerEvents: 'none',
+    });
+    const half = (h: string) => box.querySelector<HTMLElement>(`[data-h="${h}"]`)!;
+    for (const h of ['ts', 'bs', 'tf', 'bf']) {
+      const el = half(h), top = h[0] === 't';
+      Object.assign(el.style, {
+        position: 'absolute', left: '0', right: '0', height: '50%', top: top ? '0' : '50%', overflow: 'hidden', background: card,
+        borderRadius: top ? '.12em .12em 0 0' : '0 0 .12em .12em', transformOrigin: top ? '50% 100%' : '50% 0%',
+        backfaceVisibility: 'hidden', boxShadow: top ? 'inset 0 -.02em 0 rgba(0,0,0,.6)' : 'inset 0 .02em 0 rgba(255,255,255,.06)',
+      });
+      Object.assign((el.firstElementChild as HTMLElement).style, { display: 'block', height: '1.45em', position: 'relative', top: top ? '0' : '-0.725em' });
+    }
+    const set = (h: string, t: string) => { (half(h).firstElementChild as HTMLElement).textContent = t; };
+    if (words) {
+      const cs = getComputedStyle(words);
+      Object.assign(box.style, { fontSize: cs.fontSize, fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, color: cs.color });
+    }
+    drive(ctx, (raw) => {
+      const on = raw > 0;
+      box.style.opacity = on ? '' : '0';
+      if (words) words.style.opacity = on ? '0' : '';
+      if (!on) return;
+      // Step i shows numberAt(i); the first 30% of each step is the flip from the one before.
+      const span = 1 / (steps + 1);
+      const i = Math.min(steps, Math.floor(raw / span));
+      const f = i === 0 ? 1 : clamp01(((raw - i * span) / span) / 0.3);
+      const cur = numberAt(i), prev = numberAt(i - 1);
+      set('ts', cur); set('bs', f < 0.5 ? prev : cur);
+      set('tf', prev); set('bf', cur);
+      const tf = half('tf'), bf = half('bf');
+      const a = f < 0.5 ? f * 2 : 1, b = f < 0.5 ? 0 : (f - 0.5) * 2;
+      tf.style.transform = `rotateX(${(-90 * a).toFixed(2)}deg)`;
+      tf.style.visibility = f < 0.5 ? '' : 'hidden';
+      bf.style.transform = `rotateX(${(90 - 90 * b).toFixed(2)}deg)`;
+      bf.style.visibility = f >= 0.5 && f < 1 ? '' : 'hidden';
+    }, { ease: false, always: true });
+  },
+
+  crayon(ctx) {
+    // A word written in crayon: the letters go down one after another as if drawn left to right, in a waxy,
+    // grainy line (an SVG filter roughens the edges and leaves paper showing through), then an underline is
+    // scribbled under it. Takes the layer's own font and colour; a rounded, heavy font looks most like crayon.
+    const p = ctx.params;
+    const out = isOut(p);
+    const under = p.underline !== false;
+    const words = ctx.el.querySelector<HTMLElement>('.upw-txt');
+    if (!words) return;
+    const host = wordsHost(ctx);
+    let svg = host.querySelector<SVGSVGElement>(':scope > svg.upw-crayon-f');
+    if (!svg) {
+      const id = `upw-crayon-${++stampSeq}`;
+      const s1 = Math.floor(ctx.rand(3) * 900) + 1, s2 = Math.floor(ctx.rand(4) * 900) + 1;
+      host.insertAdjacentHTML('beforeend', `<svg class="upw-crayon-f" width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="${id}" x="-5%" y="-10%" width="110%" height="120%">`
+        + `<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="${s1}" result="e"/>`
+        + `<feDisplacementMap in="SourceGraphic" in2="e" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="r"/>`
+        + `<feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="${s2}" result="g"/>`
+        + `<feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.4 0 0 0 1.85" result="k"/>`
+        + `<feComposite in="r" in2="k" operator="in"/></filter></svg>`);
+      svg = host.querySelector<SVGSVGElement>(':scope > svg.upw-crayon-f')!;
+      svg.dataset.f = id;
+    }
+    words.style.filter = `url(#${svg.dataset.f})`;
+    const line = owned({ ...ctx, el: host }, 'upw-crayon-line', 'shared');
+    Object.assign(line.style, {
+      position: 'absolute', left: '-2%', width: '104%', bottom: '-.12em', height: '.09em', background: 'currentColor', borderRadius: '99px',
+      transformOrigin: '0 50%', rotate: '-1.5deg', display: under ? 'block' : 'none', pointerEvents: 'none',
+    });
+    const chars = ctx.chars;
+    chain(ctx, (raw) => {
+      const e = out ? 1 - raw : raw;
+      const write = clamp01(e / (under ? 0.78 : 1));
+      const n = chars.length || 1;
+      chars.forEach((c, i) => {
+        const lp = clamp01(write * n - i);
+        c.style.clipPath = lp >= 1 ? '' : `inset(-20% ${((1 - lp) * 100).toFixed(1)}% -20% 0)`;
+        c.style.opacity = lp > 0 ? '' : '0';
+      });
+      const u = under ? clamp01((e - 0.78) / 0.22) : 0;
+      line.style.transform = `scaleX(${u.toFixed(4)})`;
+      line.style.opacity = u > 0 ? '1' : '0';
+    }, { ease: false });
+  },
+
   jiggle(ctx) {
     // The phone home-screen wobble: a quick, slight back-and-forth tilt (before a delete, or "edit me").
     const amp = num(ctx.params, 'angle', 2.5);
@@ -1202,18 +1350,23 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     // Keeps the layer on the face in a piece of footage (found by the AI Dev Kit), or beside it, while the clip
     // runs: a circle drawn round the face, a label over the head, icons orbiting it, a callout that moves with them.
     const p = ctx.params;
-    const id = typeof p.layer === 'string' ? p.layer : '';
+    const picked = typeof p.layer === 'string' ? p.layer : '';
     const where = pick(p, 'at', ['face', 'above', 'below', 'left', 'right'] as const, 'face');
     const gap = num(p, 'gap', 0.15);
     const grow = p.scale === true;
     const outer = ctx.el.closest<HTMLElement>('.upw-layer');
     const stage = ctx.el.closest<HTMLElement>('.upw-stage');
-    if (!outer || !stage || !id) return;
+    if (!outer || !stage) return;
+    type Tracked = HTMLElement & { upwTrack?: Array<{ t: number; x: number; y: number; w: number; h: number }> };
+    // No footage picked: the first footage whose face has been found (a piece inserted before the face was found works once it is).
+    const hostOf = (): Tracked | null => picked
+      ? stage.querySelector<Tracked>(`.upw-layer[data-layer="${CSS.escape(picked)}"]`)
+      : (Array.from(stage.querySelectorAll<Tracked>('.upw-layer.upw-video')).find((l) => (l as Tracked).upwTrack?.length) ?? null);
     let on = false;
     let firstW = 0;
     const place = () => {
       if (!on) { ctx.el.style.translate = ''; if (grow) ctx.el.style.scale = ''; return; }
-      const host = stage.querySelector<HTMLElement & { upwTrack?: Array<{ t: number; x: number; y: number; w: number; h: number }> }>(`.upw-layer[data-layer="${CSS.escape(id)}"]`);
+      const host = hostOf();
       const video = host?.querySelector('video');
       const track = host?.upwTrack;
       if (!host || !video || !track?.length || !video.videoWidth) return;
