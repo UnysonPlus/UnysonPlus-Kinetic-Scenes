@@ -3,7 +3,8 @@ import { liveValue, useLive, type LiveValue } from '../lib/liveValue';
 const STILL = liveValue(0);
 import { PauseIcon, PlayIcon, RestartIcon } from './icons';
 
-const fmt = (t: number) => t.toFixed(2);
+import { clock, spokenClock } from '../lib/clock';
+const fmt = (t: number) => clock(t);
 
 /** Play, pause, jump to the start and scrub. */
 export function Transport(props: {
@@ -12,6 +13,8 @@ export function Transport(props: {
   clock?: LiveValue<number>;
   duration: number;
   playing: boolean;
+  /** Play pressed, the next seconds still loading: how much has arrived (0-1), else null. */
+  buffering?: number | null;
   disabled: boolean;
   onPlay: () => void;
   onPause: () => void;
@@ -22,7 +25,10 @@ export function Transport(props: {
   soundWaiting?: boolean;
   onSound?: (on: boolean) => void;
 }) {
-  const { duration, playing, disabled } = props;
+  const { duration, disabled } = props;
+  const loading = props.buffering !== null && props.buffering !== undefined;
+  // Waiting to start counts as playing for the button: clicking it again stops the wait.
+  const playing = props.playing || loading;
   const live = useLive(props.clock ?? STILL);
   const time = props.clock ? live : props.time;
   const pct = duration > 0 ? Math.min(100, (time / duration) * 100) : 0;
@@ -58,10 +64,16 @@ export function Transport(props: {
           </svg>
         </button>
       )}
+      {loading && (
+        <span className="buffer-note" role="status" title="Loading the footage, pictures and sounds of the next few seconds. It plays as soon as they are in.">
+          <span className="buffer-ring" style={{ ['--p' as string]: String(props.buffering) }} aria-hidden="true" />
+          Loading {Math.round((props.buffering ?? 0) * 100)}%
+        </span>
+      )}
       <span className="time mono" aria-live="off">
         <span className="time-now">{fmt(time)}</span>
         <span className="time-sep">/</span>
-        {fmt(duration)} s
+        {fmt(duration)}
       </span>
       <input
         className="scrub"
@@ -73,7 +85,7 @@ export function Transport(props: {
         disabled={disabled}
         onChange={(e) => props.onSeek(Number(e.target.value))}
         aria-label="Playhead"
-        aria-valuetext={`${fmt(time)} of ${fmt(duration)} seconds`}
+        aria-valuetext={`${spokenClock(time)} of ${spokenClock(duration)}`}
         style={{ ['--pct' as string]: `${pct}%` }}
       />
     </div>

@@ -64,7 +64,7 @@ export interface MountOptions {
   lazy?: boolean;
 }
 
-export type PlayerEvent = 'update' | 'play' | 'pause' | 'complete' | 'breakpoint' | 'rebuild';
+export type PlayerEvent = 'update' | 'play' | 'pause' | 'complete' | 'breakpoint' | 'rebuild' | 'buffering';
 
 export interface LayerLayout {
   box: Box;
@@ -84,6 +84,12 @@ export interface ScenePlayer {
   readonly duration: number;
   readonly time: number;
   readonly playing: boolean;
+  /**
+   * While play waits for the pictures, footage and sounds of the next few seconds (or for footage that stalled):
+   * how much of them has loaded, 0 to 1. Null when not waiting. `playing` is false meanwhile; the 'buffering'
+   * event fires when it starts, moves and ends, and playback starts by itself once everything is there.
+   */
+  readonly buffering: number | null;
   readonly breakpoint: string | null;
   play(): void;
   pause(): void;
@@ -337,6 +343,147 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     if (!sound) return;
     if (tl && !tl.paused() && !reduced) sound.play(tl.time());
     else sound.stop();
+  }
+  // Loading before playing. Play used to start the clock at once, so footage that had not arrived stayed blank (or
+  // stuck on its first frame) while the rest of the scene and the voice ran on without it. Now play first looks at
+  // what the next few seconds show and say; if any of it is still loading, the clock waits (a ring shows how much
+  // has arrived) and then starts by itself. Footage that stalls while playing holds the clock the same way.
+  const AHEAD = 4;
+  let buffer: { progress: number; stop: (go: boolean) => void } | null = null;
+  let bufferEl: HTMLElement | null = null;
+
+  /** The pictures, footage and sounds the scene shows or plays between t and t + AHEAD. */
+  function mediaAround(t: number) {
+    const els: Array<HTMLVideoElement | HTMLImageElement> = [];
+    for (const r of flatRefs(layers)) {
+      const from = r.layer.start ?? 0, to = r.layer.end ?? scene.duration;
+      if (from > t + AHEAD || to < t) continue;
+      if (r.media) els.push(r.media);
+      else if (r.layer.type === 'image') r.outer.querySelectorAll('img').forEach((img) => els.push(img));
+    }
+    const sounds = sound
+      ? (scene.audio ?? []).filter((c) => c.start <= t + AHEAD && (c.duration === undefined || c.start + c.duration >= t)).map((c) => c.src)
+      : [];
+    return { els, sounds: [...new Set(sounds)] };
+  }
+
+  /** How far a picture or video has loaded, 0 to 1 (1 = enough to play on from where it is now). */
+  function mediaProgress(m: HTMLVideoElement | HTMLImageElement): number {
+    if (m.dataset.upwSrc) return 0;
+    if (m instanceof HTMLImageElement) return m.complete ? 1 : 0;
+    if (m.error || (!m.currentSrc && !m.getAttribute('src'))) return 1;
+    if (m.readyState >= 3) return 1;
+    // The seconds already loaded from the current point, against the seconds the next part needs.
+    const need = Number.isFinite(m.duration) ? Math.min(AHEAD, Math.max(0.1, m.duration - m.currentTime)) : AHEAD;
+    for (let i = 0; i < m.buffered.length; i++) {
+      if (m.buffered.start(i) <= m.currentTime + 0.05 && m.buffered.end(i) > m.currentTime) {
+        return Math.min(0.95, (m.buffered.end(i) - m.currentTime) / need);
+      }
+    }
+    return m.readyState >= 1 ? 0.05 : 0;
+  }
+
+  function paintBuffer() {
+    if (!buffer || !bufferEl) return;
+    const pct = Math.round(buffer.progress * 100);
+    bufferEl.style.setProperty('--p', String(buffer.progress));
+    const label = bufferEl.querySelector('b');
+    if (label) label.textContent = `${pct}%`;
+    bufferEl.setAttribute('aria-valuenow', String(pct));
+  }
+
+  /**
+   * Holds the clock until what the next seconds need has loaded, then plays. Returns false when everything is
+   * already there (the caller plays now), true when it is waiting.
+   */
+  function waitForMedia(): boolean {
+    if (!tl) return false;
+    const { els, sounds } = mediaAround(tl.time());
+    // Files held back until the scene comes near the screen are needed now.
+    for (const m of els) {
+      const src = m.dataset.upwSrc;
+      if (!src) continue;
+      delete m.dataset.upwSrc;
+      if (m instanceof HTMLVideoElement) m.preload = 'auto';
+      m.src = src;
+    }
+    const measure = () => {
+      const parts = els.map(mediaProgress).concat(sounds.map((s) => (sound?.loaded(s) ? 1 : 0)));
+      return parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : 1;
+    };
+    if (measure() >= 1) return false;
+
+    const events = ['loadeddata', 'canplay', 'canplaythrough', 'progress', 'error', 'load', 'seeked'];
+    const check = () => {
+      if (!buffer) return;
+      const p = measure();
+      if (p >= 1) { buffer.stop(true); return; }
+      buffer.progress = Math.max(buffer.progress, p);
+      paintBuffer();
+      emit('buffering');
+    };
+    els.forEach((m) => events.forEach((e) => m.addEventListener(e, check)));
+    const poll = win.setInterval(check, 250); // sounds, and browsers that skip an event
+    // A quick load never shows the ring (no flash): it appears after a moment.
+    const show = win.setTimeout(() => {
+      if (!buffer) return;
+      if (!bufferEl) {
+        bufferEl = doc.createElement('div');
+        bufferEl.className = 'upw-buffer';
+        bufferEl.setAttribute('role', 'progressbar');
+        bufferEl.setAttribute('aria-label', 'Loading the scene');
+        bufferEl.setAttribute('aria-valuemin', '0');
+        bufferEl.setAttribute('aria-valuemax', '100');
+        bufferEl.innerHTML = '<i></i><span><b>0%</b><small>Loading</small></span>';
+      }
+      root.appendChild(bufferEl);
+      root.dataset.buffering = '';
+      paintBuffer();
+    }, 300);
+    // Never wait for ever: a file that will not load must not stop the scene.
+    const giveUp = win.setTimeout(() => buffer?.stop(true), 20000);
+    buffer = {
+      progress: measure(),
+      stop: (go) => {
+        els.forEach((m) => events.forEach((e) => m.removeEventListener(e, check)));
+        win.clearInterval(poll);
+        win.clearTimeout(show);
+        win.clearTimeout(giveUp);
+        buffer = null;
+        delete root.dataset.buffering;
+        bufferEl?.remove();
+        emit('buffering');
+        if (go && wantPlaying && tl && !destroyed) {
+          tl.play();
+          syncAudio();
+          emit('play');
+          emit('update');
+        }
+      },
+    };
+    emit('buffering');
+    return true;
+  }
+  function stopWaiting() { buffer?.stop(false); }
+
+  /** Footage that runs out of loaded video while playing holds the whole scene until it can go on. */
+  function watchStall(v: HTMLVideoElement, layer: { start?: number; end?: number }) {
+    const el = v as HTMLVideoElement & { upwStall?: boolean };
+    if (el.upwStall) return;
+    el.upwStall = true;
+    let timer = 0;
+    v.addEventListener('waiting', () => {
+      win.clearTimeout(timer);
+      // A short hiccup (a correction seek) is not worth stopping for.
+      timer = win.setTimeout(() => {
+        if (!tl || tl.paused() || buffer || destroyed || v.readyState >= 3 || !v.isConnected) return;
+        const now = tl.time();
+        if (now < (layer.start ?? 0) || now > (layer.end ?? scene.duration)) return;
+        tl.pause();
+        sound?.stop();
+        if (!waitForMedia()) { tl.play(); syncAudio(); }
+      }, 350);
+    });
   }
   function setupSound() {
     if (!hasAudio()) {
@@ -670,6 +817,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       else if (layer.type === 'video' && refs.media instanceof HTMLVideoElement) {
         const v = refs.media;
         lateFns.push(() => syncFootage(v, layer, t.time(), !!tl && !tl.paused()));
+        watchStall(v, layer);
       }
       // The cursor goes last: it measures the layers it points at after they have drawn this frame.
       else if (layer.type === 'cursor') lateFns.push(() => drawCursor(inner, layer, t.time(), easeFnOf));
@@ -777,7 +925,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   const io = new IntersectionObserver((entries) => {
     inView = entries.some((e) => e.isIntersecting);
     if (!tl || reduced) return;
-    if (inView && wantPlaying && armed && tl.paused()) { tl.play(); syncAudio(); } else if (!inView && !tl.paused() && scene.playback.loop) { tl.pause(); syncAudio(); }
+    if (inView && wantPlaying && armed && tl.paused() && !buffer) { if (!waitForMedia()) { tl.play(); syncAudio(); } } else if (!inView && !tl.paused() && scene.playback.loop) { tl.pause(); syncAudio(); }
   }, { threshold: 0.2 });
   io.observe(root);
 
@@ -818,6 +966,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       return out;
     },
     get playing() { return !!tl && !tl.paused(); },
+    get buffering() { return buffer ? buffer.progress : null; },
     get waiting() { return waiting; },
     setCamera(on: boolean) { cameraOn = on; applyCamera(); },
     async whenReady(limitMs = 20000) {
@@ -945,12 +1094,15 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       wantPlaying = true;
       // At the end (a scene that stops there, or one that loops its last part): start over.
       if (tl.time() >= scene.duration - 1e-3) tl.time(0);
+      // Pictures, footage or sounds of the next seconds still loading: start once they are in (waitForMedia).
+      if (buffer || waitForMedia()) return;
       tl.play();
       syncAudio();
       emit('play');
     },
     pause() {
       if (!tl) return;
+      stopWaiting();
       cancelLoop();
       wantPlaying = false;
       tl.pause();
@@ -960,6 +1112,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     },
     seek(seconds) {
       if (!tl) return;
+      stopWaiting();
       cancelLoop();
       wantPlaying = false;
       tl.pause();
@@ -1036,6 +1189,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      stopWaiting();
       cancelLoop();
       tl?.kill();
       host.removeEventListener('focusin', onFocusIn);

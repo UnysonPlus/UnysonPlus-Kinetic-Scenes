@@ -154,6 +154,8 @@ interface PreviewState {
   time: number;
   duration: number;
   playing: boolean;
+  /** Play pressed, waiting for the footage, pictures and sounds of the next seconds: how much has loaded (0-1). */
+  buffering: number | null;
   breakpoint: string | null;
   stageHeight: number;
 }
@@ -196,7 +198,7 @@ export function App() {
   const [kit, setKit] = useState<KitStatus>({ state: 'checking' });
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [queued, setQueued] = useState<QueuedRequest | null>(null);
-  const [state, setState] = useState<PreviewState>({ time: 0, duration: scene.duration, playing: false, breakpoint: null, stageHeight: 0 });
+  const [state, setState] = useState<PreviewState>({ time: 0, duration: scene.duration, playing: false, buffering: null, breakpoint: null, stageHeight: 0 });
   /** Sound in the Studio (the preview's audio, played here in step with it). */
   const [soundOn, setSoundOn] = useState(true);
   const { engine: audioEngine, info: audioInfo, peaksPerSecond, waiting: soundWaiting } = useSceneAudio(scene, state, soundOn);
@@ -671,7 +673,7 @@ export function App() {
       return true;
     }
     if (k.mod) return false;
-    if (k.code === 'Space') { if (st.playing) pause(); else play(); return true; }
+    if (k.code === 'Space') { if (st.playing || st.buffering !== null) pause(); else play(); return true; }
     if (key === 'Home') { seek(0); return true; }
     if (key === 'F2' && latest.current.selection.layerId) { setRenaming(latest.current.selection.layerId); return true; }
     if (!k.mod && (key === 'm' || key === 'M') && !latest.current.scope) { commit(addMarker(latest.current.scene, latest.current.state.time)); setNotice('Marker added at the playhead.'); return true; }
@@ -764,10 +766,11 @@ export function App() {
           // layout) updates it at once.
           clock.set(m.time);
           const now = performance.now();
-          const onlyTime = m.playing && st.playing && m.duration === st.duration && m.breakpoint === st.breakpoint && m.stageHeight === st.stageHeight;
+          const buffering = typeof m.buffering === 'number' ? m.buffering : null;
+          const onlyTime = m.playing && st.playing && buffering === st.buffering && m.duration === st.duration && m.breakpoint === st.breakpoint && m.stageHeight === st.stageHeight;
           if (onlyTime && now - lastStateAt.current < 200) break;
           lastStateAt.current = now;
-          setState({ time: m.time, duration: m.duration, playing: m.playing, breakpoint: m.breakpoint, stageHeight: m.stageHeight });
+          setState({ time: m.time, duration: m.duration, playing: m.playing, buffering, breakpoint: m.breakpoint, stageHeight: m.stageHeight });
           break;
         }
         case 'upw:layout-check':
@@ -1528,6 +1531,7 @@ export function App() {
             clock={clock}
             duration={state.duration}
             playing={state.playing}
+            buffering={state.buffering}
             disabled={!ready}
             onPlay={play}
             onPause={pause}

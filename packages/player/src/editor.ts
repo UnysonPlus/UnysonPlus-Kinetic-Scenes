@@ -296,13 +296,13 @@ function start() {
       ov.style.visibility = player.cameraActive ? 'hidden' : '';
       const stage = document.querySelector('.upw-stage');
       send({
-        type: 'upw:state', time: player.time, duration: player.duration, playing: player.playing,
+        type: 'upw:state', time: player.time, duration: player.duration, playing: player.playing, buffering: player.buffering,
         breakpoint: player.breakpoint, stageHeight: stage ? Math.round(stage.getBoundingClientRect().height) : 0,
         camera: player.cameraActive,
       });
     });
   };
-  (['update', 'play', 'pause', 'complete', 'breakpoint', 'rebuild'] as const).forEach((e) => player.on(e, report));
+  (['update', 'play', 'pause', 'complete', 'breakpoint', 'rebuild', 'buffering'] as const).forEach((e) => player.on(e, report));
   (['breakpoint', 'rebuild'] as const).forEach((e) => player.on(e, redraw));
   player.on('rebuild', markLocked);
   markLocked();

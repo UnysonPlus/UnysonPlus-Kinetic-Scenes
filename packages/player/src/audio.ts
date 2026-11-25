@@ -61,6 +61,8 @@ export class SceneAudio {
   private ctx: Ctx | null = null;
   private master: GainNode | null = null;
   private buffers = new Map<string, Promise<AudioBuffer | null>>();
+  /** Files whose loading has finished (decoded, or failed: either way nothing more to wait for). */
+  private settled = new Set<string>();
   private live: Array<{ src: AudioBufferSourceNode; gain: GainNode }> = [];
   private clips: AudioClip[] = [];
   private playingFrom: { time: number; at: number } | null = null;
@@ -171,12 +173,19 @@ export class SceneAudio {
     return this.load(src);
   }
 
+  /** Has this file finished loading? Starts loading it when it has not been asked for yet. */
+  loaded(src: string): boolean {
+    if (!this.settled.has(src)) void this.load(src);
+    return this.settled.has(src);
+  }
+
   dispose() {
     this.stop();
     this.ctx?.close().catch(() => {});
     this.ctx = null;
     this.onstate = null;
     this.buffers.clear();
+    this.settled.clear();
   }
 
   private context(): Ctx | null {
@@ -225,12 +234,14 @@ export class SceneAudio {
       buf.getChannelData(0).set(pcm);
       const done = Promise.resolve(buf);
       this.buffers.set(src, done);
+      this.settled.add(src);
       return done;
     }
     const p = fetch(src)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); })
       .then((data) => ctx.decodeAudioData(data))
-      .catch((e) => { console.warn('[Unyson+ scene] could not load audio', src.slice(0, 80), e); return null; });
+      .catch((e) => { console.warn('[Unyson+ scene] could not load audio', src.slice(0, 80), e); return null; })
+      .then((b) => { this.settled.add(src); return b; });
     this.buffers.set(src, p);
     return p;
   }

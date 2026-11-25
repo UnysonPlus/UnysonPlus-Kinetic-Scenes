@@ -308,20 +308,40 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
 
   strike(ctx) {
     // A line drawn through it; then (optionally) it falls away, crossed out.
+    //
+    // The line is LEVEL by default, and any tilt turns about its MIDDLE. Until 0.1.78 it defaulted to -8°
+    // turned about its left end, which raised the far end by the line's whole width times tan(8°): on a
+    // wide line that is most of a line-height above the words it is supposed to cross, and every strike
+    // in every scene came out sloped whether or not anyone asked for one.
+    //
+    // Two elements, because the draw and the tilt want different origins: the outer carries the tilt from
+    // the centre, the inner is scaled across from the left so the line still draws the way a pen would.
     const p = ctx.params;
     const out = isOut(p);
     const fall = p.fall !== false;
+    const thick = num(p, 'thickness', 0.6);
     ctx.el.style.position = ctx.el.style.position || 'relative';
     const host = wordsHost(ctx);
     const bar = owned({ ...ctx, el: host }, 'upw-strike', 'shared');
     Object.assign(bar.style, {
-      position: 'absolute', left: '-6%', width: '112%', top: '50%', height: `${num(p, 'thickness', 0.6)}cqw`, marginTop: `-${num(p, 'thickness', 0.6) / 2}cqw`,
-      background: color(p, 'color', '#ff3b47'), borderRadius: '99px', transformOrigin: '0 50%', rotate: `${num(p, 'angle', -8)}deg`, pointerEvents: 'none', zIndex: '2',
+      position: 'absolute', left: '-6%', width: '112%', top: '50%', height: `${thick}cqw`, marginTop: `-${thick / 2}cqw`,
+      transformOrigin: '50% 50%', rotate: `${num(p, 'angle', 0)}deg`, pointerEvents: 'none', zIndex: '2',
+      background: 'none',
+    });
+    let ink = bar.firstElementChild as HTMLElement | null;
+    if (!ink) {
+      ink = bar.ownerDocument.createElement('div');
+      ink.setAttribute('aria-hidden', 'true');
+      bar.appendChild(ink);
+    }
+    Object.assign(ink.style, {
+      width: '100%', height: '100%', background: color(p, 'color', '#ff3b47'),
+      borderRadius: '99px', transformOrigin: '0 50%',
     });
     chain(ctx, (raw) => {
       const r = out ? 1 - raw : raw;
       const draw = clamp01(r / (fall ? 0.4 : 1));
-      bar.style.transform = `scaleX(${(1 - (1 - draw) ** 3).toFixed(4)})`;
+      ink.style.transform = `scaleX(${(1 - (1 - draw) ** 3).toFixed(4)})`;
       bar.style.opacity = r > 0 ? '1' : '0';
       if (!fall) return;
       const f = clamp01((r - 0.5) / 0.5);

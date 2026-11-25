@@ -13,6 +13,7 @@ import { setAudio, type AudioInfo } from '../lib/audio';
 import type { AudioClip } from '@unysonplus/scene-player/types';
 import type { Clip } from '@unysonplus/scene-player/types';
 import { selectedIds, selectLayers, type Selection } from './Inspector';
+import { clock as fmtClock } from '../lib/clock';
 import { setLayerProps } from '../lib/sceneOps';
 
 /** The layer-name column's width: narrower on a phone (keep in step with .tl-head / .tl-corner in styles.css). */
@@ -90,7 +91,7 @@ const LAYER_GLYPH: Record<Layer['type'], string> = { text: 'T', shape: '◼', im
 /** The time readout at the top-left of the ruler. */
 function Readout(props: { clock: LiveValue<number>; offset: number; scope: string | null | undefined }) {
   const t = useLive(props.clock) - props.offset;
-  return <span className="mono">{t.toFixed(2)}s{props.scope ? ' in group' : ''}</span>;
+  return <span className="mono">{fmtClock(t)}{props.scope ? ' in group' : ''}</span>;
 }
 
 /** A line at the playhead: the ruler's head, or the playhead across the rows. */

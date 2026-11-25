@@ -3,6 +3,7 @@ import { mount, type ScenePlayer } from '@unysonplus/scene-player';
 import type { Scene } from '@unysonplus/scene-player/types';
 import { PauseIcon, PlayIcon, ResetIcon } from './icons';
 import { withPlayableFootage } from '../lib/footage';
+import { clock } from '../lib/clock';
 
 /**
  * The scene played full screen, at the screen's real size and without the editor: how it looks on a
@@ -103,7 +104,7 @@ export function FullscreenPlayer(props: { scene: Scene; startAt: number; onClose
       <div className="fs-controls">
         <button type="button" className="icon-btn" onClick={restart} aria-label="Restart" title="Restart"><ResetIcon /></button>
         <button type="button" className="icon-btn" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause (Space)' : 'Play (Space)'}>{playing ? <PauseIcon /> : <PlayIcon />}</button>
-        <span className="fs-time mono">{time.toFixed(1)} / {props.scene.duration.toFixed(1)} s</span>
+        <span className="fs-time mono">{clock(time, 1)} / {clock(props.scene.duration, 1)}</span>
         <button type="button" className="btn small" onClick={props.onClose}>Exit full screen</button>
       </div>
     </div>

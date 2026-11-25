@@ -564,8 +564,8 @@ export const PRESET_CATALOG: PresetMeta[] = [
     id: 'strike', label: 'Strike', category: 'emphasis', appliesTo: ALL,
     description: 'A line is drawn through it, then it falls away, crossed out ("not this one"): an app icon struck off, a wrong answer, an old way of doing things.',
     defaultEase: 'none', defaultDuration: 0.9,
-    defaults: { direction: 'in', color: '#ff3b47', thickness: 0.6, angle: -8, fall: true },
-    fields: [DIRECTION, { key: 'color', label: 'Colour', type: 'color' }, { key: 'thickness', label: 'Thickness', type: 'number', min: 0.1, max: 3, step: 0.1, unit: 'su' }, { key: 'angle', label: 'Angle', type: 'number', min: -45, max: 45, step: 1, unit: '°' }, { key: 'fall', label: 'Then it falls away', type: 'boolean' }],
+    defaults: { direction: 'in', color: '#ff3b47', thickness: 0.6, angle: 0, fall: true },
+    fields: [DIRECTION, { key: 'color', label: 'Colour', type: 'color' }, { key: 'thickness', label: 'Thickness', type: 'number', min: 0.1, max: 3, step: 0.1, unit: 'su' }, { key: 'angle', label: 'Tilt', type: 'number', min: -45, max: 45, step: 1, unit: '°' }, { key: 'fall', label: 'Then it falls away', type: 'boolean' }],
   },
   {
     id: 'jiggle', label: 'Jiggle', category: 'emphasis', appliesTo: ALL,
