@@ -69,6 +69,20 @@ export async function kitBase(): Promise<string | null> {
   return base;
 }
 
+/**
+ * A scene request handed over from the AI Dev Kit's Chat (a link with ?handoff=<id>): the kit holds it for an hour and
+ * gives it out once. Resolves with the request's words.
+ */
+export async function takeHandoff(id: string): Promise<{ request: string }> {
+  const b = await kitBase();
+  if (!b) throw new Error('The AI Dev Kit is not running on this computer. Start it, then open the link again.');
+  if (!kitHas('handoff')) throw new Error('Your AI Dev Kit is too old for this. Close it and start it again: it updates itself.');
+  const r = await fetch(`${b}/studio/handoff?id=${encodeURIComponent(id)}`);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || (r.status === 404 ? 'That request has expired or was already opened. Ask for it again in the AI Dev Kit’s Chat.' : `The AI Dev Kit answered ${r.status}.`));
+  return { request: String(j.request ?? '') };
+}
+
 /** The browser's "apps and services on this device" permission for this site, where it exists. */
 async function localNetworkPermission(): Promise<PermissionState | 'unknown'> {
   try {

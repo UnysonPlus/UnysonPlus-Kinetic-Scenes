@@ -15,7 +15,7 @@ import { AiAssist, type ChatMessage } from './components/AiAssist';
 import { CheckPanel } from './components/CheckPanel';
 import { FullscreenPlayer } from './components/FullscreenPlayer';
 import { TranslateDialog } from './components/TranslateDialog';
-import { kitStatus, type KitStatus } from './lib/ai';
+import { kitStatus, takeHandoff, type KitStatus } from './lib/ai';
 import { lintScene, type LintIssue } from '@unysonplus/scene-player/lint';
 import { sceneWeight } from './lib/sceneWeight';
 import type { LayoutIssue } from '@unysonplus/scene-player/layout';
@@ -933,6 +933,28 @@ export function App() {
     setAssistOpen(open);
     if (open && kit.state !== 'ready' && kit.state !== 'checking') recheckKit();
   }, [kit.state, recheckKit]);
+
+  // A scene request handed over from the AI Dev Kit's Chat (?handoff=<id>): once the kit check is done, take it and
+  // queue it in AI assist as a new scene; the id leaves the address either way (it can be collected only once).
+  const handoffDone = useRef(false);
+  useEffect(() => {
+    if (handoffDone.current || kit.state === 'checking') return;
+    const params = new URLSearchParams(location.search);
+    const id = params.get('handoff');
+    if (!id) return;
+    handoffDone.current = true;
+    params.delete('handoff');
+    window.history.replaceState(null, '', `${location.pathname}${params.toString() ? `?${params}` : ''}${location.hash}`);
+    if (kit.state !== 'ready') { setNotice('A request from the AI Dev Kit is waiting, but the kit is not running. Start it (start.bat or start.command), then open the link from its Chat again.'); return; }
+    takeHandoff(id)
+      .then(({ request }) => {
+        if (!request.trim()) { setNotice('The request from the AI Dev Kit was empty.'); return; }
+        setQueued({ text: request, scope: 'new' });
+        openAssist(true);
+        setNotice('Your request from the AI Dev Kit’s Chat is in AI assist, making a new scene.');
+      })
+      .catch((e) => setNotice((e as Error).message));
+  }, [kit.state, openAssist]);
 
   const applyAi = useCallback((next: Scene, mode: 'create' | 'edit') => {
     commit(next);

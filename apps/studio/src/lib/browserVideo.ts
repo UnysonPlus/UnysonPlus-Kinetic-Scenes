@@ -23,7 +23,7 @@ type Api = {
   sfxWav?: (src: string) => Uint8Array | null;
   voiceSpans?: (clips: unknown[]) => Array<[number, number]>;
 };
-type Player = { seek: (t: number) => void; settle?: () => Promise<void>; whenReady: (ms?: number) => Promise<{ missing: string[] }>; destroy?: () => void };
+type Player = { seek: (t: number) => void; settle?: () => Promise<void>; showStills?: (on: boolean) => Promise<void>; whenReady: (ms?: number) => Promise<{ missing: string[] }>; destroy?: () => void };
 
 /** Whether this browser can render video on its own. */
 export function browserCanRender(): boolean {
@@ -263,6 +263,8 @@ export async function renderInBrowser(input: Scene, opts: BrowserRenderOptions, 
     let cover: Blob | undefined;
     if (opts.cover) {
       const pt = typeof scene.playback.posterTime === 'number' ? scene.playback.posterTime : scene.duration - 0.01;
+      // 3D layers with a path-traced still show it for the cover.
+      if (player.showStills) await player.showStills(true);
       player.seek(pt);
       if (player.settle) await player.settle();
       await paint();

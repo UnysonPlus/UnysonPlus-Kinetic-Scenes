@@ -30,7 +30,9 @@ const FINISHES = [
 const MAX_UPLOAD = 4 * 1024 * 1024;
 
 /** The Inspector section for a 3D layer: what the object is, its material, its resting pose and light. */
-export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<ModelLayer>) => void; reshape?: (patch: Partial<ModelLayer>, box: { w: number; ratio: number }) => void }) {
+export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<ModelLayer>) => void; reshape?: (patch: Partial<ModelLayer>, box: { w: number; ratio: number }) => void;
+  /** Renders this layer's path-traced still (the Inspector knows the whole scene). */
+  makeStill?: () => Promise<{ still: string; at: number; seconds: number; device: string }>; posterTime?: number }) {
   const { layer, set } = props;
   const m = layer.model;
   const mat = layer.material ?? {};
@@ -71,6 +73,8 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
 
   // The model's own weight, read from its file: shown under it, so a heavy model is seen as soon as it is loaded.
   const [weight, setWeight] = useState<string | null>(null);
+  const [stillBusy, setStillBusy] = useState('');
+  const [stillNote, setStillNote] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     setWeight(null);
@@ -193,6 +197,27 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
         )}
         <NumberField label="Light" value={layer.light ?? 1} step={0.1} min={0} max={3} onCommit={(v) => set({ light: v })} />
       </Section>
+
+      {m.kind === 'gltf' && props.makeStill && (
+        <Section title="Path-traced still">
+          <button type="button" className="btn small wide-btn" disabled={!!stillBusy || !m.src} onClick={async () => {
+            setStillBusy('Rendering in Blender (Cycles)'); setStillNote(null);
+            try {
+              const r = await props.makeStill!();
+              set({ still: r.still, stillAt: r.at });
+              setStillNote(`Rendered for the still frame (${r.at} s) in ${r.seconds} s on the ${r.device === 'CPU' ? 'processor' : `graphics card (${r.device})`}.`);
+            } catch (e) { setStillNote((e as Error).message); }
+            setStillBusy('');
+          }}>{stillBusy ? `${stillBusy}…` : layer.still ? 'Render the still again' : 'Render a path-traced still'}</button>
+          {layer.still && <button type="button" className="btn small wide-btn" onClick={() => { set({ still: undefined, stillAt: undefined }); setStillNote(null); }}>Remove the still</button>}
+          <p className="field-hint wide">
+            {layer.still
+              ? `This layer has a still${typeof layer.stillAt === 'number' ? ` for ${layer.stillAt} s` : ''}${typeof layer.stillAt === 'number' && typeof props.posterTime === 'number' && Math.abs(layer.stillAt - props.posterTime) > 0.01 ? `, but the scene's still frame is now ${props.posterTime} s: render it again` : ''}. It is shown instead of the live model for the cover image and for visitors who turn motion off. Render it again after changing the model, its pose or its motion.`
+              : `Renders the model in Blender's path tracer (Cycles) at the scene's still frame, with soft shadows and real reflections, at exactly the pose the player shows. The still is used for the cover image and for visitors who turn motion off; the scene plays live as before. Needs the AI Dev Kit and Blender.`}
+          </p>
+          {stillNote && <p className="field-hint wide">{stillNote}</p>}
+        </Section>
+      )}
 
       <Section title="Resting pose">
         <NumberField label="Turn" value={pose.ry ?? 0} step={1} unit="°" onCommit={(v) => setPose({ ry: v ?? 0 })} />

@@ -6,7 +6,7 @@ import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { ModelLayer, ModelMaterial } from '../types';
-import type { Module3D, Runtime3D, State3D } from '../model3d';
+import { BLEED_3D, type Module3D, type Runtime3D, type State3D } from '../model3d';
 import fontJson from './font-inter-800.json';
 
 /**
@@ -17,7 +17,7 @@ import fontJson from './font-inter-800.json';
 const DEG = Math.PI / 180;
 const FOV = 22;
 /** The canvas reaches this far past the layer's box on each side (a fraction of the box), so an object that turns or orbits isn't cut off at the box edge. */
-const BLEED = 0.35;
+const BLEED = BLEED_3D;
 let font: ReturnType<FontLoader['parse']> | null = null;
 const getFont = () => (font ??= new FontLoader().parse(fontJson as never));
 

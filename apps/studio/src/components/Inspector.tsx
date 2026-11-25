@@ -18,6 +18,7 @@ import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/
 import { KeyframeEditor } from './KeyframeEditor';
 import { blankScene } from '../lib/sceneOps';
 import { ModelSection } from './ModelSection';
+import { renderStill } from '../lib/stills';
 import { CameraPath } from './CameraPath';
 import { LottieSection } from './LottieSection';
 import { CutObjectSection } from './CutObjectSection';
@@ -660,7 +661,8 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         </Section>
       )}
 
-      {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} reshape={(p, box) => onCommit(writeLayout(setLayerProps(scene, layer.id, p as Record<string, unknown>), layer.id, null, { box }))} />}
+      {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} reshape={(p, box) => onCommit(writeLayout(setLayerProps(scene, layer.id, p as Record<string, unknown>), layer.id, null, { box }))}
+        makeStill={() => renderStill(scene, layer.id)} posterTime={scene.playback.posterTime} />}
       {layer.type === 'model' && <CameraPath scene={scene} layer={layer} time={time} />}
       {layer.type === 'lottie' && <LottieSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'path' && <PathSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}

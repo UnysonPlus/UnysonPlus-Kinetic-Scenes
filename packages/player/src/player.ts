@@ -10,7 +10,7 @@ import { presets, presetRand, type Timeline } from './presets';
 import { seedFrom } from './random';
 import { NAMED_EASES, resolveEase } from './eases';
 import { linkToScroll, type ScrollLink } from './scroll';
-import { load3d, type State3D } from './model3d';
+import { BLEED_3D, load3d, type State3D } from './model3d';
 import { SceneAudio } from './audio';
 import { soundTrack } from './sfx';
 import { TRANSCRIPT_CLASS, transcriptHtml } from './transcript';
@@ -112,6 +112,13 @@ export interface ScenePlayer {
   readonly cameraActive: boolean;
   /** Swap in a changed scene, keeping the playhead (and playback) where it was. Throws if invalid. */
   update(scene: unknown): void;
+  /**
+   * Shows 3D layers' path-traced stills (their `still` picture) instead of the live 3D, or the live 3D again. For the
+   * still frame: the cover image a renderer takes. Resolves once the pictures are loaded. Reduced motion uses them too.
+   */
+  showStills(on: boolean): Promise<void>;
+  /** A 3D layer's 3D state now (its turn, scale, position, camera orbit, tilt and distance, lid), or null. */
+  modelState(layerId: string): State3D | null;
   setSafeArea(show: boolean): void;
   setBreakpoint(id: string | null): void;
   /** The canvas element: layer positions are percentages of its size. */
@@ -473,9 +480,27 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     for (const r of flatRefs(layers)) { r.lottie?.anim?.dispose(); if (r.lottie) r.lottie.anim = undefined; }
   }
 
+  /** Pictures standing in for 3D layers (their path-traced stills), while stills are on. */
+  const stillImgs: HTMLImageElement[] = [];
+  let stillsOn = false;
+  function clearStills() { stillImgs.splice(0).forEach((img) => img.remove()); }
+
   /** Starts the 3D runtime for this scene's 3D layers (loading scene-3d.js the first time). */
   function start3d() {
-    const models = flatRefs(layers).filter((r) => r.model);
+    clearStills();
+    // A layer with a path-traced still shows it instead of the live 3D for the still frame (stills on, or no motion).
+    const useStill = (r: { layer: unknown }) => (stillsOn || reduced) && !!(r.layer as ModelLayer).still;
+    for (const r of flatRefs(layers).filter((x) => x.model && useStill(x))) {
+      const img = doc.createElement('img');
+      img.src = (r.layer as ModelLayer).still!;
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      img.className = 'upw-3d-still';
+      Object.assign(img.style, { position: 'absolute', left: `${-BLEED_3D * 100}%`, top: `${-BLEED_3D * 100}%`, width: `${(1 + 2 * BLEED_3D) * 100}%`, height: `${(1 + 2 * BLEED_3D) * 100}%`, pointerEvents: 'none', display: 'block' });
+      r.inner.appendChild(img);
+      stillImgs.push(img);
+    }
+    const models = flatRefs(layers).filter((r) => r.model && !useStill(r));
     if (!models.length) return;
     load3d(win).then((m) => {
       for (const r of models) {
@@ -763,6 +788,22 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     root,
     get duration() { return scene.duration; },
     get time() { return tl ? tl.time() : 0; },
+    async showStills(on: boolean) {
+      if (stillsOn === on) return;
+      stillsOn = on;
+      dispose3d();
+      start3d();
+      emit('update');
+      await Promise.all(stillImgs.map((img) => (img.complete ? Promise.resolve() : new Promise<void>((done) => { img.onload = () => done(); img.onerror = () => done(); }))));
+      await new Promise((r) => win.requestAnimationFrame(() => r(null)));
+    },
+    modelState(layerId: string) {
+      const r = flatRefs(layers).find((x) => x.layer.id === layerId);
+      if (!r?.model) return null;
+      // Only the state's own fields (GSAP keeps its bookkeeping on the object it tweens).
+      const s = r.model.state;
+      return { rx: s.rx, ry: s.ry, rz: s.rz, s: s.s, px: s.px, py: s.py, orbit: s.orbit, tilt: s.tilt, dolly: s.dolly, open: s.open };
+    },
     model3dPath(id: string, times: number[]) {
       const r = refsOf(id);
       if (!r?.model || !tl) return [];

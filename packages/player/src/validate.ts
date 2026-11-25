@@ -300,6 +300,8 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.material !== undefined && !isObj(layer.material)) fail(`${lp}.material`, 'must be an object');
         if (layer.pose !== undefined && !isObj(layer.pose)) fail(`${lp}.pose`, 'must be an object');
         if (layer.light !== undefined && (!isNum(layer.light) || layer.light < 0 || layer.light > 3)) fail(`${lp}.light`, 'must be 0 to 3');
+        if (layer.still !== undefined && typeof layer.still !== 'string') fail(`${lp}.still`, 'must be a picture address');
+        if (layer.stillAt !== undefined && !isNum(layer.stillAt)) fail(`${lp}.stillAt`, 'must be a time in seconds');
       } else if (layer.type === 'group') {
         if (layer.duration !== undefined && (!isNum(layer.duration) || layer.duration <= 0)) fail(`${lp}.duration`, 'must be more than 0 seconds');
         checkLayers(layer.layers, `${lp}.layers`, depth + 1);

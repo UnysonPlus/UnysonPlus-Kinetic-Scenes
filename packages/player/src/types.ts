@@ -507,6 +507,13 @@ export interface ModelLayer extends LayerBase {
    * clip: one animation by name, or "all" (the default); speed (1 = as made); loop (default true; false: play once, hold).
    */
   animation?: { clip?: string; speed?: number; loop?: boolean };
+  /**
+   * A path-traced still of this layer (a transparent picture of the model rendered in Blender's Cycles, covering the 3D
+   * canvas: the layer's box plus its bleed on every side), made for the scene's still frame. It is shown instead of the
+   * live 3D for the cover image and for visitors who turn motion off. stillAt: the moment it was rendered at.
+   */
+  still?: string;
+  stillAt?: number;
 }
 
 /**

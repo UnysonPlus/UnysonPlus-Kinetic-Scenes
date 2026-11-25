@@ -28,6 +28,9 @@ export interface State3D {
   open: number;
 }
 
+/** The 3D canvas reaches this far past the layer's box on each side (a fraction of the box), so a turning object isn't cut off. */
+export const BLEED_3D = 0.35;
+
 export const REST_3D: State3D = { rx: 0, ry: 0, rz: 0, s: 1, px: 0, py: 0, orbit: 0, tilt: 0, dolly: 1, open: 1 };
 
 export interface Runtime3D {
