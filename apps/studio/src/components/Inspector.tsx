@@ -651,6 +651,8 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
           <NumberField label="Outline width" value={layer.strokeWidth ?? 0.2} step={0.05} min={0} unit="su" onCommit={(v) => props({ strokeWidth: v })} />
           <NumberField label="Dashes" value={layer.dash} step={0.1} min={0} max={50} unit="su" optional placeholder="Solid" onCommit={(v) => props({ dash: v || undefined })} />
           {!!layer.dash && <NumberField label="Gap" value={layer.dashGap ?? Math.round(layer.dash * 80) / 100} step={0.1} min={0} max={50} unit="su" onCommit={(v) => props({ dashGap: v })} />}
+          <NumberField label="Frosted" value={layer.frost} step={0.1} min={0} max={10} unit="su" optional placeholder="Off" onCommit={(v) => props({ frost: v || undefined })} />
+          {!!layer.frost && <p className="field-hint wide">Frosted glass blurs what is behind the shape. Give it a see-through fill (white at about 12%) and a thin light outline.</p>}
           {!!layer.dash && <p className="field-hint wide">A dashed outline can march (Marching outline) and close up into a solid one (Make solid).</p>}
           {!layer.clips.some((c) => c.preset === 'sketch' || c.preset === 'painted') && (
             <div className="insp-start wide">

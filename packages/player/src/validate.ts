@@ -254,6 +254,7 @@ export function validateScene(input: unknown): ValidationResult {
         if (layer.shape !== 'rect' && layer.shape !== 'ellipse') fail(`${lp}.shape`, 'must be rect or ellipse');
         if (layer.dash !== undefined && (!isNum(layer.dash) || layer.dash < 0 || layer.dash > 50)) fail(`${lp}.dash`, 'must be 0 to 50 stage units');
         if (layer.dashGap !== undefined && (!isNum(layer.dashGap) || layer.dashGap < 0 || layer.dashGap > 50)) fail(`${lp}.dashGap`, 'must be 0 to 50 stage units');
+        if (layer.frost !== undefined && (!isNum(layer.frost) || layer.frost < 0 || layer.frost > 10)) fail(`${lp}.frost`, 'must be 0 to 10 stage units');
       } else if (layer.type === 'image') {
         if (typeof layer.src !== 'string' || !layer.src) fail(`${lp}.src`, 'is required');
         if (!layer.alt) warnings.push(`${lp}.alt: add a description so screen readers can announce the image (or "" if it is decorative).`);

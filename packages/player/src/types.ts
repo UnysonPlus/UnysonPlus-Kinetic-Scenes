@@ -436,6 +436,11 @@ export interface ShapeLayer extends LayerBase {
   dash?: number;
   /** The gap between dashes, in stage units. Defaults to 0.8 times the dash. */
   dashGap?: number;
+  /**
+   * Frosted glass: blurs whatever is behind the shape by this much, in stage units (0 or unset = off), and
+   * lifts its colour a little. Pair it with a see-through fill (rgba(255,255,255,0.12)) for glass widgets.
+   */
+  frost?: number;
 }
 
 export interface ImageLayer extends LayerBase {

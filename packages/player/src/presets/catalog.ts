@@ -589,6 +589,13 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [DIRECTION, { key: 'push', label: 'Pushes', type: 'layer' }, { key: 'share', label: 'Frame it takes', type: 'number', min: 20, max: 70, step: 5, unit: '%' }],
   },
   {
+    id: 'lock-on', label: 'Lock-on brackets', category: 'emphasis', appliesTo: ['video'],
+    description: 'Four corner brackets snap onto the speaker’s face and track it while the clip runs, with an optional small label above ("TARGET", "THIS GUY", a name), and the picture pushes in gently towards the face. Uses the footage’s face path (Follow the face, in the AI Dev Kit); without one it locks onto the middle of the frame.',
+    defaultEase: 'none', defaultDuration: 2.5,
+    defaults: { text: '', color: '#2ad38b', zoom: 12, pad: 0.25 },
+    fields: [{ key: 'text', label: 'Label', type: 'text' }, { key: 'color', label: 'Colour', type: 'color' }, { key: 'zoom', label: 'Push in', type: 'number', min: 0, max: 40, step: 1, unit: '%' }, { key: 'pad', label: 'Room round the face', type: 'number', min: 0, max: 1.5, step: 0.05, unit: '× face' }],
+  },
+  {
     id: 'jiggle', label: 'Jiggle', category: 'emphasis', appliesTo: ALL,
     description: 'The phone home-screen wobble: quick, slight back-and-forth tilting, as before a delete or to say "you can change this".',
     defaultEase: 'none', defaultDuration: 1.2,

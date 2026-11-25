@@ -267,6 +267,7 @@ const SUGGESTED: Record<string, { in: string; out?: string }> = {
   stamp: { in: 'stamp', out: 'swish' },
   'tape-label': { in: 'tape-pull', out: 'tape-pull' },
   'split-push': { in: 'whoosh', out: 'whoosh-out' },
+  'lock-on': { in: 'beep' },
   'tr-slash': { in: 'swish', out: 'swish' },
   'tr-tear': { in: 'paper-tear', out: 'paper-tear' },
   'tr-page': { in: 'paper-rustle', out: 'paper-rustle' },

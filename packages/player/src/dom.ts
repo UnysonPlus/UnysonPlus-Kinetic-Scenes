@@ -152,6 +152,12 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
   if (layer.type === 'shape') {
     if (layer.fill) inner.style.background = smoothGradient(layer.fill);
     inner.style.borderRadius = layer.shape === 'ellipse' ? '50%' : `${layer.radius ?? 0}cqw`;
+    if (typeof layer.frost === 'number' && layer.frost > 0) {
+      // Frosted glass: what is behind is blurred (and its colour lifted a little) inside the shape's outline.
+      const f = `blur(${layer.frost}cqw) saturate(1.35)`;
+      inner.style.backdropFilter = f;
+      inner.style.setProperty('-webkit-backdrop-filter', f);
+    }
     if (layer.stroke && typeof layer.dash === 'number' && layer.dash > 0) {
       // A dashed outline is drawn as SVG (a CSS dashed border can't set its dash length or move it).
       const sw = layer.strokeWidth ?? 0.2;

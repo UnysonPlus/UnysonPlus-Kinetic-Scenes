@@ -519,6 +519,97 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     });
   },
 
+  'lock-on'(ctx) {
+    // Corner brackets snap onto the speaker's face and track it while the clip runs, with a small label above,
+    // and the picture pushes in gently towards the face (the camera following). It reads the footage's own face
+    // path (Follow the face, found by the AI Dev Kit); without one it locks onto the middle of the frame.
+    // Everything is measured from the video's laid-out size (offsetWidth), not its on-screen rectangle, so the
+    // push-in it applies itself never feeds back into where the brackets go.
+    const p = ctx.params;
+    const ink = color(p, 'color', '#2ad38b');
+    const label = typeof p.text === 'string' ? p.text.trim().slice(0, 40) : '';
+    const zoom = clamp01(num(p, 'zoom', 12) / 100);
+    const pad = num(p, 'pad', 0.25);
+    const video = ctx.el.querySelector<HTMLVideoElement>(':scope > video');
+    const host = ctx.el.closest<HTMLElement & { upwTrack?: Array<{ t: number; x: number; y: number; w: number; h: number }> }>('.upw-layer');
+    const box = owned(ctx, 'upw-lock');
+    if (!box.firstElementChild) {
+      box.innerHTML = '<i data-c="tl"></i><i data-c="tr"></i><i data-c="bl"></i><i data-c="br"></i><b></b>';
+    }
+    Object.assign(box.style, { position: 'absolute', left: '0', top: '0', width: '0', height: '0', pointerEvents: 'none', zIndex: '4', opacity: '0' });
+    box.querySelectorAll<HTMLElement>(':scope > i').forEach((c) => {
+      const t = c.dataset.c!;
+      Object.assign(c.style, {
+        position: 'absolute', width: '24%', height: '24%', borderColor: ink, borderStyle: 'solid', borderWidth: '0',
+        filter: `drop-shadow(0 0 .35cqw ${ink})`,
+        [t[0] === 't' ? 'top' : 'bottom']: '0', [t[1] === 'l' ? 'left' : 'right']: '0',
+        [t[0] === 't' ? 'borderTopWidth' : 'borderBottomWidth']: '.42cqw', [t[1] === 'l' ? 'borderLeftWidth' : 'borderRightWidth']: '.42cqw',
+      });
+    });
+    const tag = box.querySelector<HTMLElement>(':scope > b')!;
+    tag.textContent = label;
+    Object.assign(tag.style, {
+      display: label ? 'block' : 'none', position: 'absolute', left: '0', bottom: '100%', marginBottom: '.8cqw', padding: '.25em .6em',
+      background: ink, color: '#0a0d11', font: '700 1.5cqw/1.1 ui-monospace, "SFMono-Regular", Consolas, monospace', letterSpacing: '.08em',
+      textTransform: 'uppercase', whiteSpace: 'nowrap', borderRadius: '.2em',
+    });
+    // The push-in must not spill out of the layer's own frame (a picture-in-picture speaker).
+    if (zoom > 0) ctx.el.style.overflow = 'hidden';
+    let k = 0, snap = 0, fade = 1;
+    const place = () => {
+      if (k <= 0 || !video) {
+        box.style.opacity = '0';
+        if (video) { video.style.scale = ''; video.style.transformOrigin = ''; }
+        return;
+      }
+      const W = video.offsetWidth, H = video.offsetHeight;
+      if (!W || !H) return;
+      // The face at the video's current moment, as fractions of the frame (or the middle when none was found).
+      let fx = 0.5, fy = 0.42, fw = 0.3, fh = 0.36;
+      const track = host?.upwTrack;
+      if (track?.length) {
+        // The file's moment from the timeline, as the player syncs footage (reading video.currentTime here would
+        // give the previous frame: the footage is synced after the presets have drawn).
+        const L = ctx.layer as { start?: number; offset?: number; rate?: number };
+        const t = (L.offset ?? 0) + Math.max(0, ctx.now() - (L.start ?? 0)) * (L.rate ?? 1);
+        let i = track.findIndex((q) => q.t > t);
+        if (i < 0) i = track.length;
+        const a = track[Math.max(0, i - 1)], b = track[Math.min(track.length - 1, i)];
+        const f = b.t > a.t ? clamp01((t - a.t) / (b.t - a.t)) : 0;
+        fx = lerp(a.x, b.x, f); fy = lerp(a.y, b.y, f); fw = lerp(a.w, b.w, f); fh = lerp(a.h, b.h, f);
+      }
+      // Where that is in the layer: the video fills (or fits) its box.
+      const vw = video.videoWidth || W, vh = video.videoHeight || H;
+      const cover = getComputedStyle(video).objectFit !== 'contain';
+      const s = cover ? Math.max(W / vw, H / vh) : Math.min(W / vw, H / vh);
+      const ox = video.offsetLeft + (W - vw * s) / 2, oy = video.offsetTop + (H - vh * s) / 2;
+      const cx = ox + fx * vw * s, cy = oy + fy * vh * s;
+      // The push-in, about the face: the face stays where it is and grows by Z.
+      const Z = 1 + zoom * k;
+      video.style.transformOrigin = `${(((cx - video.offsetLeft) / W) * 100).toFixed(2)}% ${(((cy - video.offsetTop) / H) * 100).toFixed(2)}%`;
+      video.style.scale = Z.toFixed(4);
+      // The brackets: the face plus a margin, larger while snapping in.
+      const grow = 1 + 0.7 * (1 - snap);
+      const bw = fw * vw * s * (1 + pad) * Z * grow, bh = fh * vh * s * (1 + pad) * Z * grow;
+      Object.assign(box.style, {
+        left: `${(cx - bw / 2).toFixed(1)}px`, top: `${(cy - bh / 2).toFixed(1)}px`, width: `${bw.toFixed(1)}px`, height: `${bh.toFixed(1)}px`,
+        opacity: (Math.min(1, snap * 1.6) * fade).toFixed(3),
+      });
+    };
+    ctx.late(place);
+    drive(ctx, (raw) => {
+      const t = raw * ctx.duration;
+      const inside = raw > 0 && raw < 1;
+      // Snap in over a third of a second with a small overshoot; the push-in eases in over the clip.
+      const u = clamp01(t / 0.35);
+      snap = inside ? 1 - (1 - u) ** 3 * Math.cos(u * Math.PI * 1.5) : 0;
+      fade = inside ? clamp01((ctx.duration - t) / 0.25) : 0;
+      k = inside ? (1 - (1 - clamp01(t / Math.max(0.5, ctx.duration * 0.6))) ** 2) * fade : 0;
+      if (!inside) k = 0;
+      place();
+    }, { ease: false, always: true });
+  },
+
   jiggle(ctx) {
     // The phone home-screen wobble: a quick, slight back-and-forth tilt (before a delete, or "edit me").
     const amp = num(ctx.params, 'angle', 2.5);

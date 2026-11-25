@@ -342,6 +342,86 @@ export const PIECES: Piece[] = [
       ]);
     },
   },
+  {
+    id: 'follow-button', name: 'Follow button', description: 'A profile card in a generic phone style: the Follow button is tapped (a ripple, a little press) and flips to a grey "Following". Change the name, the count and the colours.',
+    build: () => group('follow-button', 'Follow button', [
+      rect('card', 50, 50, 86, 15, { fill: '#16181d', radius: 3, clips: [C('pop', 0, 0.4)] }),
+      { id: 'avatar', type: 'shape', shape: 'ellipse', fill: '#2ad38b', box: { x: 17, y: 50, w: 10, ratio: 1 }, clips: [C('pop', 0.15, 0.35)] } as Layer,
+      text('name', 'Your Channel', 26, 47.6, 3.4, { box: { anchor: 'left' }, style: { fontSize: 3.4, fontWeight: 800, color: '#ffffff' }, clips: [C('fade', 0.25, 0.3)] }),
+      text('count', '12.4K followers', 26, 52.4, 2.6, { box: { anchor: 'left' }, style: { fontSize: 2.6, fontWeight: 500, color: '#9aa1ab' }, clips: [C('fade', 0.3, 0.3)] }),
+      rect('btn', 77, 50, 23, 6.5, { fill: '#ff3b5c', radius: 3.25, clips: [C('pop', 0.4, 0.35), C('pulse', 1.2, 0.24, { scale: 0.9, times: 1 }), C('recolor', 1.32, 0.25, { to: '#2b2f36' })] }),
+      text('label', 'Follow', 77, 50, 3, { style: { fontSize: 3, fontWeight: 800, color: '#ffffff' }, clips: [C('fade', 0.5, 0.25), withSound(C('text-swap', 1.32, 0.3, { to: 'Following', style: 'roll' }), 'tap')] }),
+      { id: 'tap', type: 'shape', shape: 'ellipse', fill: 'rgba(255,255,255,0.35)', box: { x: 77, y: 50, w: 9, ratio: 1 }, clips: [C('zoom', 1.15, 0.2, { scale: 0.3 }), C('fade', 1.3, 0.25, { direction: 'out' })] } as Layer,
+    ]),
+  },
+  {
+    id: 'toggles', name: 'Toggle switches', description: 'A settings panel in a generic phone style whose switches turn on one line at a time: the knob slides across and the track turns green. Change the lines, the times and the colour.',
+    build: () => {
+      const lines = ['Dark mode', 'Notifications', 'Auto-save'];
+      const y = (i: number) => 40 + i * 10;
+      const at = (i: number) => 0.9 + i * 0.6;
+      return group('toggles', 'Toggle switches', [
+        rect('panel', 50, 50, 86, 34, { fill: '#16181d', radius: 3, clips: [C('pop', 0, 0.4)] }),
+        ...lines.flatMap((l, i) => [
+          text(`t${i}`, l, 12, y(i), 3.4, { box: { anchor: 'left' }, style: { fontSize: 3.4, fontWeight: 600, color: '#ffffff' }, clips: [C('fade', 0.2 + i * 0.08, 0.3)] }),
+          rect(`track${i}`, 80, y(i), 11, 6, { fill: '#3a3f47', radius: 3, clips: [C('fade', 0.25 + i * 0.08, 0.3), C('recolor', at(i), 0.25, { to: '#2ad38b' })] }),
+          { id: `knob${i}`, type: 'shape', shape: 'ellipse', fill: '#ffffff', box: { x: 77.5, y: y(i), w: 5, ratio: 1 },
+            clips: [C('fade', 0.3 + i * 0.08, 0.3), withSound(C('keyframes', at(i), 0.3, { frames: [{ t: 0, x: 0 }, { t: 0.3, x: 100 }] }, 'power3.out'), 'click')] } as Layer,
+        ]),
+      ]);
+    },
+  },
+  {
+    id: 'notifications', name: 'Notifications', description: 'Phone notifications in a generic style stack up one by one, each with a soft glow as it lands: sales, sign-ups, messages. Change the words and the app colours.',
+    build: () => {
+      const items: Array<[string, string, string]> = [['New sale', '$48.00 from a new customer', '#2ad38b'], ['New subscriber', 'Someone joined your list', '#5580ff'], ['Payment received', '$120.00 has arrived', '#ffb020']];
+      const y = (i: number) => 22 + i * 10;
+      const at = (i: number) => 0.2 + i * 0.7;
+      return group('notifications', 'Notifications', items.flatMap(([title, body, tint], i) => [
+        rect(`card${i}`, 50, y(i), 88, 8.5, { fill: 'rgba(32,35,41,0.94)', radius: 2.4, clips: [withSound(C('stack-in', at(i), 0.4), 'notify'), C('glow', at(i) + 0.2, 0.4, { color: tint, size: 1, strength: 0.7 }), C('glow', at(i) + 0.9, 0.5, { direction: 'out', color: tint, size: 1, strength: 0.7 })] }),
+        { id: `icon${i}`, type: 'shape', shape: 'rect', fill: tint, radius: 1.4, box: { x: 12, y: y(i), w: 5.5, ratio: 1 }, clips: [C('stack-in', at(i), 0.4)] } as Layer,
+        text(`title${i}`, title, 18.5, y(i) - 1.6, 2.7, { box: { anchor: 'left' }, style: { fontSize: 2.7, fontWeight: 800, color: '#ffffff' }, clips: [C('stack-in', at(i), 0.4)] }),
+        text(`body${i}`, body, 18.5, y(i) + 1.7, 2.4, { box: { anchor: 'left' }, style: { fontSize: 2.4, fontWeight: 500, color: '#a8adb5' }, clips: [C('stack-in', at(i), 0.4)] }),
+        text(`time${i}`, 'now', 90, y(i) - 1.6, 2.1, { box: { anchor: 'right' }, style: { fontSize: 2.1, fontWeight: 500, color: '#8a8f98' }, clips: [C('stack-in', at(i), 0.4)] }),
+      ]));
+    },
+  },
+  {
+    id: 'glass-widgets', name: 'Glass widgets', description: 'Four frosted-glass widgets float in around the speaker and drift gently: a stat tile, a progress ring that fills, a calendar date and a now-playing card. Over footage, the glass blurs the video behind it. Change the words, the numbers and where they sit.',
+    build: () => {
+      const glass = { fill: 'rgba(255,255,255,0.13)', stroke: 'rgba(255,255,255,0.38)', strokeWidth: 0.18, frost: 1.4 };
+      const drift = (at: number, i: number) => C('float', at + 0.5, 6, { height: 1.6 + (i % 2) * 0.6, cycles: 2 }, 'sine.inOut');
+      const widget = (id: string, name: string, at: number, i: number, layers: Layer[]) => group(id, name, layers, [C('pop', at, 0.45), drift(at, i)]);
+      // A ring drawn to 72%: from the top, clockwise (path units are 0-100 across the ring's own box).
+      const arc = 'M 50 5 A 45 45 0 1 1 5.79 58.43';
+      const ring = 'M 50 5 A 45 45 0 1 1 49.99 5';
+      return group('glass-widgets', 'Glass widgets', [
+        widget('stat', 'Stat tile', 0.2, 0, [
+          rect('statg', 22, 30, 32, 12, { ...glass, radius: 2.6 }),
+          text('statk', 'Views this week', 9, 26.6, 2.3, { box: { anchor: 'left' }, style: { fontSize: 2.3, fontWeight: 600, color: 'rgba(255,255,255,0.75)' } }),
+          text('statv', '248K', 9, 31.6, 5.2, { box: { anchor: 'left' }, style: { fontSize: 5.2, fontWeight: 900, color: '#ffffff' }, clips: [C('text-count', 0.4, 1.2, { from: 0 })] }),
+        ]),
+        widget('ringw', 'Progress ring', 0.55, 1, [
+          { id: 'ringg', type: 'shape', shape: 'rect', ...glass, radius: 3, box: { x: 79, y: 29, w: 24, ratio: 1 }, clips: [] } as Layer,
+          { id: 'track', type: 'path', d: ring, stroke: 'rgba(255,255,255,0.22)', strokeWidth: 0.9, box: { x: 79, y: 29, w: 16, ratio: 1 }, clips: [] } as Layer,
+          { id: 'fill', type: 'path', d: arc, stroke: '#2ad38b', strokeWidth: 0.9, glow: 0.4, box: { x: 79, y: 29, w: 16, ratio: 1 }, clips: [C('draw', 0.35, 1.3, undefined, 'power2.out')] } as Layer,
+          text('pct', '72%', 79, 29, 3.6, { style: { fontSize: 3.6, fontWeight: 800, color: '#ffffff' }, clips: [C('text-count', 0.35, 1.3, { from: 0 })] }),
+        ]),
+        widget('cal', 'Calendar', 0.9, 2, [
+          { id: 'calg', type: 'shape', shape: 'rect', ...glass, radius: 2.6, box: { x: 19, y: 63, w: 20, ratio: 0.9 }, clips: [] } as Layer,
+          text('calm', 'NOV', 19, 58.6, 2.3, { style: { fontSize: 2.3, fontWeight: 800, color: '#ff6b6b', letterSpacing: 0.15 } }),
+          text('cald', '25', 19, 64, 7.5, { style: { fontSize: 7.5, fontWeight: 800, color: '#ffffff' } }),
+        ]),
+        widget('np', 'Now playing', 1.25, 3, [
+          rect('npg', 71, 64, 48, 11.5, { ...glass, radius: 2.6 }),
+          { id: 'art', type: 'shape', shape: 'rect', fill: 'linear-gradient(135deg,#ff7a59,#a14dff)', radius: 1.2, box: { x: 54, y: 64, w: 8, ratio: 1 }, clips: [] } as Layer,
+          text('npk', 'Now playing', 60.5, 61, 2.1, { box: { anchor: 'left' }, style: { fontSize: 2.1, fontWeight: 600, color: 'rgba(255,255,255,0.7)' } }),
+          text('nps', 'Your song title', 60.5, 64.6, 2.9, { box: { anchor: 'left' }, style: { fontSize: 2.9, fontWeight: 800, color: '#ffffff' } }),
+          rect('npbar', 73, 68.2, 25, 0.9, { fill: 'rgba(255,255,255,0.22)', radius: 0.45, clips: [C('progress', 0.2, 5, { from: 10, to: 70, color: '#ffffff' }, 'none')] }),
+        ]),
+      ]);
+    },
+  },
 ];
 
 /** A clip with a built-in sound that plays as it starts. */
