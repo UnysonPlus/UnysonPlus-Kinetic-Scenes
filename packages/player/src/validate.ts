@@ -277,12 +277,22 @@ export function validateScene(input: unknown): ValidationResult {
         }
       } else if (layer.type === 'model') {
         const m = layer.model;
-        if (!isObj(m) || !['text', 'shape', 'svg', 'gltf'].includes(m.kind)) fail(`${lp}.model.kind`, 'must be text, shape, svg or gltf');
+        if (!isObj(m) || !['text', 'shape', 'svg', 'gltf', 'device'].includes(m.kind)) fail(`${lp}.model.kind`, 'must be text, shape, svg, gltf or device');
         else {
           if (m.kind === 'text' && (typeof m.text !== 'string' || !m.text.trim())) fail(`${lp}.model.text`, 'is required for 3D text');
           if (m.kind === 'shape' && !['box', 'sphere', 'torus', 'knot', 'cylinder', 'crystal'].includes(m.shape as string)) fail(`${lp}.model.shape`, 'must be box, sphere, torus, knot, cylinder or crystal');
           if ((m.kind === 'svg' || m.kind === 'gltf') && (typeof m.src !== 'string' || !m.src)) fail(`${lp}.model.src`, 'is required');
           if (m.depth !== undefined && (!isNum(m.depth) || m.depth < 0.01 || m.depth > 4)) fail(`${lp}.model.depth`, 'must be 0.01 to 4');
+          if (m.kind === 'device') {
+            if (m.device !== undefined && !['phone', 'tablet', 'laptop', 'monitor'].includes(m.device)) fail(`${lp}.model.device`, 'must be phone, tablet, laptop or monitor');
+            if (m.screen !== undefined && typeof m.screen !== 'string') fail(`${lp}.model.screen`, 'must be a picture or video address');
+            if (m.fit !== undefined && !['cover', 'contain'].includes(m.fit)) fail(`${lp}.model.fit`, 'must be cover or contain');
+            if (m.landscape !== undefined && typeof m.landscape !== 'boolean') fail(`${lp}.model.landscape`, 'must be true or false');
+            if (m.open !== undefined && (!isNum(m.open) || m.open < 0 || m.open > 135)) fail(`${lp}.model.open`, 'must be 0 to 135 degrees');
+            if (m.offset !== undefined && (!isNum(m.offset) || m.offset < 0)) fail(`${lp}.model.offset`, 'must be 0 or more seconds');
+            if (m.rate !== undefined && (!isNum(m.rate) || m.rate <= 0 || m.rate > 8)) fail(`${lp}.model.rate`, 'must be more than 0 and up to 8');
+            if (m.loop !== undefined && typeof m.loop !== 'boolean') fail(`${lp}.model.loop`, 'must be true or false');
+          }
           if (m.bevel !== undefined && (!isNum(m.bevel) || m.bevel < 0 || m.bevel > 1)) fail(`${lp}.model.bevel`, 'must be 0 to 1');
           const an = layer.animation;
           if (an !== undefined && (!isObj(an) || (an.speed !== undefined && (!isNum(an.speed) || an.speed <= 0 || an.speed > 8)) || (an.loop !== undefined && typeof an.loop !== 'boolean') || (an.clip !== undefined && typeof an.clip !== 'string'))) fail(`${lp}.animation`, 'must be { clip?: name, speed?: up to 8, loop?: true or false }');

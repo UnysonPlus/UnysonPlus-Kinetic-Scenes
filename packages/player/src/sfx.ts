@@ -263,6 +263,7 @@ const SUGGESTED: Record<string, { in: string; out?: string }> = {
   'spin-3d': { in: 'spin' },
   'tumble-in': { in: 'impact' },
   'camera-push': { in: 'riser' },
+  'open-lid': { in: 'swish', out: 'thud' },
   'tr-slash': { in: 'swish', out: 'swish' },
   'tr-tear': { in: 'paper-tear', out: 'paper-tear' },
   'tr-page': { in: 'paper-rustle', out: 'paper-rustle' },

@@ -135,6 +135,11 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
     tween3d(ctx, { orbit: -a / 2, tilt: 0 }, { orbit: a / 2, tilt: num(ctx.params, 'tilt', 10) }, ctx.first);
   },
 
+  'open-lid'(ctx) {
+    if (isOut(ctx.params)) tween3d(ctx, { open: 1 }, { open: 0 }, false);
+    else tween3d(ctx, { open: 0 }, { open: 1 }, ctx.first);
+  },
+
   'camera-push'(ctx) {
     const d = num(ctx.params, 'distance', 2.2);
     if (isOut(ctx.params)) tween3d(ctx, { dolly: 1 }, { dolly: d }, false);

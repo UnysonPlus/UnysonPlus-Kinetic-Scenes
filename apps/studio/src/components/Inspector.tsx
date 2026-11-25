@@ -660,7 +660,7 @@ function LayerInspector({ scene, layer, bp, onCommit, onSelect, alignTo, onAlign
         </Section>
       )}
 
-      {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
+      {layer.type === 'model' && <ModelSection layer={layer} set={(p) => props(p as Record<string, unknown>)} reshape={(p, box) => onCommit(writeLayout(setLayerProps(scene, layer.id, p as Record<string, unknown>), layer.id, null, { box }))} />}
       {layer.type === 'model' && <CameraPath scene={scene} layer={layer} time={time} />}
       {layer.type === 'lottie' && <LottieSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}
       {layer.type === 'path' && <PathSection layer={layer} set={(p) => props(p as Record<string, unknown>)} />}

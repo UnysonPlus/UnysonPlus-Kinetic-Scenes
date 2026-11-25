@@ -651,7 +651,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       // Animated 3D models: the animation at this moment of the layer's own clock, every update.
       else if (layer.type === 'model' && refs.model) {
         const mr = refs.model, from = layer.start ?? 0;
-        lateFns.push(() => { mr.runtime?.time?.(t.time() - from); });
+        lateFns.push(() => { mr.runtime?.time?.(t.time() - from, !!tl && !tl.paused()); });
       }
       // Lottie: the exact frame for this moment, every update (it never plays by itself).
       else if (layer.type === 'lottie' && refs.lottie) {

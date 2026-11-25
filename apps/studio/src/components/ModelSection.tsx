@@ -1,6 +1,7 @@
 import { kitBase } from '../lib/ai';
 import { useEffect, useRef, useState } from 'react';
 import { gltfAnimations } from '../lib/gltfInfo';
+import { putFootage } from '../lib/footage';
 import type { ModelLayer } from '@unysonplus/scene-player/types';
 import { CheckField, ColorField, NumberField, Section, SelectField, TextField } from './fields';
 
@@ -9,6 +10,12 @@ const KINDS = [
   { value: 'shape', label: 'Shape' },
   { value: 'svg', label: 'Logo (SVG)' },
   { value: 'gltf', label: 'Model (glTF / GLB)' },
+  { value: 'device', label: 'Device with a screen' },
+];
+/** A box that suits each device (width in % of the stage, width ÷ height). */
+const DEVICE_BOX: Record<string, { w: number; ratio: number }> = { phone: { w: 24, ratio: 0.55 }, tablet: { w: 30, ratio: 0.8 }, laptop: { w: 42, ratio: 1.45 }, monitor: { w: 42, ratio: 1.3 } };
+const DEVICES = [
+  { value: 'phone', label: 'Phone' }, { value: 'tablet', label: 'Tablet' }, { value: 'laptop', label: 'Laptop' }, { value: 'monitor', label: 'Desktop monitor' },
 ];
 const SHAPES = [
   { value: 'box', label: 'Rounded box' }, { value: 'sphere', label: 'Sphere' }, { value: 'torus', label: 'Ring' },
@@ -22,12 +29,13 @@ const FINISHES = [
 const MAX_UPLOAD = 4 * 1024 * 1024;
 
 /** The Inspector section for a 3D layer: what the object is, its material, its resting pose and light. */
-export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<ModelLayer>) => void }) {
+export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<ModelLayer>) => void; reshape?: (patch: Partial<ModelLayer>, box: { w: number; ratio: number }) => void }) {
   const { layer, set } = props;
   const m = layer.model;
   const mat = layer.material ?? {};
   const pose = layer.pose ?? {};
   const fileRef = useRef<HTMLInputElement>(null);
+  const screenRef = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState<string | null>(null);
   const setModel = (patch: Partial<ModelLayer['model']>) => set({ model: { ...m, ...patch } });
   const setMat = (patch: Partial<NonNullable<ModelLayer['material']>>) => set({ material: { ...mat, ...patch } });
@@ -76,9 +84,45 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
       <Section title="3D object">
         <SelectField label="Object" value={m.kind} options={KINDS} onChange={(kind) => {
           setNote(null);
+          if (kind === 'device') { set({ model: { kind: 'device', device: m.device ?? 'phone', screen: m.screen } }); return; }
           set({ model: { kind: kind as ModelLayer['model']['kind'], text: m.text ?? '3D', shape: m.shape ?? 'knot', depth: m.depth, bevel: m.bevel, src: kind === m.kind ? m.src : undefined } });
         }} />
         {m.kind === 'text' && <TextField label="Text" value={m.text ?? ''} multiline wide onCommit={(v) => v.trim() && setModel({ text: v })} />}
+        {m.kind === 'device' && (
+          <>
+            <SelectField label="Device" value={m.device ?? 'phone'} options={DEVICES} onChange={(v) => {
+              const patch = { model: { ...m, device: v as ModelLayer['model']['device'], landscape: undefined } };
+              // A laptop or a monitor is wider than a phone: the box takes the device's shape.
+              if (props.reshape) props.reshape(patch, DEVICE_BOX[v] ?? DEVICE_BOX.phone); else set(patch);
+            }} />
+            <TextField label="Screen (picture or video)" wide mono placeholder="https://…/screencast.mp4"
+              value={m.screen?.startsWith('data:') ? '(uploaded picture)' : m.screen?.startsWith('local:') ? '(uploaded file)' : m.screen ?? ''}
+              onCommit={(v) => { if (!v.startsWith('(uploaded')) setModel({ screen: v.trim() || undefined }); }} />
+            <button type="button" className="btn small wide-btn" onClick={() => screenRef.current?.click()}>Upload a picture or a screen recording…</button>
+            <input ref={screenRef} type="file" hidden accept="image/*,video/*" onChange={async (e) => {
+              const f = e.target.files?.[0]; e.target.value = '';
+              if (!f) return;
+              // Videos (and big pictures) stay in this browser like footage; small pictures travel inside the scene.
+              if (f.type.startsWith('image/') && f.size < 600 * 1024) {
+                const reader = new FileReader();
+                reader.onload = () => { setModel({ screen: String(reader.result) }); setNote(`Showing ${f.name}.`); };
+                reader.readAsDataURL(f);
+              } else { setModel({ screen: await putFootage(f) }); setNote(`Showing ${f.name}.`); }
+            }} />
+            <SelectField label="Fill the screen" value={m.fit ?? 'cover'} options={[{ value: 'cover', label: 'Crop to fill' }, { value: 'contain', label: 'Show all of it' }]} onChange={(v) => setModel({ fit: v as 'cover' | 'contain' })} />
+            {(m.device ?? 'phone') !== 'laptop' && (m.device ?? 'phone') !== 'monitor' && <CheckField label="Held sideways" checked={!!m.landscape} onChange={(v) => {
+              const b = DEVICE_BOX[m.device ?? 'phone'];
+              const patch = { model: { ...m, landscape: v || undefined } };
+              if (props.reshape) props.reshape(patch, v ? { w: b.w * 1.6, ratio: 1 / b.ratio } : b); else set(patch);
+            }} />}
+            {m.device === 'laptop' && <NumberField label="Lid open" value={m.open ?? 105} min={0} max={135} step={5} unit="°" onCommit={(v) => setModel({ open: v ?? 105 })} />}
+            <NumberField label="Video starts at" value={m.offset ?? 0} min={0} step={0.1} unit="s" onCommit={(v) => setModel({ offset: v || undefined })} />
+            <NumberField label="Video speed" value={m.rate ?? 1} min={0.1} max={8} step={0.1} unit="×" onCommit={(v) => setModel({ rate: v && v !== 1 ? v : undefined })} />
+            <CheckField label="Loop the video" checked={m.loop ?? true} onChange={(v) => setModel({ loop: v ? undefined : false })} />
+            <p className="field-hint wide">The screen plays on the scene's clock, so it scrubs and exports exactly. Spin 3D, Tumble in, Orbit and Camera push move the device{m.device === 'laptop' ? '; Open lid opens the lid on the timeline' : ''}. A picture or video from another site must allow loading from other sites (CORS).</p>
+            {note && <p className="field-hint wide">{note}</p>}
+          </>
+        )}
         {m.kind === 'shape' && <SelectField label="Shape" value={m.shape ?? 'box'} options={SHAPES} onChange={(v) => setModel({ shape: v as ModelLayer['model']['shape'] })} />}
         {(m.kind === 'svg' || m.kind === 'gltf') && (
           <>
@@ -127,8 +171,8 @@ export function ModelSection(props: { layer: ModelLayer; set: (patch: Partial<Mo
         )}
         {(m.kind !== 'gltf' || mat.original === false) && (
           <>
-            <ColorField label="Colour" value={mat.color} placeholder={m.kind === 'svg' ? "The SVG's own colours" : '#2ad38b'} onCommit={(v) => setMat({ color: v || undefined })} />
-            <SelectField label="Finish" value={mat.finish ?? 'glossy'} options={FINISHES} onChange={(v) => setMat({ finish: v as NonNullable<ModelLayer['material']>['finish'] })} />
+            <ColorField label={m.kind === 'device' ? 'Body colour' : 'Colour'} value={mat.color} placeholder={m.kind === 'svg' ? "The SVG's own colours" : m.kind === 'device' ? "The device's own (graphite or silver)" : '#2ad38b'} onCommit={(v) => setMat({ color: v || undefined })} />
+            <SelectField label="Finish" value={mat.finish ?? (m.kind === 'device' ? 'metal' : 'glossy')} options={FINISHES} onChange={(v) => setMat({ finish: v as NonNullable<ModelLayer['material']>['finish'] })} />
           </>
         )}
         <NumberField label="Light" value={layer.light ?? 1} step={0.1} min={0} max={3} onCommit={(v) => set({ light: v })} />

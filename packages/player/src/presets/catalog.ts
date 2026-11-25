@@ -847,6 +847,13 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [{ key: 'angle', label: 'Around', type: 'number', min: -360, max: 360, step: 5, unit: '°' }, { key: 'tilt', label: 'Rise', type: 'number', min: -60, max: 60, step: 1, unit: '°' }],
   },
   {
+    id: 'open-lid', label: 'Open lid', category: '3d', appliesTo: ['model'],
+    description: "A laptop's lid opens to its angle from closed (or closes). 3D devices only: put it on a laptop.",
+    defaultEase: 'softLand', defaultDuration: 1.2,
+    defaults: { direction: 'in' },
+    fields: [DIRECTION],
+  },
+  {
     id: 'camera-push', label: 'Camera push', category: '3d', appliesTo: ['model'],
     description: 'The camera moves in from further away (or pulls back out).',
     defaultEase: 'softLand', defaultDuration: 1.4,

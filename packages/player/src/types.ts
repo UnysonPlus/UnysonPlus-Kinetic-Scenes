@@ -533,7 +533,22 @@ export interface LottieLayer extends LayerBase {
 }
 
 export interface ModelSource {
-  kind: 'text' | 'shape' | 'svg' | 'gltf';
+  /** device: a generic, unbranded phone, tablet, laptop or monitor whose screen shows a picture or plays a video (a screencast). */
+  kind: 'text' | 'shape' | 'svg' | 'gltf' | 'device';
+  /** kind device: which device (default phone). */
+  device?: 'phone' | 'tablet' | 'laptop' | 'monitor';
+  /** kind device: what the screen shows, a picture or a video (an address, a data: URL or a project file). Empty: a dark screen. */
+  screen?: string;
+  /** kind device: how the picture fills the screen: cover (crops to fill, the default) or contain (all of it, with black bars). */
+  fit?: 'cover' | 'contain';
+  /** kind device, phone and tablet: held sideways. */
+  landscape?: boolean;
+  /** kind device, laptop: how far the lid is open, in degrees (0 closed to 135; default 105). The Open lid preset opens it on the timeline. */
+  open?: number;
+  /** kind device, a video screen: seconds into the video where it starts, playback speed (1 = as recorded), and whether it starts again at its end (default true). */
+  offset?: number;
+  rate?: number;
+  loop?: boolean;
   /** kind text: the words to extrude (a line break starts a new line). */
   text?: string;
   /** kind shape. */

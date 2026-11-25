@@ -350,6 +350,7 @@ export function App() {
     else if (a === 'translate') setTranslateOpen(true);
     else if (a === 'intro') setWelcomeOpen(true);
     else if (a === 'mascot') setMascotAsk({ editId: null });
+    else if (a === 'device') insertDevice();
     else setStartOpen(true);
   };
   const newTag = newsUnread ? 'New' : undefined;
@@ -529,6 +530,12 @@ export function App() {
     commit(r.scene);
     setSelection({ layerId: r.id, clipId: null });
   }, [commit]);
+
+  /** A 3D phone (the Inspector turns it into a tablet, laptop or monitor and gives it its screen recording). */
+  const insertDevice = () => addLayerOfType('model', {
+    name: 'Phone', model: { kind: 'device', device: 'phone' }, material: undefined, pose: { ry: -18, rx: 4 },
+    alt: 'A phone showing the app', box: { x: 50, y: 50, w: 24, ratio: 0.55 },
+  } as Partial<Layer>);
 
   /** Measures the loudness of the voice a mascot talks on, then puts it on the scene as it is by then (nothing else is undone). */
   const timeVoice = () => {
@@ -1104,6 +1111,7 @@ export function App() {
       { label: 'Footage', onSelect: () => onAddLayer('video') },
       { label: 'Free stock…', onSelect: () => setStockOpen(true), hint: 'Footage, photos and sounds free for commercial use (Pexels, Pixabay, NASA, Openverse); choose which sources you and your AI agent use' },
       { label: '3D object', onSelect: () => onAddLayer('model') },
+      { label: 'Device with a screen', hint: 'A 3D phone, tablet, laptop or monitor that plays your screen recording or shows a picture; it turns, tumbles and orbits with the 3D presets', onSelect: () => insertDevice() },
       { label: 'Lottie animation', onSelect: () => onAddLayer('lottie'), hint: 'A Lottie (After Effects) animation on the scene clock: recolour and reword it in place' },
       'sep',
       { label: 'Line', onSelect: () => onAddLayer('path') },

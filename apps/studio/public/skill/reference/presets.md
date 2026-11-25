@@ -1,6 +1,6 @@
 # Presets
 
-Generated from the Studio 0.1.70. A clip names one of these in `preset` and may set the listed `params`; a preset
+Generated from the Studio 0.1.73. A clip names one of these in `preset` and may set the listed `params`; a preset
 only works on the layer types it applies to. Presets marked *not for AI* are left out of what an AI should use.
 
 ## Text
@@ -172,4 +172,5 @@ only works on the layer types it applies to. Presets marked *not for AI* are lef
 | `spin-3d` | **Spin 3D.** The object turns around one of its axes, a set number of times. | model | 2 s | `axis`: `y` / `x` / `z`; `turns`: number -10 to 10 |
 | `tumble-in` | **Tumble in.** The object tumbles into its pose from a turned, smaller start (or tumbles away). | model | 1.1 s | `direction`: `in` / `out`; `turn`: number -720 to 720 °; `tilt`: number -180 to 180 °; `scale`: number 0 to 3 |
 | `orbit-3d` | **Orbit.** The camera circles the object, rising or dipping as it goes. | model | 3 s | `angle`: number -360 to 360 °; `tilt`: number -60 to 60 ° |
+| `open-lid` | **Open lid.** A laptop's lid opens to its angle from closed (or closes). 3D devices only: put it on a laptop. | model | 1.2 s | `direction`: `in` / `out` |
 | `camera-push` | **Camera push.** The camera moves in from further away (or pulls back out). | model | 1.4 s | `direction`: `in` / `out`; `distance`: number 0.3 to 8 × |

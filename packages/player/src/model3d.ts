@@ -11,7 +11,10 @@ import { setPaintBase } from './paintLayer';
  * runtime never animates on its own, so 3D seeks, scrubs and loops exactly like everything else.
  */
 
-/** Rotations in degrees; px / py move the object by a fraction of its size; the camera orbits, tilts and dollies. */
+/**
+ * Rotations in degrees; px / py move the object by a fraction of its size; the camera orbits, tilts and dollies;
+ * open: how far a laptop's lid is open, as a fraction of the layer's own lid angle (1 = as set, 0 = closed).
+ */
 export interface State3D {
   rx: number;
   ry: number;
@@ -22,9 +25,10 @@ export interface State3D {
   orbit: number;
   tilt: number;
   dolly: number;
+  open: number;
 }
 
-export const REST_3D: State3D = { rx: 0, ry: 0, rz: 0, s: 1, px: 0, py: 0, orbit: 0, tilt: 0, dolly: 1 };
+export const REST_3D: State3D = { rx: 0, ry: 0, rz: 0, s: 1, px: 0, py: 0, orbit: 0, tilt: 0, dolly: 1, open: 1 };
 
 export interface Runtime3D {
   /** Draws the object in this state (remembered and redrawn once a model finishes loading). */
@@ -32,8 +36,11 @@ export interface Runtime3D {
   dispose(): void;
   /** Resolves once the object is built (models and SVGs load asynchronously). */
   ready: Promise<void>;
-  /** Animated models: shows the animation at this many seconds of the layer's own time (and redraws). */
-  time?(seconds: number): void;
+  /**
+   * Shows the layer at this many seconds of its own time (and redraws): animated models' animation, and a device's
+   * screen video, which plays while the scene plays and is seeked exactly when it is paused, scrubbed or exported.
+   */
+  time?(seconds: number, playing?: boolean): void;
   /** Animated models: the longest animation clip, in seconds (0 when it has none). */
   animationLength?(): number;
 }
