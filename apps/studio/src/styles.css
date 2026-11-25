@@ -1383,3 +1383,32 @@ dialog.mascot-dialog { width: min(960px, calc(100vw - 32px)); max-height: calc(1
 /* ---------- page mode (Animation Creator, beta): the Unyson+ page's elements ---------- */
 
 /* Page timelines 5e: Runs on, Save to page, tracks not on this page, Import / Export. */
+
+/* What Kinetic Scenes can do (Help) and the start box's Did you know? */
+.cap-dialog .export-inner { max-width: 720px; }
+.cap-search { width: 100%; }
+.cap-groups { display: flex; flex-direction: column; gap: 18px; }
+.cap-groups h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cap-card { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line, rgba(127,127,127,.18)); }
+.cap-groups section > .cap-card:first-of-type { border-top: 0; }
+.cap-words { flex: 1; min-width: 0; }
+.cap-words strong { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cap-words p { margin: 2px 0 6px; opacity: .82; line-height: 1.45; }
+.cap-kit { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 99px; border: 1px solid currentColor; opacity: .6; }
+.cap-prompt { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; background: rgba(127,127,127,.1); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
+.cap-prompt span { flex: 1; }
+.cap-prompt em { font-style: normal; font-weight: 600; opacity: .7; }
+.cap-actions { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.cap-actions a { color: var(--accent); }
+.cap-thumb { position: relative; flex: none; width: 72px; aspect-ratio: 9 / 16; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: #000; cursor: pointer; }
+.cap-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cap-thumb span { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 20px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.start-tip { border: 1px solid var(--line, rgba(127,127,127,.22)); border-radius: 10px; padding: 10px 12px 8px; margin: 4px 0 10px; }
+.start-tip__tag { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+.start-tip .cap-card { border: 0; padding: 4px 0 0; }
+.start-tip .cap-thumb { width: 64px; }
+.start-tip__foot { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; margin-top: 4px; }
+.start-tip__off { margin-left: auto; opacity: .7; }
+dialog.tip-video-dialog { width: min(420px, calc(100vw - 32px)); }
+.tip-video { position: relative; width: 100%; max-height: calc(100dvh - 180px); aspect-ratio: 9 / 16; margin: 0 auto 10px; background: #000; border-radius: 10px; overflow: hidden; }
+.tip-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }

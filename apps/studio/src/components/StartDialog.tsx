@@ -8,6 +8,9 @@ import { WHATS_NEW } from '../lib/whatsNew';
 import { StyleGallery } from './StyleGallery';
 import { featuredStyles, noteStyle } from '../lib/styleRecent';
 import { kitify } from './KitLink';
+import { TipCard } from './Capabilities';
+import { nextTip, tipsOff, type Capability, type CapabilityAction } from '../lib/capabilities';
+import { welcomeSeen } from './WelcomeDialog';
 
 /** The done-for-you video service, on the Unyson+ site. */
 const DFY_URL = 'https://www.unysonplus.com/videos/?utm_source=kinetic-scenes&utm_medium=start-screen';
@@ -78,6 +81,10 @@ export function StartDialog(props: {
   onNews: () => void;
   /** Opens the welcome video (the 3-minute tour). */
   onIntro?: () => void;
+  /** A tip's Show me, its short, and Help › What Kinetic Scenes can do. */
+  onTipTry?: (a: CapabilityAction) => void;
+  onTipVideo?: (c: Capability) => void;
+  onCapabilities?: () => void;
   /** A new scene in this style, with no AI. */
   onStyleNew: (style: SceneStyle) => void;
   /** Opens the Style library (every style). */
@@ -86,6 +93,8 @@ export function StartDialog(props: {
   pickStyle?: { id: string; n: number } | null;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  /** This visit's tip, for someone who has been here before (and has not hidden tips). */
+  const [tip, setTip] = useState<Capability | null>(() => (welcomeSeen() && !tipsOff() ? nextTip() : null));
   const [step, setStep] = useState<'pick' | 'describe' | 'website' | 'paper' | 'style'>('pick');
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
@@ -191,7 +200,10 @@ export function StartDialog(props: {
                 <span>Short videos and reels for your business, from the photos you already have. From US$5 a video.</span>
                 <span className="start-dfy__go">See how it works <span className="start-dfy__arrow" aria-hidden="true">→</span></span>
               </a>
-              {props.onIntro && (
+              {/* Returning visitors get one thing it can do per visit; first-timers get the tour. */}
+              {tip && props.onTipTry && props.onTipVideo && props.onCapabilities ? (
+                <TipCard tip={tip} onTry={props.onTipTry} onVideo={props.onTipVideo} onAll={props.onCapabilities} onNext={() => setTip(nextTip())} onOff={() => setTip(null)} />
+              ) : props.onIntro && (
                 <p className="start-note start-intro">
                   New here? <button type="button" className="start-intro-btn" onClick={props.onIntro}>Watch the 3-minute tour</button>
                 </p>

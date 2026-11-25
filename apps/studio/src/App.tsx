@@ -49,6 +49,8 @@ import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { TemplatesDialog } from './components/TemplatesDialog';
 import { FirstRun, shouldShowFirstRun } from './components/FirstRun';
 import { WelcomeDialog, welcomeSeen } from './components/WelcomeDialog';
+import { CapabilitiesDialog, TipVideoDialog } from './components/Capabilities';
+import type { Capability, CapabilityAction } from './lib/capabilities';
 import { MascotDialog } from './components/MascotDialog';
 import { draftsOf, mascotLayer, type DraftPose } from './lib/mascotMaker';
 import { measureVoiceLevels, withLevels } from './lib/levels';
@@ -358,6 +360,24 @@ export function App() {
     else setStartOpen(true);
   };
   const newTag = newsUnread ? 'New' : undefined;
+  const tryCapability = (a: CapabilityAction) => {
+    setCapsOpen(false);
+    if (a !== 'start' && a !== 'website') setStartOpen(false);
+    if (a === 'start' || a === 'website') setStartOpen(true);
+    else if (a === 'highlights') setHighlightsOpen(true);
+    else if (a === 'like') setLikeOpen(true);
+    else if (a === 'sheet') setBatchOpen(true);
+    else if (a === 'recording') screencastRef.current?.click();
+    else if (a === 'templates') setTemplatesOpen(true);
+    else if (a === 'paper') setStartOpen(true);
+    else if (a === 'styles') setStyleLibOpen(true);
+    else if (a === 'stock') setStockOpen(true);
+    else if (a === 'music') setMusicOpen(true);
+    else if (a === 'mascot' || a === 'device' || a === 'translate' || a === 'listen' || a === 'physics' || a === 'swarm' || a === 'export') tryNews(a);
+  };
+  /** Help › What Kinetic Scenes can do, and a tip's short playing. */
+  const [capsOpen, setCapsOpen] = useState(false);
+  const [tipVideo, setTipVideo] = useState<Capability | null>(null);
   /** A new scene is on its way from the start screen: it must not land in the project reopened from last time. */
   const fromStart = useRef(false);
   const [likeOpen, setLikeOpen] = useState(false);
@@ -1200,6 +1220,7 @@ export function App() {
     ] },
     { label: 'Help', dot: newsUnread, items: [
       { label: 'What\'s new', onSelect: openNews, badge: newTag },
+      { label: 'What Kinetic Scenes can do', onSelect: () => setCapsOpen(true), hint: 'Everything you can make, by hand or by asking your AI, with a prompt to copy for each' },
       { label: 'The manual', onSelect: link(DOCS) },
       { label: 'Connect your AI agent', onSelect: link(AGENTS_GUIDE) },
       { label: 'Watch the intro (3 min)', onSelect: () => setWelcomeOpen(true), hint: 'A quick tour: the workspace, HTML vs MP4, and how to connect your AI' },
@@ -1598,6 +1619,7 @@ export function App() {
         currentTitle={scene === DEMO || !scene.layers.length ? '' : scene.title || 'This scene'} projectOpen={!!project}
         onAi={startWithAi} onProject={(id) => { setStartOpen(false); openFolderProject(id); }}
         onAllProjects={() => { setStartOpen(false); setProjectsOpen(true); }} onNews={openNews} onIntro={() => setWelcomeOpen(true)}
+        onTipTry={(a) => tryCapability(a)} onTipVideo={setTipVideo} onCapabilities={() => { setStartOpen(false); setCapsOpen(true); }}
         onStyleNew={(style) => {
           setStartOpen(false);
           leaveForNew();
@@ -1634,6 +1656,8 @@ export function App() {
         onUseForAi={useStyleForAi} onDelete={deleteStyle} onUpsert={upsertStyle} />
       <WhatsNewDialog open={newsOpen} onClose={() => setNewsOpen(false)} onTry={tryNews} />
       <WelcomeDialog open={welcomeOpen} onClose={() => setWelcomeOpen(false)} />
+      <CapabilitiesDialog open={capsOpen} onClose={() => setCapsOpen(false)} onTry={(a) => tryCapability(a)} onVideo={setTipVideo} />
+      <TipVideoDialog tip={tipVideo} onClose={() => setTipVideo(null)} />
       <MascotDialog open={!!mascotAsk} hasVoice={(scene.audio ?? []).some((a) => a.words?.length)} onClose={() => setMascotAsk(null)}
         initial={(() => { const l = mascotAsk?.editId ? findLayer(scene, mascotAsk.editId) : undefined; return l?.type === 'mascot' ? { name: l.name ?? 'Mascot', poses: draftsOf(l), mouths: l.mouths } : undefined; })()}
         onUseFile={(f) => { addMascotFields(layerFromFile(f)); setMascotAsk(null); }}
