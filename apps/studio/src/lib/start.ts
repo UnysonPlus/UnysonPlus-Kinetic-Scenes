@@ -14,7 +14,9 @@ export function setStartHidden(hidden: boolean) {
 /** Opens with the Studio, unless the person turned it off or arrived with a job: an agent's project link, a shared scene link, or a page editor. */
 export function shouldShowStart(search: string, hidden = startHidden()): boolean {
   const q = new URLSearchParams(search);
-  return !hidden && !q.has('project') && !q.has('scene') && !q.has('connect');
+  // A request handed over from the AI Dev Kit's Chat (?handoff=) goes straight to AI assist: no welcome tour or start box
+  // in front of it (the visitor already uses the kit; the tour still shows on their next visit).
+  return !hidden && !q.has('project') && !q.has('scene') && !q.has('connect') && !q.has('handoff');
 }
 
 export interface StartFormat { id: string; label: string; hint: string; video: VideoSettings | null }
