@@ -63,6 +63,8 @@ const FALSE_COLOURS: Record<'thermal' | 'xray' | 'night-vision', [number[], numb
   'night-vision': [[0, 0.02, 0.08, 0.2, 0.55], [0.02, 0.25, 0.55, 0.85, 1], [0, 0.04, 0.12, 0.25, 0.55]],
 };
 let falseColourSeq = 0;
+/** Numbers each stamp's ink filter (one per stamp, kept when the timeline is rebuilt). */
+let stampSeq = 0;
 /** A CSS filter for a look, part of the way there (0 = untouched, 1 = the full look). */
 export function gradeFilter(look: string, k: number): string {
   const g = LOOKS[look] ?? LOOKS.bw;
@@ -349,6 +351,172 @@ export const VIDEO_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
       ctx.el.style.rotate = f > 0 ? `${(f * f * 14).toFixed(2)}deg` : '';
       ctx.el.style.opacity = f > 0 ? (1 - f).toFixed(3) : '';
     }, { ease: false });
+  },
+
+  stamp(ctx) {
+    // A rubber stamp slams down on it ("APPROVED", "REJECTED", "SOLD OUT"): big and faint above, down hard with
+    // a little squash, the layer jolts under it, and the ink spreads a touch. The impact comes early (a fifth of
+    // the clip) so it lands on the Rubber stamp sound, which plays at the clip's start. Out lifts it off.
+    // The stamp's rough edge and worn ink are an SVG filter (noise that bends the outline and eats a few
+    // specks), seeded per clip so every stamp wears differently but the same on every frame.
+    const p = ctx.params;
+    const out = isOut(p);
+    const ink = color(p, 'color', '#d92d3a');
+    const size = num(p, 'size', 5);
+    const angle = num(p, 'angle', -12);
+    const text = String(p.text ?? 'APPROVED').trim().slice(0, 40) || 'APPROVED';
+    const st = owned(ctx, 'upw-stamp', 'shared');
+    Object.assign(st.style, { position: 'absolute', inset: '0', display: 'grid', placeItems: 'center', pointerEvents: 'none', zIndex: '3' });
+    let mark = st.querySelector<HTMLElement>(':scope > span');
+    if (!mark) {
+      const id = `upw-stamp-ink-${++stampSeq}`;
+      const s1 = Math.floor(ctx.rand(1) * 900) + 1, s2 = Math.floor(ctx.rand(2) * 900) + 1;
+      st.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="${id}" x="-15%" y="-25%" width="130%" height="150%">`
+        + `<feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="${s1}" result="edge"/>`
+        + `<feDisplacementMap in="SourceGraphic" in2="edge" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="rough"/>`
+        + `<feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="4" seed="${s2}" result="wear"/>`
+        + `<feColorMatrix in="wear" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -9 0 0 0 6.6" result="keep"/>`
+        + `<feComposite in="rough" in2="keep" operator="in"/></filter></svg><span></span>`;
+      mark = st.querySelector<HTMLElement>(':scope > span')!;
+      mark.dataset.filter = id;
+    }
+    mark.textContent = text;
+    Object.assign(mark.style, {
+      display: 'inline-block', padding: '.22em .55em .16em', border: '.13em solid currentColor', borderRadius: '.14em',
+      outline: '.045em solid currentColor', outlineOffset: '-.3em', color: ink,
+      font: `900 ${size}cqw/1 "Arial Black", "Helvetica Neue", Impact, system-ui, sans-serif`, letterSpacing: '.07em',
+      textTransform: 'uppercase', whiteSpace: 'nowrap', filter: `url(#${mark.dataset.filter})`, willChange: 'transform, opacity',
+    });
+    const HIT = 0.22;
+    chain(ctx, (raw) => {
+      let scale = 1, alpha = 0.92, spread = 0, jolt = 0;
+      if (out) {
+        scale = 1 + 0.35 * raw;
+        alpha = 0.92 * (1 - raw);
+      } else if (raw < HIT) {
+        const k = raw / HIT;
+        scale = lerp(2.4, 1, k * k);
+        alpha = raw > 0 ? 0.92 * Math.min(1, 0.25 + k) : 0;
+      } else {
+        const u = (raw - HIT) / (1 - HIT);
+        // The squash on impact, then settled.
+        scale = 1 - 0.07 * Math.sin(Math.min(1, u / 0.2) * Math.PI);
+        spread = Math.min(1, u / 0.6);
+        const s = u / 0.45;
+        jolt = s < 1 ? (1 - s) * Math.sin(s * Math.PI * 5) : 0;
+      }
+      mark!.style.opacity = alpha.toFixed(3);
+      mark!.style.transform = `rotate(${angle}deg) scale(${scale.toFixed(4)})`;
+      mark!.style.textShadow = spread > 0 ? `0 0 ${(0.015 * spread).toFixed(3)}em ${ink}` : '';
+      ctx.el.style.translate = jolt ? `${(jolt * 0.35).toFixed(3)}cqw ${(jolt * 0.5).toFixed(3)}cqw` : '';
+    }, { ease: false });
+  },
+
+  'tape-label'(ctx) {
+    // A strip of tape with a short line on it, slapped on at a slant, as on a moving box or a chest: it comes in
+    // a little too big and lifted, presses flat with a small overshoot, and the out clip peels it off from one
+    // end. The torn ends are a zigzag drawn from the clip's own random numbers, so every strip tears differently
+    // and the same on every frame.
+    const p = ctx.params;
+    const out = isOut(p);
+    const tape = color(p, 'color', '#efd88f');
+    const ink = color(p, 'ink', '#1c1e22');
+    const size = num(p, 'size', 3.2);
+    const angle = num(p, 'angle', -6);
+    const place = pick(p, 'place', ['center', 'top', 'bottom'] as const, 'center');
+    const text = String(p.text ?? 'FRAGILE').trim().slice(0, 60) || 'FRAGILE';
+    const host = owned(ctx, 'upw-tape', 'shared');
+    Object.assign(host.style, {
+      position: 'absolute', inset: '0', display: 'grid', placeItems: place === 'top' ? 'start center' : place === 'bottom' ? 'end center' : 'center',
+      pointerEvents: 'none', zIndex: '3',
+    });
+    let strip = host.querySelector<HTMLElement>(':scope > span');
+    if (!strip) {
+      strip = ctx.el.ownerDocument.createElement('span');
+      host.appendChild(strip);
+      // Torn ends: a few teeth down each short side.
+      const teeth = 7;
+      const left: string[] = [], right: string[] = [];
+      for (let i = 0; i <= teeth; i++) {
+        const y = (i / teeth) * 100;
+        left.push(`${(ctx.rand(10 + i) * 2.2).toFixed(2)}% ${y.toFixed(1)}%`);
+        right.push(`${(100 - ctx.rand(40 + i) * 2.2).toFixed(2)}% ${(100 - y).toFixed(1)}%`);
+      }
+      strip.style.clipPath = `polygon(${left.join(',')},${right.join(',')})`;
+    }
+    strip.textContent = text;
+    Object.assign(strip.style, {
+      display: 'inline-block', padding: '.42em 1.3em .36em', margin: place === 'center' ? '0' : '.4em 0',
+      background: `linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 35%, rgba(0,0,0,.06)), ${tape}`,
+      color: ink, font: `700 ${size}cqw/1.05 "Marker Felt", "Comic Sans MS", "Segoe Print", "Bradley Hand", cursive`,
+      letterSpacing: '.03em', whiteSpace: 'nowrap', boxShadow: '0 .25cqw .6cqw rgba(0,0,0,.22)', opacity: '0.96',
+      transformOrigin: out ? '0% 50%' : '50% 50%', willChange: 'transform, opacity',
+    });
+    chain(ctx, (raw) => {
+      let scale = 1, alpha = 0.96, tilt = angle, lift = 0, peel = 0;
+      if (out) {
+        // Peeled off from the left end: it lifts, curls up a little and slides away.
+        const e = raw * raw;
+        peel = e;
+        tilt = angle - 22 * e;
+        lift = -6 * e;
+        alpha = 0.96 * (1 - Math.max(0, (raw - 0.55) / 0.45));
+      } else {
+        const k = clamp01(raw / 0.3);
+        const s = 1 - (1 - k) ** 3;
+        scale = lerp(1.18, 1, s) - 0.035 * Math.sin(clamp01((raw - 0.3) / 0.25) * Math.PI);
+        tilt = angle + (1 - s) * 5;
+        lift = (1 - s) * -1.2;
+        alpha = raw > 0 ? 0.96 * Math.min(1, 0.2 + k * 1.2) : 0;
+      }
+      strip!.style.opacity = alpha.toFixed(3);
+      strip!.style.transform = `translate(${(peel * 3).toFixed(2)}cqw, ${lift.toFixed(3)}cqw) rotate(${tilt.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
+      strip!.style.boxShadow = `0 ${(0.25 + (1 - scale) * -2 + peel * 1.2).toFixed(3)}cqw ${(0.6 + peel * 1.5).toFixed(2)}cqw rgba(0,0,0,${(0.22 + peel * 0.08).toFixed(3)})`;
+    }, { ease: false });
+  },
+
+  'split-push'(ctx) {
+    // A headline card, a screenshot or a B-roll clip slides down from the top and pushes the speaker into the
+    // lower half of the frame; the out clip slides it back up and gives the frame back. Put this layer's box over
+    // the top half. The speaker is the footage layer named in "Pushes", or else the biggest other footage layer
+    // in the scene. Its picture (not its box, so its own presets and the camera are left alone) moves down a
+    // quarter and is cut to its middle band, the part where a face usually is, so the face lands in the lower
+    // half instead of being squashed.
+    const p = ctx.params;
+    const out = isOut(p);
+    const want = typeof p.push === 'string' ? p.push.trim() : '';
+    const share = clamp01(num(p, 'share', 50) / 100);
+    const shift = share / 2;
+    let speaker: HTMLElement | null = null;
+    const findSpeaker = () => {
+      if (speaker?.isConnected) return speaker;
+      const stage = ctx.el.closest('.upw-stage') ?? ctx.el.ownerDocument;
+      const own = ctx.el.closest<HTMLElement>('.upw-layer');
+      let pickEl: HTMLElement | null = null;
+      if (want) pickEl = stage.querySelector<HTMLElement>(`.upw-layer[data-layer="${CSS.escape(want)}"]`);
+      if (!pickEl) {
+        let best = 0;
+        stage.querySelectorAll<HTMLElement>('.upw-layer.upw-video').forEach((l) => {
+          if (l === own) return;
+          const r = l.getBoundingClientRect(), a = r.width * r.height;
+          if (a > best) { best = a; pickEl = l; }
+        });
+      }
+      const media = pickEl ? (pickEl as HTMLElement).querySelector<HTMLElement>('.upw-li > video, .upw-li > img') : null;
+      speaker = media;
+      return media;
+    };
+    chain(ctx, (k0) => {
+      const k = out ? 1 - k0 : k0;
+      // Exactly its own height: its bottom edge then meets the speaker's top edge all the way (no gap opens).
+      ctx.el.style.translate = k < 1 ? `0 ${(-(1 - k) * 100).toFixed(3)}%` : '';
+      const m = findSpeaker();
+      if (!m) return;
+      if (k <= 0) { m.style.translate = ''; m.style.clipPath = ''; return; }
+      const d = (k * shift * 100).toFixed(3);
+      m.style.translate = `0 ${d}%`;
+      m.style.clipPath = `inset(${d}% 0 ${d}% 0)`;
+    });
   },
 
   jiggle(ctx) {

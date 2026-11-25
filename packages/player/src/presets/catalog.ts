@@ -568,6 +568,27 @@ export const PRESET_CATALOG: PresetMeta[] = [
     fields: [DIRECTION, { key: 'color', label: 'Colour', type: 'color' }, { key: 'thickness', label: 'Thickness', type: 'number', min: 0.1, max: 3, step: 0.1, unit: 'su' }, { key: 'angle', label: 'Tilt', type: 'number', min: -45, max: 45, step: 1, unit: '°' }, { key: 'fall', label: 'Then it falls away', type: 'boolean' }],
   },
   {
+    id: 'stamp', label: 'Stamp', category: 'emphasis', appliesTo: ALL,
+    description: 'A rubber stamp slams down on it with a jolt and inky, worn edges: "APPROVED", "REJECTED", "SOLD OUT", "PAID". The words, colour, tilt and size are yours; the out clip lifts it off. Pairs with the Rubber stamp sound.',
+    defaultEase: 'none', defaultDuration: 0.8,
+    defaults: { direction: 'in', text: 'APPROVED', color: '#d92d3a', angle: -12, size: 5 },
+    fields: [DIRECTION, { key: 'text', label: 'Words', type: 'text' }, { key: 'color', label: 'Ink', type: 'color' }, { key: 'angle', label: 'Tilt', type: 'number', min: -45, max: 45, step: 1, unit: '°' }, { key: 'size', label: 'Size', type: 'number', min: 1, max: 20, step: 0.5, unit: 'su' }],
+  },
+  {
+    id: 'tape-label', label: 'Tape label', category: 'emphasis', appliesTo: ALL,
+    description: 'A strip of tape with a short handwritten line is slapped on at a slant, as on a moving box or a chest: "FRAGILE", "DO NOT OPEN", "Day 1", "Before". Torn ends, your words, tape colour and tilt; across the middle, the top or the bottom of the layer. The out clip peels it off.',
+    defaultEase: 'none', defaultDuration: 0.6,
+    defaults: { direction: 'in', text: 'FRAGILE', color: '#efd88f', ink: '#1c1e22', angle: -6, size: 3.2, place: 'center' },
+    fields: [DIRECTION, { key: 'text', label: 'Words', type: 'text' }, { key: 'place', label: 'Where', type: 'select', options: [{ value: 'center', label: 'Across the middle' }, { value: 'top', label: 'At the top' }, { value: 'bottom', label: 'At the bottom' }] }, { key: 'color', label: 'Tape', type: 'color' }, { key: 'ink', label: 'Writing', type: 'color' }, { key: 'angle', label: 'Tilt', type: 'number', min: -45, max: 45, step: 1, unit: '°' }, { key: 'size', label: 'Size', type: 'number', min: 1, max: 15, step: 0.2, unit: 'su' }],
+  },
+  {
+    id: 'split-push', label: 'Split push', category: 'motion', appliesTo: ALL,
+    description: 'For a talking head: this card, screenshot or clip slides down from the top and pushes the speaker into the lower half of the frame (their face stays in view, nothing is squashed); the out clip slides it back up and gives the frame back. Put this layer over the top half; the speaker is the footage layer you pick, or the biggest one.',
+    defaultEase: 'power3.inOut', defaultDuration: 0.7,
+    defaults: { direction: 'in', push: '', share: 50 },
+    fields: [DIRECTION, { key: 'push', label: 'Pushes', type: 'layer' }, { key: 'share', label: 'Frame it takes', type: 'number', min: 20, max: 70, step: 5, unit: '%' }],
+  },
+  {
     id: 'jiggle', label: 'Jiggle', category: 'emphasis', appliesTo: ALL,
     description: 'The phone home-screen wobble: quick, slight back-and-forth tilting, as before a delete or to say "you can change this".',
     defaultEase: 'none', defaultDuration: 1.2,

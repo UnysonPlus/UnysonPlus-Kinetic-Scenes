@@ -155,7 +155,7 @@ Text: kinetic hook = the Kinetic hook piece (text-slam, gravity-drop); gravity d
   captions motion slam; viral drop = captions motion drop; knockout captions = knockout; headline storm = several
   tilted pill texts with strip-in from alternating sides; receipt printer = receipt on a group; screenplay page =
   text-typewriter then select-box; intertitle / title card = the Intertitle / Title card pieces (timecode).
-Emphasis: checklist pop / checklist = text lines with tick, a counter with odometer; icon strike = strike; jiggle delete =
+Emphasis: checklist pop / checklist = text lines with tick, a counter with odometer; icon strike = strike; a verdict (approved, rejected, sold out, paid) = stamp; jiggle delete =
   jiggle then strike; growth curve = the Growth chart piece (draw, odometer).
 Interface pieces (build from layers like the Pieces library): comment CTA / comment drop = a comment box typing "EDIT"
   then a reply; prompt bar; chat takeover = a chat window; file drop = a dashed zone (march, dash-solid) and a file card;
