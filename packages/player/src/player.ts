@@ -205,11 +205,37 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   const win = doc.defaultView ?? window;
   // Pictures and footage wait until the scene comes near the screen (options.lazy; see releaseHeld).
   let holding = !!options.lazy && 'IntersectionObserver' in win;
-  function releaseHeld() {
-    if (!holding) return;
+  // Once near the screen, media load part by part: the parts that play in the next LOOKAHEAD seconds first, then
+  // each part as the playhead comes within LOOKAHEAD of it (playing, seeking or scrolling), so a long scene doesn't
+  // fetch every picture and video up front. A part is a top-level layer (an act, usually) and everything inside it.
+  const LOOKAHEAD = 10;
+  let stepping = false;
+  let lastStep = -1;
+  function releaseAround(t: number) {
+    if (!stepping) return;
+    let left = 0;
+    for (const r of layers) {
+      const held = Array.from(r.outer.querySelectorAll<HTMLImageElement | HTMLVideoElement>('img[data-upw-src], video[data-upw-src]'));
+      if (!held.length) continue;
+      const from = r.layer.start ?? 0, to = r.layer.end ?? scene.duration;
+      if (from <= t + LOOKAHEAD && to >= t - 0.5) {
+        for (const m of held) {
+          const src = m.dataset.upwSrc!;
+          delete m.dataset.upwSrc;
+          if (m instanceof HTMLVideoElement) m.preload = 'auto';
+          m.src = src;
+        }
+      } else left += held.length;
+    }
+    if (!left) stepping = false;
+  }
+  function releaseHeld(all = false) {
+    if (!holding && !(all && stepping)) return;
     holding = false;
     nearWatch?.disconnect();
-    releaseMedia(root);
+    if (all) { stepping = false; releaseMedia(root); return; }
+    stepping = true;
+    releaseAround(tl ? tl.time() : 0);
   }
 
   injectStyles(doc);
@@ -691,7 +717,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     if (soundBtn) soundBtn = null; // the old button went with the old stage
     root.appendChild(stage);
     layers = scene.layers.map((layer, i) => {
-      const refs = createLayer(doc, layer, i + 1, false, holding);
+      const refs = createLayer(doc, layer, i + 1, false, holding || stepping);
       // Pinned layers go in the pin space: placed against the stage, not moved by the camera.
       (refs.pinned ? pins : camNode).appendChild(refs.outer);
       return refs;
@@ -739,6 +765,8 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         render3d();
         applyCamera();
         runLate();
+        // Media of the parts coming up (checked every quarter second of the timeline, or on a jump).
+        if (stepping) { const now = t.time(); if (Math.abs(now - lastStep) >= 0.25) { lastStep = now; releaseAround(now); } }
         emit('update');
       },
       onRepeat: () => syncAudio(),
@@ -979,7 +1007,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     setCamera(on: boolean) { cameraOn = on; applyCamera(); },
     async whenReady(limitMs = 20000) {
       // Whoever waits for the scene to be ready wants all of it now (a renderer, a screenshot).
-      releaseHeld();
+      releaseHeld(true);
       const missing: string[] = [];
       const until = <T,>(p: Promise<T>, ms: number, what: string) => new Promise<void>((done) => {
         const timer = setTimeout(() => { missing.push(what); done(); }, ms);
