@@ -70,6 +70,13 @@ export class SceneAudio {
   private volume = 1;
   /** A play() made while the context was not yet running: the timeline time and when it was asked. */
   private pending: { time: number; wall: number } | null = null;
+  /**
+   * Which play() a file that is still decoding belongs to. Every stop() (and so every play()) starts a new one, and a
+   * file that finishes decoding for an older one is not scheduled: before, two plays in quick succession while the
+   * files were still loading (play, the loader holding the clock, play again) each scheduled every line once the
+   * file arrived, so the voice-over played twice, slightly apart, like an echo.
+   */
+  private session = 0;
   private decoder: BaseAudioContext | null = null;
   /** Called when the context starts or stops running (the Studio shows "click to hear"). */
   onstate: (() => void) | null = null;
@@ -125,9 +132,10 @@ export class SceneAudio {
       return;
     }
     this.playingFrom = { time, at: ctx.currentTime };
+    const session = this.session;
     for (const clip of this.clips) {
       this.load(clip.src).then((buf) => {
-        if (!buf || !this.playingFrom || !this.ctx) return;
+        if (!buf || !this.playingFrom || !this.ctx || session !== this.session) return;
         // Where the timeline is now, if this file took a moment to decode.
         const now = this.playingFrom.time + (this.ctx.currentTime - this.playingFrom.at);
         this.schedule(clip, buf, now);
@@ -136,6 +144,7 @@ export class SceneAudio {
   }
 
   stop() {
+    this.session++;
     this.playingFrom = null;
     this.pending = null;
     for (const { src, gain } of this.live) {

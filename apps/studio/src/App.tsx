@@ -527,8 +527,37 @@ export function App() {
     return () => clearTimeout(t);
   }, [notice]);
 
-  const play = useCallback(() => post({ type: 'play' }), [post]);
-  const pause = useCallback(() => post({ type: 'pause' }), [post]);
+  // Play waits for the voice too. The preview plays without sound (the Studio's own engine plays it, in step with the
+  // preview's clock), so the preview's loader only waits for pictures and footage: a voice line still decoding came in
+  // late on the first play of a project. So Play first waits, with the same Loading note, until the sounds that start in
+  // the next four seconds have been decoded (20 s at most), then starts the preview. Pause cancels the wait.
+  const stateNow = useRef(state);
+  stateNow.current = state;
+  const soundWaitId = useRef(0);
+  const play = useCallback(() => {
+    const id = ++soundWaitId.current;
+    const t = stateNow.current.time >= (stateNow.current.duration || Infinity) - 1e-3 ? 0 : stateNow.current.time;
+    const need = soundOn ? [...new Set(soundTrack(scene).filter((c) => c.start >= t - 0.25 && c.start <= t + 4).map((c) => c.src))] : [];
+    const missing = () => need.filter((src) => !audioEngine.loaded(src));
+    if (!missing().length) { post({ type: 'play' }); return; }
+    const started = performance.now();
+    const step = () => {
+      if (id !== soundWaitId.current) return; // paused, or played again
+      const left = missing().length;
+      if (!left || performance.now() - started > 20000) {
+        setState((st) => ({ ...st, buffering: null }));
+        post({ type: 'play' });
+        return;
+      }
+      setState((st) => ({ ...st, buffering: 1 - left / need.length }));
+      setTimeout(step, 150);
+    };
+    step();
+  }, [post, scene, soundOn, audioEngine]);
+  const pause = useCallback(() => {
+    if (soundWaitId.current) { soundWaitId.current++; setState((st) => (st.buffering !== null && !st.playing ? { ...st, buffering: null } : st)); }
+    post({ type: 'pause' });
+  }, [post]);
   // The playhead moves at once: the stage reports its time too, but a browser pauses a stage that is scrolled off screen
   // (a phone scrolled down to the timeline), and the playhead would otherwise wait for it.
   const seek = useCallback((t: number) => {

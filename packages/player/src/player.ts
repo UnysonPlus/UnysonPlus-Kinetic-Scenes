@@ -210,6 +210,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   // fetch every picture and video up front. A part is a top-level layer (an act, usually) and everything inside it.
   const LOOKAHEAD = 10;
   let stepping = false;
+  let lastLook = -1;
   let lastStep = -1;
   function releaseAround(t: number) {
     if (!stepping) return;
@@ -383,11 +384,13 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   // what the next few seconds show and say; if any of it is still loading, the clock waits (a ring shows how much
   // has arrived) and then starts by itself. Footage that stalls while playing holds the clock the same way.
   const AHEAD = 4;
+  /** Files that did not arrive within the wait: not waited for again. */
+  const gaveUp = new Set<unknown>();
   let buffer: { progress: number; stop: (go: boolean) => void } | null = null;
   let bufferEl: HTMLElement | null = null;
 
   /** The pictures, footage and sounds the scene shows or plays between t and t + AHEAD. */
-  function mediaAround(t: number) {
+  function mediaAround(t: number, ahead = AHEAD) {
     const els: Array<HTMLVideoElement | HTMLImageElement> = [];
     // A layer inside a group keeps its times in the group's own time (0 = the group's start), so the walk adds the
     // group's start and keeps within its end; read as scene times they made every later act look due now.
@@ -395,7 +398,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       for (const r of refs) {
         const from = base + (r.layer.start ?? 0);
         const to = Math.min(limit, r.layer.end !== undefined ? base + r.layer.end : limit);
-        if (from > t + AHEAD || to < t) continue;
+        if (from > t + ahead || to < t) continue;
         if (r.children) { walk(r.children, from, to); continue; }
         if (r.media) els.push(r.media);
         else if (r.layer.type === 'image') r.outer.querySelectorAll('img').forEach((img) => els.push(img));
@@ -407,14 +410,14 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     // music at the top); one already running, such as a long music bed when sound is turned on mid-scene, joins as
     // soon as it has arrived instead of holding the picture until the whole file is in.
     const sounds = sound?.on
-      ? (scene.audio ?? []).filter((c) => c.start <= t + AHEAD && c.start >= t - 0.25).map((c) => c.src)
+      ? (scene.audio ?? []).filter((c) => c.start <= t + ahead && c.start >= t - 0.25).map((c) => c.src)
       : [];
     return { els, sounds: [...new Set(sounds)] };
   }
 
   /** How far a picture or video has loaded, 0 to 1 (1 = enough to play on from where it is now). */
   function mediaProgress(m: HTMLVideoElement | HTMLImageElement): number {
-    if (m.dataset.upwSrc) return 0;
+    if (m.dataset.upwSrc || pendingSrc(m)) return 0;
     if (m instanceof HTMLImageElement) return m.complete ? 1 : 0;
     if (m.error || (!m.currentSrc && !m.getAttribute('src'))) return 1;
     if (m.readyState >= 3) return 1;
@@ -426,6 +429,77 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       }
     }
     return m.readyState >= 1 ? 0.05 : 0;
+  }
+
+  /**
+   * A file the page is still fetching before it can show it: in the Studio a project's pictures and footage start with a
+   * placeholder address (local:ws:…) while their files come from the AI Dev Kit, then switch to the real file. A picture
+   * with an address the browser cannot load counts as "complete" and footage as "failed", so the loaders took them as
+   * ready and the scene played over blank pictures.
+   */
+  function pendingSrc(m: HTMLVideoElement | HTMLImageElement) {
+    return /^local:/i.test(m.getAttribute('src') || '');
+  }
+
+  /** The loading ring: a progress circle with the percentage, over a dimmed stage. */
+  function makeRing() {
+    const el = doc.createElement('div');
+    el.className = 'upw-buffer';
+    el.setAttribute('role', 'progressbar');
+    el.setAttribute('aria-label', 'Loading the scene');
+    el.setAttribute('aria-valuemin', '0');
+    el.setAttribute('aria-valuemax', '100');
+    el.innerHTML = '<i></i><span><b>0%</b><small>Loading</small></span>';
+    return el;
+  }
+  function paintRing(el: HTMLElement, p: number) {
+    const pct = Math.round(p * 100);
+    el.style.setProperty('--p', String(p));
+    const label = el.querySelector('b');
+    if (label) label.textContent = `${pct}%`;
+    el.setAttribute('aria-valuenow', String(pct));
+  }
+
+  /*
+   * Opening a project in the Studio: its pictures and footage take a moment to arrive, while the words show at once, so
+   * the stage looked finished and a Play pressed then played over blank pictures. In the editor the ring shows from the
+   * start until every picture and video of the scene is in (30 s at most); it steps aside while Play's own loader is up
+   * or the scene plays. (A live web page loads part by part instead, and shows the ring only when Play waits.)
+   */
+  let openEl: HTMLElement | null = null;
+  let openTimer = 0;
+  let openSince = 0;
+  let openBest = 0; // the ring only counts up (a refresh briefly re-checks files already in)
+  function watchOpening() {
+    if (!options.editor) return;
+    // Each file that arrives refreshes the stage and starts this again: a watch still running keeps its ring and its
+    // start time, so the ring stays up instead of blinking off at every file.
+    if (!openTimer) { openSince = Date.now(); openBest = 0; }
+    win.clearInterval(openTimer);
+    const started = openSince;
+    const ready = (m: HTMLImageElement | HTMLVideoElement) => !pendingSrc(m) && (m instanceof HTMLImageElement ? m.complete
+      : !!m.error || m.readyState >= 2 || (!m.currentSrc && !m.getAttribute('src')));
+    const tick = () => {
+      if (destroyed) { win.clearInterval(openTimer); openTimer = 0; return; }
+      const media = Array.from(root.querySelectorAll<HTMLImageElement | HTMLVideoElement>('img, video'));
+      const done = media.filter(ready).length;
+      if (!media.length || done === media.length || Date.now() - started > 30000) {
+        win.clearInterval(openTimer);
+        openTimer = 0;
+        openEl?.remove();
+        openEl = null;
+        return;
+      }
+      const busy = !!buffer || (!!tl && !tl.paused());
+      if (busy) { openEl?.remove(); return; }
+      if (Date.now() - started < 250) return; // a quick load never flashes the ring
+      if (!openEl) openEl = makeRing();
+      if (!openEl.isConnected) root.appendChild(openEl);
+      openBest = Math.max(openBest, done / media.length);
+      paintRing(openEl, openBest);
+    };
+    tick();
+    openTimer = win.setInterval(tick, 200);
   }
 
   function paintBuffer() {
@@ -453,7 +527,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       m.src = src;
     }
     const measure = () => {
-      const parts = els.map(mediaProgress).concat(sounds.map((s) => (sound?.loaded(s) ? 1 : 0)));
+      const parts = els.filter((m) => !gaveUp.has(m)).map(mediaProgress).concat(sounds.filter((s) => !gaveUp.has(s)).map((s) => (sound?.loaded(s) ? 1 : 0)));
       return parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : 1;
     };
     if (measure() >= 1) return false;
@@ -472,21 +546,19 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
     // A quick load never shows the ring (no flash): it appears after a moment.
     const show = win.setTimeout(() => {
       if (!buffer) return;
-      if (!bufferEl) {
-        bufferEl = doc.createElement('div');
-        bufferEl.className = 'upw-buffer';
-        bufferEl.setAttribute('role', 'progressbar');
-        bufferEl.setAttribute('aria-label', 'Loading the scene');
-        bufferEl.setAttribute('aria-valuemin', '0');
-        bufferEl.setAttribute('aria-valuemax', '100');
-        bufferEl.innerHTML = '<i></i><span><b>0%</b><small>Loading</small></span>';
-      }
+      if (!bufferEl) bufferEl = makeRing();
+      openEl?.remove();
       root.appendChild(bufferEl);
       root.dataset.buffering = '';
       paintBuffer();
     }, 300);
     // Never wait for ever: a file that will not load must not stop the scene.
-    const giveUp = win.setTimeout(() => buffer?.stop(true), 20000);
+    const giveUp = win.setTimeout(() => {
+      // What has not arrived by now is skipped from then on (a broken address must not hold the scene every time).
+      els.forEach((m) => { if (mediaProgress(m) < 1) gaveUp.add(m); });
+      sounds.forEach((s) => { if (!sound?.loaded(s)) gaveUp.add(s); });
+      buffer?.stop(true);
+    }, 20000);
     buffer = {
       progress: measure(),
       stop: (go) => {
@@ -779,6 +851,21 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
         runLate();
         // Media of the parts coming up (checked every quarter second of the timeline, or on a jump).
         if (stepping) { const now = t.time(); if (Math.abs(now - lastStep) >= 0.25) { lastStep = now; releaseAround(now); } }
+        // While playing, what shows in the next second must be there: a picture or footage still loading (a slow
+        // connection, a file further into the scene) holds the scene with the ring instead of showing up blank.
+        if (!buffer && wantPlaying && !t.paused()) {
+          const now = t.time();
+          if (Math.abs(now - lastLook) >= 0.5) {
+            lastLook = now;
+            const { els, sounds } = mediaAround(now, 1);
+            const late = els.some((m) => !gaveUp.has(m) && mediaProgress(m) < 1) || sounds.some((x) => !gaveUp.has(x) && !sound?.loaded(x));
+            if (late) {
+              t.pause();
+              sound?.stop();
+              if (!waitForMedia()) { t.play(); syncAudio(); }
+            }
+          }
+        }
         emit('update');
       },
       onRepeat: () => syncAudio(),
@@ -953,6 +1040,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   setupDom();
   applyBreakpoint(chooseBreakpoint(root.getBoundingClientRect().width || win.innerWidth));
   rebuild(0, false);
+  watchOpening();
 
   const resizeObserver = new ResizeObserver((entries) => {
     const w = entries[0]?.contentRect.width;
@@ -1182,6 +1270,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       setupDom();
       applyBreakpoint(chooseBreakpoint(root.getBoundingClientRect().width || win.innerWidth));
       rebuild(time, play);
+      watchOpening();
       scrollLink?.refresh();
       emit('breakpoint');
       emit('update');

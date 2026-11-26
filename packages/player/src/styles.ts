@@ -76,6 +76,10 @@ body.admin-bar .upw-scene{--upw-offset-extra:32px}
 .upw-buffer>i{background:conic-gradient(#fff calc(var(--p)*1turn),rgba(255,255,255,.22) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));transition:background .2s}
 .upw-buffer>span{display:grid;place-content:center;justify-items:center;color:#fff;font:600 clamp(13px,1.6cqw,18px)/1.1 system-ui,sans-serif;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .upw-buffer small{font-size:.62em;font-weight:500;opacity:.8;margin-top:2px}
+[data-editor] .upw-buffer{background:rgba(10,13,17,.62)}
+[data-editor] .upw-buffer>i,[data-editor] .upw-buffer>span{width:24cqw}
+[data-editor] .upw-buffer>i{-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 1.8cqw),#000 calc(100% - 1.6cqw));mask:radial-gradient(farthest-side,transparent calc(100% - 1.8cqw),#000 calc(100% - 1.6cqw))}
+[data-editor] .upw-buffer>span{font-size:5.2cqw}
 @keyframes upw-nudge{0%,100%{opacity:.35;translate:0 0}50%{opacity:1;translate:4px 0}}
 @media (prefers-reduced-motion:reduce){.upw-scene[data-waiting]::after{animation:none;opacity:.8}}
 .upw-sound{position:absolute;left:max(10px,1.4cqw);bottom:max(10px,1.4cqw);z-index:2147483002;display:inline-flex;align-items:center;gap:6px;height:34px;min-width:34px;padding:0 9px;border:0;border-radius:17px;background:rgba(10,13,17,.62);color:#fff;font:600 12px/1 system-ui,sans-serif;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
