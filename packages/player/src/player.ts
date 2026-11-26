@@ -33,6 +33,11 @@ export interface MountOptions {
   autoplay?: boolean;
   /** Editor preview: ignore the reduced-motion setting so the author can still watch the animation. */
   editor?: boolean;
+  /**
+   * The Studio's own stage: show a loading ring while the scene's pictures and footage arrive after it opens. Only for a
+   * person watching: a render or a still also mounts in editor mode, and must never capture the ring in a frame.
+   */
+  openingRing?: boolean;
   /** Show the safe-area guide. */
   safeArea?: boolean;
   /** Force a breakpoint instead of choosing one from the stage width. */
@@ -471,7 +476,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   let openSince = 0;
   let openBest = 0; // the ring only counts up (a refresh briefly re-checks files already in)
   function watchOpening() {
-    if (!options.editor) return;
+    if (!options.editor || !options.openingRing) return;
     // Each file that arrives refreshes the stage and starts this again: a watch still running keeps its ring and its
     // start time, so the ring stays up instead of blinking off at every file.
     if (!openTimer) { openSince = Date.now(); openBest = 0; }

@@ -105,7 +105,7 @@ function start() {
   let player: ScenePlayer;
   try {
     // audio: false: the Studio plays the scene's sound itself (a frame can't start sound from clicks outside it).
-    player = api.mount(host, localize(initial), { editor: true, autoplay: false, safeArea: safeInitial, allowCode: true, audio: false });
+    player = api.mount(host, localize(initial), { editor: true, openingRing: true, autoplay: false, safeArea: safeInitial, allowCode: true, audio: false });
   } catch (e) {
     const box = el('div', 'err');
     box.textContent = (e as Error).message;
