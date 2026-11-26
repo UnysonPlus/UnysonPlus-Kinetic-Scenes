@@ -7,9 +7,10 @@ export interface NewsItem { id: string; title: string; /** A few words for the s
 
 const DOCS = 'https://docs.unysonplus.com/kinetic-scenes/';
 
-export const NEWS_ID = '2026-11-26-chatgpt';
+export const NEWS_ID = '2026-11-26-paste-a-link';
 
 export const WHATS_NEW: NewsItem[] = [
+  { id: 'paste-a-link', title: 'Make one like this, from a link', short: 'Paste the address of a video you like', text: 'AI › Make one like this now takes a link as well as a file: a direct video address, or a video page such as YouTube or Instagram when yt-dlp is on your computer. The AI Dev Kit reads its captions, works out how it is made and deletes it. Agents also get video_watch: frames from any video within a budget, chosen at the moments and words that matter.', doc: `${DOCS}ai#from-a-link` },
   { id: 'chatgpt', title: 'Make a scene in ChatGPT', short: 'Or Gemini, or any chat app', text: 'Ask ChatGPT (or any chat app) to make a Kinetic Scene: it reads the scene format from this app and answers with the scene as JSON. Paste it into the Scene file tab and it plays; any problems are listed for you to paste back. For the full set of tools (voice-overs, footage, checks, video export), connect Codex, ChatGPT’s coding agent, through the AI Dev Kit.', doc: 'https://docs.unysonplus.com/kinetic-scenes/ai-agents#chatgpt-gemini-and-other-chat-apps' },
   { id: 'voicestudio', title: 'Your voice from VoiceStudio', short: 'A natural cloned voice for voice-overs', text: 'With VoiceStudio open on your computer, its voices appear in the Voice menu (VoiceStudio: name) for Voice-over from a script and AI assist, and your AI agent can use them as voicestudio:name. Each line is spoken in your cloned voice, joined and timed word by word like any other voice-over. It takes about a minute a line on a mid-range graphics card. Needs the AI Dev Kit.', doc: `${DOCS}addons#voicestudio` },
   { id: 'what-it-can-do', title: 'Everything it can do, in one place', short: 'Tips, and a list with prompts to copy', text: 'Help › What Kinetic Scenes can do lists the 40 things you can make, by hand or by asking your AI, each with a prompt to copy for Claude, a Show me and its manual page. And when you come back, the start box shows one of them each visit (Did you know?), with its short video once it is published.', doc: `${DOCS}start-screen#what-kinetic-scenes-can-do` },

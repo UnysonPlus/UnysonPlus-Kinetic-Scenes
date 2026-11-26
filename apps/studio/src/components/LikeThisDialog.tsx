@@ -12,6 +12,8 @@ export function LikeThisDialog(props: { open: boolean; onClose: () => void; onBr
   const ref = useRef<HTMLDialogElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  /** Or a link: a direct video, or a video page (YouTube, Instagram, TikTok…) when yt-dlp is installed. */
+  const [link, setLink] = useState('');
   const [about, setAbout] = useState('');
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState('');
@@ -25,18 +27,19 @@ export function LikeThisDialog(props: { open: boolean; onClose: () => void; onBr
   }, [props.open]);
 
   const go = async () => {
-    if (!file || !about.trim()) return;
+    if ((!file && !link.trim()) || !about.trim()) return;
     setError('');
     try {
       const b = await kitBase();
       if (!b) throw new Error('This needs the AI Dev Kit running on this computer.');
-      setBusy('Working out how it is made (about half a minute)');
-      const r = await fetch(`${b}/studio/like-this`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ src: await asDataUrl(file), seconds: seconds || undefined }) });
+      setBusy(file ? 'Working out how it is made (about half a minute)' : 'Fetching the video and working out how it is made (a minute or two)');
+      const body = file ? { src: await asDataUrl(file), seconds: seconds || undefined } : { url: link.trim(), seconds: seconds || undefined };
+      const r = await fetch(`${b}/studio/like-this`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));
       if (r.status === 404 && !j.error) throw new Error('Your AI Dev Kit is too old for this. Close it and start it again: it updates itself.');
       if (!r.ok) throw new Error(j.error || `The AI Dev Kit answered ${r.status}.`);
       props.onBrief({ about: about.trim(), brief: j.brief, context: j.context, summary: j.summary });
-      setFile(null); setAbout('');
+      setFile(null); setLink(''); setAbout('');
     } catch (e) { setError((e as Error).message); }
     setBusy('');
   };
@@ -58,7 +61,11 @@ export function LikeThisDialog(props: { open: boolean; onClose: () => void; onBr
           <button type="button" className="btn small" disabled={!!busy} onClick={() => fileRef.current?.click()}>{file ? 'Choose another video…' : 'Choose the video you like…'}</button>
           {file && <span className="addon-detail">{file.name}</span>}
         </div>
-        <input ref={fileRef} type="file" accept="video/*" hidden onChange={(e) => { setFile(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+        <input ref={fileRef} type="file" accept="video/*" hidden onChange={(e) => { setFile(e.target.files?.[0] ?? null); setLink(''); e.target.value = ''; }} />
+        <label className="addon-detail" htmlFor="like-link">Or paste a link to it</label>
+        <input id="like-link" type="url" inputMode="url" value={link} disabled={!!busy} placeholder="https://www.youtube.com/shorts/… or a link to a video file"
+          onChange={(e) => { setLink(e.target.value); if (e.target.value) setFile(null); }} />
+        <p className="addon-detail">The AI Dev Kit fetches it, reads its captions, works out how it is made, then deletes it. Video pages (YouTube, Instagram, TikTok) need yt-dlp on your computer; a direct link to a video file works without it. Only use videos you may study for reference.</p>
         <label className="addon-detail" htmlFor="like-about">What yours is about</label>
         <textarea id="like-about" className="notes-text" rows={4} value={about} disabled={!!busy} placeholder="A 20-second reel for our new booking feature: book in two taps, reminders, no fees. End on Book now."
           onChange={(e) => setAbout(e.target.value)} />
@@ -69,7 +76,7 @@ export function LikeThisDialog(props: { open: boolean; onClose: () => void; onBr
               {[15, 20, 30, 45, 60].map((s) => <option key={s} value={s}>{s} s</option>)}
             </select>
           </label>
-          <button type="button" className="btn small primary" disabled={!file || !about.trim() || !!busy} onClick={go}>{busy ? 'Working…' : 'Make mine'}</button>
+          <button type="button" className="btn small primary" disabled={(!file && !link.trim()) || !about.trim() || !!busy} onClick={go}>{busy ? 'Working…' : 'Make mine'}</button>
         </div>
         <p className="addon-detail" role="status">{busy ? `${busy}…` : 'Then AI assist builds it (with three directions and the plan first, if they are on).'}</p>
       </div>
