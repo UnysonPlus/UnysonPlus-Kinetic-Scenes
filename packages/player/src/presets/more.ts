@@ -136,8 +136,13 @@ export const MORE_BUILDERS: Record<string, (ctx: PresetContext) => void> = {
   },
 
   'open-lid'(ctx) {
-    if (isOut(ctx.params)) tween3d(ctx, { open: 1 }, { open: 0 }, false);
-    else tween3d(ctx, { open: 0 }, { open: 1 }, ctx.first);
+    if (isOut(ctx.params)) { tween3d(ctx, { open: 1 }, { open: 0 }, false); return; }
+    // The lid is its own channel: no other preset moves it. So the first Open lid on the layer holds the lid closed
+    // from the start, even when another clip comes first (a Tumble in that brings the laptop on). Before, only the
+    // layer's earliest clip did, and a laptop that tumbled in showed its lid open, snapped it shut when Open lid
+    // began, then opened it.
+    const lids = ctx.layer.clips.filter((c) => c.preset === 'open-lid').sort((a, b) => a.start - b.start);
+    tween3d(ctx, { open: 0 }, { open: 1 }, ctx.first || lids[0]?.id === ctx.clip.id);
   },
 
   'camera-push'(ctx) {
