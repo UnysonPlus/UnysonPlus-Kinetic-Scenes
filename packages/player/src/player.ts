@@ -389,14 +389,25 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   /** The pictures, footage and sounds the scene shows or plays between t and t + AHEAD. */
   function mediaAround(t: number) {
     const els: Array<HTMLVideoElement | HTMLImageElement> = [];
-    for (const r of flatRefs(layers)) {
-      const from = r.layer.start ?? 0, to = r.layer.end ?? scene.duration;
-      if (from > t + AHEAD || to < t) continue;
-      if (r.media) els.push(r.media);
-      else if (r.layer.type === 'image') r.outer.querySelectorAll('img').forEach((img) => els.push(img));
-    }
-    const sounds = sound
-      ? (scene.audio ?? []).filter((c) => c.start <= t + AHEAD && (c.duration === undefined || c.start + c.duration >= t)).map((c) => c.src)
+    // A layer inside a group keeps its times in the group's own time (0 = the group's start), so the walk adds the
+    // group's start and keeps within its end; read as scene times they made every later act look due now.
+    const walk = (refs: LayerRefs[], base: number, limit: number) => {
+      for (const r of refs) {
+        const from = base + (r.layer.start ?? 0);
+        const to = Math.min(limit, r.layer.end !== undefined ? base + r.layer.end : limit);
+        if (from > t + AHEAD || to < t) continue;
+        if (r.children) { walk(r.children, from, to); continue; }
+        if (r.media) els.push(r.media);
+        else if (r.layer.type === 'image') r.outer.querySelectorAll('img').forEach((img) => els.push(img));
+      }
+    };
+    walk(layers, 0, scene.duration);
+    // Sound counts only once it is on: a visitor who has not turned it on neither waits for it nor downloads it.
+    // Only sounds that START in the next seconds are waited for (the voice line the sound button jumps back to, the
+    // music at the top); one already running, such as a long music bed when sound is turned on mid-scene, joins as
+    // soon as it has arrived instead of holding the picture until the whole file is in.
+    const sounds = sound?.on
+      ? (scene.audio ?? []).filter((c) => c.start <= t + AHEAD && c.start >= t - 0.25).map((c) => c.src)
       : [];
     return { els, sounds: [...new Set(sounds)] };
   }
@@ -501,7 +512,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
   function stopWaiting() { buffer?.stop(false); }
 
   /** Footage that runs out of loaded video while playing holds the whole scene until it can go on. */
-  function watchStall(v: HTMLVideoElement, layer: { start?: number; end?: number }) {
+  function watchStall(v: HTMLVideoElement, layer: { start?: number; end?: number }, localNow: () => number) {
     const el = v as HTMLVideoElement & { upwStall?: boolean };
     if (el.upwStall) return;
     el.upwStall = true;
@@ -511,8 +522,9 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       // A short hiccup (a correction seek) is not worth stopping for.
       timer = win.setTimeout(() => {
         if (!tl || tl.paused() || buffer || destroyed || v.readyState >= 3 || !v.isConnected) return;
-        const now = tl.time();
-        if (now < (layer.start ?? 0) || now > (layer.end ?? scene.duration)) return;
+        // The layer's times are in its group's own time (the scene's, at the top level).
+        const now = localNow();
+        if (now < (layer.start ?? 0) || now > (layer.end ?? Infinity)) return;
         tl.pause();
         sound?.stop();
         if (!waitForMedia()) { tl.play(); syncAudio(); }
@@ -853,7 +865,7 @@ export function mount(host: HTMLElement, input: unknown, options: MountOptions =
       else if (layer.type === 'video' && refs.media instanceof HTMLVideoElement) {
         const v = refs.media;
         lateFns.push(() => syncFootage(v, layer, t.time(), !!tl && !tl.paused()));
-        watchStall(v, layer);
+        watchStall(v, layer, () => t.time());
       }
       // The cursor goes last: it measures the layers it points at after they have drawn this frame.
       else if (layer.type === 'cursor') lateFns.push(() => drawCursor(inner, layer, t.time(), easeFnOf));
