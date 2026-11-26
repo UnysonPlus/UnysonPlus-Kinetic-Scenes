@@ -77,7 +77,7 @@ import {
 import { groupDuration, groupOffset, groupPath } from '@unysonplus/scene-player/groups';
 import { VIDEO_FORMATS, zonesFor } from '@unysonplus/scene-player/video';
 import type { VideoFormat } from '@unysonplus/scene-player/types';
-import { footageIds, getFootage, probeVideo, putFootage } from './lib/footage';
+import { footageIds, getFootage, isWsFootage, probeVideo, putFootage } from './lib/footage';
 import { isRecording, screencastScene } from './lib/screencast';
 import { insertPiece } from './lib/pieces';
 import { logoLayer } from './lib/brand';
@@ -92,6 +92,7 @@ import type { AlignMode, AlignTo } from './components/AlignPanel';
 import { Library } from './components/Library';
 import { Timeline } from './components/Timeline';
 import { kitify } from './components/KitLink';
+import { KitWait } from './components/KitWait';
 import {
   DesktopIcon, DownloadIcon, FullscreenIcon, LaptopIcon, Logo, PhoneIcon, RedoIcon, TabletIcon, UndoIcon,
 } from './components/icons';
@@ -244,6 +245,34 @@ export function App() {
   const latest = useRef({ scene, selection, state, scope });
   latest.current = { scene, selection, state, scope };
 
+  /*
+   * A workspace project plays its pictures, footage and voice from the AI Dev Kit. When the kit is not there (not
+   * started, stopped, blocked by the browser), a notice stays over the stage saying so and what to do (KitWait), and
+   * the page reloads by itself once the kit answers, unless the scene was changed meanwhile. Before, one line said it
+   * and faded after a few seconds, and someone new saw a scene with words and nothing else, as if it were broken.
+   */
+  const [kitWait, setKitWait] = useState<{ project: string; reason: 'open' | 'lost'; scene: Scene } | null>(null);
+  const [kitWaitStatus, setKitWaitStatus] = useState<KitStatus | null>(null);
+  const kitWaitDismissed = useRef(false);
+  const [kitWaitTick, setKitWaitTick] = useState(0);
+  useEffect(() => {
+    if (!kitWait) return;
+    let stop = false;
+    const look = async () => {
+      const st = await kitStatus();
+      if (stop) return;
+      setKitWaitStatus(st);
+      if ((st.state === 'ready' || st.state === 'off') && (await workspaceAvailable()) && !stop) {
+        kitWaitDismissed.current = false;
+        // Nothing changed while it was away: start again from the project (its files load as on any open).
+        if (latest.current.scene === kitWait.scene) location.reload();
+      }
+    };
+    look();
+    const t = setInterval(look, 3000);
+    return () => { stop = true; clearInterval(t); };
+  }, [kitWait, kitWaitTick]);
+
   // A video is previewed at its exact pixel size, one format at a time.
   const video = scene.mode === 'video' && scene.video ? scene.video : null;
   const [formatId, setFormatId] = useState<VideoFormat | null>(null);
@@ -282,6 +311,8 @@ export function App() {
       sentFootage.current.add(id);
       getFootage(id).then((blob) => {
         if (blob) post({ type: 'footage', id, blob });
+        // A project file the kit could not hand over: let it be asked for again once the kit is back (KitWait says why).
+        else if (isWsFootage(id)) sentFootage.current.delete(id);
         else setNotice('Some footage is not on this computer any more (it is kept in the browser where it was added). Add it again.');
       });
     }
@@ -324,6 +355,20 @@ export function App() {
 
   // ---- the workspace: the scene kept in a project folder on this computer (AI Dev Kit), shared with an AI agent ----
   const [project, setProject] = useState<OpenProject | null>(null);
+  // While a project is open, check every 8 seconds that the kit still answers (two misses in a row: a busy kit, in
+  // the middle of a render, can be slow to answer once).
+  useEffect(() => {
+    if (!project || kitWait) return;
+    let misses = 0;
+    const t = setInterval(async () => {
+      const st = await kitStatus();
+      if (st.state === 'ready' || st.state === 'off') { misses = 0; kitWaitDismissed.current = false; return; }
+      if (++misses < 2 || kitWaitDismissed.current) return;
+      setKitWaitStatus(st);
+      setKitWait({ project: project.id, reason: 'lost', scene: latest.current.scene });
+    }, 8000);
+    return () => clearInterval(t);
+  }, [project, kitWait]);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState(false);
@@ -439,7 +484,7 @@ export function App() {
     workspaceAvailable().then((ok) => {
       if (ok) openFolderProject(want, true);
       // Its media plays from the kit: without it, say so rather than show a copy with nothing playing.
-      else setNotice(`The project “${want}” plays from the AI Dev Kit, which is not running. Start it (start.bat or start.command), then reload this page.`);
+      else setKitWait({ project: want, reason: 'open', scene: latest.current.scene });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1549,6 +1594,11 @@ export function App() {
               </div>
             )}
             <Preview ref={iframeRef} device={device} srcDoc={srcDoc} label="Scene preview" onScale={setScale} zones={zones} checker={seeThrough} onEmptyClick={() => setSelection({ layerId: null, clipId: null })} />
+            {kitWait && (
+              <KitWait project={kitWait.project} reason={kitWait.reason} status={kitWaitStatus} unsaved={scene !== kitWait.scene}
+                onCheck={() => setKitWaitTick((n) => n + 1)}
+                onClose={() => { kitWaitDismissed.current = true; setKitWait(null); }} />
+            )}
             <AiAssist
               project={project?.id ?? null}
               onMakeMusic={() => setMusicOpen(true)}

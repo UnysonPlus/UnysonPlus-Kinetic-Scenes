@@ -1415,3 +1415,15 @@ dialog.tip-video-dialog { width: min(420px, calc(100vw - 32px)); }
 /* The start box’s note for phone visitors: only on small touch screens. */
 .start-phone { display: none; margin: 0 0 12px; padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.45; background: rgba(42,211,139,.1); border: 1px solid rgba(42,211,139,.35); }
 @media (max-width: 720px) and (pointer: coarse) { .start-phone { display: block; } }
+
+/* Over the stage while a workspace project's files cannot be reached (the AI Dev Kit is not running): KitWait.tsx. */
+.kit-wait { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgba(8, 11, 15, .72); backdrop-filter: blur(3px); }
+.kit-wait-card { max-width: 520px; padding: 22px 24px; border-radius: 12px; background: var(--surface-2, #141a21); border: 1px solid rgba(255, 255, 255, .1); box-shadow: 0 18px 50px rgba(0, 0, 0, .45); font-size: 13px; line-height: 1.55; }
+.kit-wait-card h2 { margin: 0 0 8px; font-size: 17px; }
+.kit-wait-card p { margin: 0 0 10px; }
+.kit-wait-step { padding: 10px 12px; border-radius: 8px; background: rgba(0, 178, 149, .12); }
+.kit-wait-step code { font-size: 12px; }
+.kit-wait-auto { display: flex; gap: 8px; align-items: center; opacity: .85; }
+.kit-wait-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #2AD38B; animation: kit-wait-pulse 1.4s ease-in-out infinite; }
+@keyframes kit-wait-pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .kit-wait-dot { animation: none; } }
