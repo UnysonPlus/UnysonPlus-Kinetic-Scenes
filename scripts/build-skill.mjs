@@ -72,7 +72,33 @@ writeFileSync(join(out, 'index.html'), `<!doctype html><html lang="en"><head><me
 <p>Everything an AI needs to make good scenes for Unyson+ Kinetic Scenes, generated from the Studio's own code (version ${version}). Point your AI at this page, or at <a href="SKILL.md">SKILL.md</a>.</p>
 <ul>${files.map((f) => `<li><a href="${f}">${f}</a></li>`).join('')}</ul>
 <p>In the AI Dev Kit, the same files are in <code>skills/kinetic-scenes</code>.</p></body></html>`);
-writeFileSync(join(root, 'apps/studio/public/llms.txt'), `# Unyson+ Kinetic Scenes\n\n> Timeline motion graphics for the web, exported as plain HTML. Scenes are JSON data built from presets.\n\n## Skill\n\n${files.map((f) => `- [${f}](https://kinetic-scenes.unysonplus.com/skill/${f})`).join('\n')}\n`);
+// llms.txt: what an AI answering a question about Kinetic Scenes (or asked to make a scene) needs first: what it is,
+// the two ways to use it from an AI (a chat with no tools, or an agent through the AI Dev Kit), and where the rest is.
+const LLMS = [
+  '# Unyson+ Kinetic Scenes',
+  '',
+  '> A free motion-graphics and video animation maker that runs in the browser: website heroes, explainer videos, product tours and social reels, built from ready-made presets on a timeline and exported as plain HTML for a website or as an MP4 video. No account and no install. Scenes are JSON data, so an AI can write them.',
+  '',
+  '- App: https://kinetic-scenes.unysonplus.com/ (works best on a computer; on a phone you can look around and play scenes)',
+  '- Manual: https://docs.unysonplus.com/kinetic-scenes/',
+  '- Everything it can do, with prompts to try: https://docs.unysonplus.com/kinetic-scenes/start-screen#what-kinetic-scenes-can-do',
+  '- Free AI Dev Kit (connects Claude Code, Codex or Cursor; adds voice-overs, footage, pictures, checks and video export on your computer): https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit',
+  '- Made by Unyson+ (free WordPress framework): https://www.unysonplus.com/',
+  '',
+  '## Making a scene from a chat (no tools)',
+  '',
+  'Write the whole scene file as one JSON code block (see the skill below). The person opens the app on a computer, pastes it into the Scene file tab (it applies when valid and lists any problems to send back), or saves it as scene.json and uses File > Open.',
+  '',
+  '## Making a scene as an agent (with tools)',
+  '',
+  'With the AI Dev Kit running, the kinetic-scenes MCP server gives the tools: scene_guide, scene_check, scene_stills, project_save (a preview link), voice_over, stock_search, image_cutout, scene_render and more. `studio-cli connect` registers them with Claude Code, Codex and Cursor.',
+  '',
+  '## Skill (the scene format, presets, styles and sounds, generated from the app\u2019s own code)',
+  '',
+  ...files.map((f) => `- [${f}](https://kinetic-scenes.unysonplus.com/skill/${f})`),
+  '',
+];
+writeFileSync(join(root, 'apps/studio/public/llms.txt'), LLMS.join('\n'));
 
 // The AI Dev Kit beside this repository gets a copy (Github Repository/<this> → ../../UnysonPlus-AI-Dev-Kit).
 const kit = process.env.UPW_KIT_DIR || resolve(root, '../../UnysonPlus-AI-Dev-Kit');

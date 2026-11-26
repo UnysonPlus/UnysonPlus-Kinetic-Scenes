@@ -8,7 +8,7 @@ description: Make motion-graphics scenes for Unyson+ Kinetic Scenes (animated we
 Kinetic Scenes (https://kinetic-scenes.unysonplus.com/) plays **scene files**: JSON data with a stage, layers and
 clips (presets placed on a timeline). You write data, never code, so whatever you make lands in the Studio as
 ordinary layers and clips the person can keep editing. This skill is generated from the Studio's own code
-(version 0.1.86), so the presets, settings and rules here are exactly what the player understands.
+(version 0.1.87), so the presets, settings and rules here are exactly what the player understands.
 
 ## Read first
 
@@ -19,6 +19,24 @@ ordinary layers and clips the person can keep editing. This skill is generated f
   named motion-design styles (synthwave, line art, Swiss grid, risograph, VHS, pixel art, newsreel, whiteboard, blueprint, woodcut, neon sign, rhythm game show, chalkboard, ink wash, stained glass, rubber-hose cartoon, CRT terminal, transit map, radar, thermal camera, X-ray, sketchnote, ukiyo-e, silent film, exploded view, ink silhouette, 90s low poly…) with what makes each recognisable
   and how to build it.
 - [Sounds](reference/sounds.md): the built-in sound effects.
+
+## Without the AI Dev Kit (a chat AI with no tools)
+
+A chat AI that cannot run the kit's tools (ChatGPT, Gemini or Claude in a browser or phone app) can still make a
+scene: write the **whole scene file as one JSON code block**, valid against [the scene file](reference/scene-format.md)
+and using only the presets in [the preset library](reference/presets.md). Then tell the person:
+
+1. Open https://kinetic-scenes.unysonplus.com/ **on a computer** (the Studio's editor is made for a mouse and a big
+   screen; on a phone they can look around and play scenes, not edit comfortably).
+2. Close the start box, open the **Scene file** tab on the right, select all of its text and paste yours over it.
+   It applies by itself as soon as it is valid. If the tab lists problems, they paste them back to you: fix them and
+   send the whole file again.
+3. Or save your JSON as `scene.json` and open it with **File › Open**.
+
+Keep it simple enough to be right the first time: a few acts, presets you can see in the library, no pictures or
+footage they don't have yet (use shapes and text, or `https://` pictures that allow being shown). Pictures, a
+voice-over, music, checks and stills of every frame need the free [AI Dev Kit](https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit),
+which connects Claude Code, Codex (ChatGPT's coding agent) or Cursor to the tools below.
 
 ## How to work
 

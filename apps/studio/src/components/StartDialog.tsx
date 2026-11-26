@@ -179,6 +179,8 @@ export function StartDialog(props: {
         {step === 'pick' ? (
           <div className="start-body">
             <div className="start-main">
+              {/* Phones: say up front that making and editing is for a computer (many visitors arrive from an AI chat on a phone). */}
+              <p className="start-phone">On a phone you can look around and play scenes. To make and edit them, open this page on a computer: the editor needs a mouse and a bigger screen.</p>
               <form className="start-describe" onSubmit={(e) => { e.preventDefault(); if (text.trim()) setStep('describe'); }}>
                 <label htmlFor="start-idea">Describe it</label>
                 <div className="start-describe-row">

@@ -20,6 +20,24 @@ ordinary layers and clips the person can keep editing. This skill is generated f
   and how to build it.
 - [Sounds](reference/sounds.md): the built-in sound effects.
 
+## Without the AI Dev Kit (a chat AI with no tools)
+
+A chat AI that cannot run the kit's tools (ChatGPT, Gemini or Claude in a browser or phone app) can still make a
+scene: write the **whole scene file as one JSON code block**, valid against [the scene file](reference/scene-format.md)
+and using only the presets in [the preset library](reference/presets.md). Then tell the person:
+
+1. Open https://kinetic-scenes.unysonplus.com/ **on a computer** (the Studio's editor is made for a mouse and a big
+   screen; on a phone they can look around and play scenes, not edit comfortably).
+2. Close the start box, open the **Scene file** tab on the right, select all of its text and paste yours over it.
+   It applies by itself as soon as it is valid. If the tab lists problems, they paste them back to you: fix them and
+   send the whole file again.
+3. Or save your JSON as `scene.json` and open it with **File › Open**.
+
+Keep it simple enough to be right the first time: a few acts, presets you can see in the library, no pictures or
+footage they don't have yet (use shapes and text, or `https://` pictures that allow being shown). Pictures, a
+voice-over, music, checks and stills of every frame need the free [AI Dev Kit](https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit),
+which connects Claude Code, Codex (ChatGPT's coding agent) or Cursor to the tools below.
+
 ## How to work
 
 0. **In a workspace project, read its notes first** (`notes.md`: the plan, what was decided, what is left; MCP

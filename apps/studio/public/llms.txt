@@ -1,8 +1,22 @@
 # Unyson+ Kinetic Scenes
 
-> Timeline motion graphics for the web, exported as plain HTML. Scenes are JSON data built from presets.
+> A free motion-graphics and video animation maker that runs in the browser: website heroes, explainer videos, product tours and social reels, built from ready-made presets on a timeline and exported as plain HTML for a website or as an MP4 video. No account and no install. Scenes are JSON data, so an AI can write them.
 
-## Skill
+- App: https://kinetic-scenes.unysonplus.com/ (works best on a computer; on a phone you can look around and play scenes)
+- Manual: https://docs.unysonplus.com/kinetic-scenes/
+- Everything it can do, with prompts to try: https://docs.unysonplus.com/kinetic-scenes/start-screen#what-kinetic-scenes-can-do
+- Free AI Dev Kit (connects Claude Code, Codex or Cursor; adds voice-overs, footage, pictures, checks and video export on your computer): https://github.com/UnysonPlus/UnysonPlus-AI-Dev-Kit
+- Made by Unyson+ (free WordPress framework): https://www.unysonplus.com/
+
+## Making a scene from a chat (no tools)
+
+Write the whole scene file as one JSON code block (see the skill below). The person opens the app on a computer, pastes it into the Scene file tab (it applies when valid and lists any problems to send back), or saves it as scene.json and uses File > Open.
+
+## Making a scene as an agent (with tools)
+
+With the AI Dev Kit running, the kinetic-scenes MCP server gives the tools: scene_guide, scene_check, scene_stills, project_save (a preview link), voice_over, stock_search, image_cutout, scene_render and more. `studio-cli connect` registers them with Claude Code, Codex and Cursor.
+
+## Skill (the scene format, presets, styles and sounds, generated from the app’s own code)
 
 - [SKILL.md](https://kinetic-scenes.unysonplus.com/skill/SKILL.md)
 - [reference/scene-format.md](https://kinetic-scenes.unysonplus.com/skill/reference/scene-format.md)
