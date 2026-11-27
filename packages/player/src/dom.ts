@@ -228,6 +228,11 @@ export function createLayer(doc: Document, layer: Layer, z: number, pinned = fal
     if (layer.alt && m instanceof HTMLVideoElement) m.setAttribute('aria-label', layer.alt);
     setMediaSrc(m, layer.src, hold);
     m.style.cssText = `width:100%;height:100%;display:block;object-fit:${layer.fit ?? 'cover'}`;
+    // Chrome draws an axis-aligned <video> on whole pixels, so under a slow camera zoom or pan its picture jumps
+    // back and forth by up to a pixel while everything else glides (measured: 25 backward steps in 60 frames).
+    // A turn too small to see (0.13 px across a 1920 px frame) takes it off that path and it moves smoothly.
+    // As the separate "rotate" property, so presets that set or clear the element's transform do not undo it.
+    if (m instanceof HTMLVideoElement) m.style.rotate = '0.004deg';
     inner.style.borderRadius = `${layer.radius ?? 0}cqw`;
     inner.style.overflow = 'hidden';
     inner.appendChild(m);
